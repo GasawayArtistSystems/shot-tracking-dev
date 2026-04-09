@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto my-12 px-6 relative z-20">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+    <h2 class="text-4xl font-bold mb-6" id="classes-overview">Classes</h2>
+    <p class="mb-6 text-lg leading-relaxed">
+      This page shows you how to manage classes, including viewing, adding, editing, and deleting classes. Classes hold
+      all the assignments, grading tasks, and student records.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">Classes are comprised of Assignments. These assignments are built based on
+      Individual Assignmets that are attached to each student. Each class has assignments, students, and individual
+      assignments.</p>
+    <img src="{{ url_for('static', filename='help/images/classes_main.png') }}" alt="Classes"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-3/4">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-classes">View Classes</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>CLASSES</strong> link at the top of the page takes you to the main classes page, where you
+      can view all existing classes, including their names, codes, semesters, and instructors.
+    </p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-class">Adding a Class</h3>
+    <p class="mb-6 text-lg leading-relaxed">When you add a class, you are also adding the folders for that class on the server. This helps with the other buttons in (Maya, Harmony, and Storyboard Pro).</p>
+    <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>Add Class</strong> button will open this window:</p>
+    <img src="{{ url_for('static', filename='help/images/add_class_modal.png') }}" alt="Add Class"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to create a class:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Select the Semester</span></li>
+      <li><span>Change the Course Code</span></li>
+      <li><span>Enter the Class Number</span></li>
+      <li><span>Enter the Class Name</span></li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> The Class Preview is auto-generated and not editable. It shows the full name of the
+        class for tracking purposes.
+      </div>
+      <li><span>Change Instructor</span></li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> Instructors can be added by the ADMIN under the <a
+          href="http://127.0.0.1:5000/help/admin#users"
+          class="underline font-semibold text-blue-400 hover:text-yellow-500">View Users</a> section in the Admin
+        dropdown.
+      </div>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-class">Editing a Class</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To edit a class, click the <strong>Edit</strong> button next to the class. This opens a modal where you can update
+      the class name, semester, instructor, and other details.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/edit_class_modal.png') }}" alt="Edit Class"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+      <strong>📌 NOTE:</strong> If you change the name of the class or the semester in which the class is, a warning will ask if you want to add the folders and delete the old folders.
+    </div>
+    <img src="{{ url_for('static', filename='help/images/delete-old-folders.png') }}" alt="Delete Folders"
+      class="rounded-xl shadow-lg mb-8 w-full">
+    <p class="mb-6 text-lg leading-relaxed">
+      Click Yes to delete the old folders and create new ones or No to simply add new folders.
+      </p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-class">Deleting a Class</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To delete a class, click the <strong>Delete</strong> button next to the class. Note that this action will also
+      delete all associated assignments and cannot be undone.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-green-400">⚠️ WARNING:</strong> Deleting a class will permanently remove all related
+      assignments and student data.
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="adding-students-to-class">Adding Students to a Class
+    </h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To add students to a class, click the <strong>Students</strong> button on the main class page. This opens the
+      student selection screen, where you can assign students to the current class.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-students-page.png') }}" alt="Add Students"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="removing-students-from-class">Removing Students
+      from a Class</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To remove students from a class, select the student from the right column and click the <strong>Remove from
+        Class</strong> button.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/remove-students-page.png') }}" alt="Remove Students"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-assignment">Adding Assignments to a Class</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      On the main Classes page, click on the desired class, then click the <strong>Add New Assignment</strong> button.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-assignment-modal.png') }}" alt="Add Assignment Modal"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li>Enter Assignment Name, Start Date, and Due Date.</li>
+      <li>Select the <a href="{{ url_for('help.help_admin') }}#configure-workflows"
+          class="font-semibold text-blue-400 hover:text-yellow-500">workflow</a> for the assignment.</li>
+      <li>Choose Progress Tracking Steps to monitor assignment progress.</li>
+      <li>Select one or more tracking options.</li>
+      <li>Choose <strong>Assign to All Students</strong>.</li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> Use "Assign to All Students" when first creating assignments. Use "Assign to Selected
+        Students" when adding late joiners.
+      </div>
+    </ol>
+    <p class="mb-6 text-lg leading-relaxed">This action creates both the main assignment and student-specific
+      assignments.</p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-assignment">Editing Assignment</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      On the main Assignments page, click on the Edit button next to the desired Assignment</p>
+    <img src="{{ url_for('static', filename='help/images/edit-assignment.png') }}" alt="Edit Assignment Modal"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+    <p class="mb-6 text-lg leading-relaxed">This will allow you to edit the Assignment name, Start Date, and Completion
+      Date.</p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-assignment">Deleting Assignment</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      On the main Assignments page, click on the Delete button next to the desired Assignment</p>
+    <p class="mb-6 text-lg leading-relaxed">
+      A warning will pop up allowing you to delete the assignment or to cancel.</p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+
+    <h1 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="class-submit">SUBMITTING ASSIGNMENTS</h1>
+    <p class="mb-6 text-lg leading-relaxed">
+      Trying to figure out what rigs are used for assignments is in the past. For Maya, the rigs are pre-loaded as long
+      as the student selects the correct class and assignment.
+      Students don't have to worry about naming convention or adding their name to the file. The code in Maya or ToonBoom
+      will do it for them.
+    </p>
+    <p class="text-lg mb-4">Software:</p>
+    <ul class="list-disc list-inside text-lg space-y-2">
+      <li><a href="{{ url_for('help.help_classes') }}#maya-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Maya</a></li>
+      <li><a href="{{ url_for('help.help_classes') }}#harmony-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Harmony</a></li>
+      <li><a href="{{ url_for('help.help_classes') }}#sbpro-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Storyboard Pro</a></li>
+    </ul>
+
+<h3 class="text-3xl font-semibold text-green-400 mt-10 mb-6" id="maya-walk-through">Maya Pipeline</h3>
+
+<p class="mb-8 text-lg leading-relaxed">
+  Students working in Maya should use the GAA or DMC shelf tools to set up, save, and submit assignments using the
+  following steps.
+</p>
+
+<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm mb-10">
+  <strong>📌 NOTE:</strong> Before starting an assignment, in order for this submission to work, students MUST use the
+  following steps.
+</div>
+
+<ol class="list-decimal list-inside text-lg space-y-12">
+  <li>
+    Click the <strong>Assignments</strong> button in the GAA shelf 
+    <img src="{{ url_for('static', filename='help/images/assignment.png') }}" 
+         alt="Assignment Button"
+         class="inline w-6 h-6 mx-1 align-middle" /> 
+    and save the Maya file in a folder you will remember.
+
+    <div class="bg-green-500 border-l-4 border-green-800 text-amber-800 p-4 rounded-lg text-sm mt-6">
+      <strong>📌 REMEMBER:</strong> It's best to create a folder in your Documents folder OR on Onedrive. THIS is where your file will be saved.
+      When opening an assignment, this is where it will be.
+    </div>
+
+    <img src="{{ url_for('static', filename='help/images/Save_Folder_Assignment.png') }}" 
+         alt="Save Folder"
+         class="shadow-lg mt-8 w-full md:w-2/3">
+
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm mt-8">
+      <strong>NOTE:</strong> You don't have to type anything in the Directory: box. Once you go to your folder, you can
+      simply click SAVE.
+    </div>
+  </li>
+
+  <li>
+    Select your Class and Assignment from the modal window that appears.
+    <img src="{{ url_for('static', filename='help/images/Create_Assignment.png') }}" 
+         alt="Create Assignment"
+         class="shadow-lg mt-6 w-[307px] h-[246px]">
+  </li>
+
+  <li>
+    Click <strong>Create Assignment File</strong>. This loads the rigged scene and auto-generates the correct file name.
+  </li>
+
+  <li>
+    A render camera is added to your scene.
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm mt-6">
+      <strong>📌 REMEMBER:</strong> Do not delete this camera — it's used for rendering!
+    </div>
+  </li>
+
+  <li>Use <strong>File → Save</strong> to save your scene.</li>
+
+  <li>
+    You can version up with the <strong>Increment</strong> button.
+    <img src="{{ url_for('static', filename='help/images/increment.png') }}" 
+         alt="Version Button"
+         class="inline w-6 h-6 mx-1 align-middle">
+  </li>
+
+  <li>
+    Create a Playblast using the <strong>GAA Playblast</strong> button.
+    <span class="inline-block bg-white p-1 shadow-lg">
+      <img src="{{ url_for('static', filename='help/images/film.png') }}" 
+           alt="Playblast"
+           class="w-6 h-6 align-middle">
+    </span>
+
+    <img src="{{ url_for('static', filename='help/images/Playblast.png') }}" 
+         alt="Playblast Window"
+         class="w-[40%] h-auto mt-8">
+  </li>
+
+  <li>
+    Click <strong>Movie For You</strong> to generate a local .avi file (not for submission).
+  </li>
+
+  <li>
+    To submit: click <strong>Submit Assignment</strong>. The movie file is placed automatically in the correct folder.
+  </li>
+
+  <li>If audio is detected, check the audio box to include it.</li>
+</ol>
+
+<div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm mt-12">
+  <strong>📌 REMEMBER:</strong> Track assignment status anytime from your 
+  <a href="{{ url_for('help.help_overview') }}#dashboard"
+     class="underline font-semibold text-yellow-800 hover:text-yellow-700">Dashboard</a>. 
+  You can 
+  <a href="{{ url_for('help.help_grading') }}#changing-status"
+     class="underline font-semibold text-blue-400 hover:text-yellow-500">update your status</a> after grading.
+</div>
+
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="harmony-walk-through">Harmony Pipeline</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Coming SOON!
+    </p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="sbpro-walk-through">Storyboard Pro Pipeline</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Students working in Storyboard Pro should use the Toonboom shortcuts to open new files and work on existing files.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">
+      The toonboom tools for both SBPro and Harmony will be on your desktop.
+    </p>
+    <p class="mb-4 text-lg">
+      Creating <a href="{{ url_for('help.help_sbpro') }}#sbpro-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">THUMBNAILS</a> from scratch, or working on
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">REVISIONS</a>.
+    </p>
+    
+    <p class="mb-6 text-lg">
+      Creating <a href="{{ url_for('help.help_sbpro') }}#sbpro-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">STORYBOARDS</a> from thumbnails, or working on
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">REVISIONS</a>.
+    </p>
+
+    <p class="mb-6 text-lg">
+      Exporting <a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">Thumbnails</a> or
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">Storyboards</a>.
+    </p>
+    
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="resubmit">Revise and Resubmit</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Making changes and then resubmitting is the exact same process as creating an assignment and creating a movie. If
+      your assignment is less than a 5, the software will make the status of your assignment a RETAKE.
+    </p>
+    <ul class="list-disc list-inside text-lg space-y-2">
+      <li>IF your status is RETAKE, you have the option to <a href="{{ url_for('help.help_grading') }}#students-status"
+          class="font-semibold text-blue-400 hover:text-yellow-500">make changes</a> and get a better grade or be happy
+        with the grade and change the status to Approved.</li>
+      <li>IF you choose to make changes, simply follow the same directions as <a
+          href="{{ url_for('help.help_classes') }}#class-submit"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Creating a Shot.</a></li>
+    </ul>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="config-editor">Config Editor</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      In order to make Maya, Harmony, and Storyboard Pro compatible with this application, we must create a config
+      editor. This editor will show all the classes and assignments, along with the Rigs
+      that are used in each assignment. Follow the intuitive instructions to creating a config file for each software.
+    </p>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+      <strong>📌 NOTE:</strong> It's best to do the config editor after creating the film and scenes/shots/assets as
+      this
+      editor gets all the information from those scenes/shots/assets.
+    </div>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-green-400">⚠️ WARNING:</strong> This should ONLY be done by an instructor with all other
+      instructors aware, at the beginning of each semester. All tools are based on this editor. It will not be able to
+      be used after the semester starts.
+    </div>
+
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li>To speed the process, Load an Old Config. This will allow you to locate an old config file so you can edit
+        that instead of starting from scratch.</li>
+      <li>Select <strong>Semester</strong> from dropdown.</li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> If the semester is different than is in the initial dropdown, you will get a warning,
+        saying the Switching will reset everything. When first starting, this is ok. Select Yes, Discard changes.
+      </div>
+      <li>Click the <strong>+ Add Class</strong> button on the main modal and select a class you want to add.</li>
+      <img src="{{ url_for('static', filename='help/images/config-add-class.png') }}" alt="Config Add Class"
+        class="rounded-xl shadow-lg mt-4 w-[451px] h-[320px]">
+      <li>Click <strong>+ Add Assignment</strong> button under the class you want the assignment to be.</li>
+      <img src="{{ url_for('static', filename='help/images/config-editor-class.png') }}" alt="Config Editor Class"
+        class="rounded-xl shadow-lg mt-4 w-[886px] h-[329px]">
+      <li>Select an assignment from the dropdown or add your own.</li>
+      <img src="{{ url_for('static', filename='help/images/config-add-assignment.png') }}" alt="Config Add Assignment"
+        class="rounded-xl shadow-lg mt-4 w-[452px] h-[327px]">
+      <li>The editor is populated with the Assignment. You can now add if you want a camera by clicking the checkbox and
+        add rigs by clicking on the Select Rigs button.</li>
+      <img src="{{ url_for('static', filename='help/images/config-editor-assignment.png') }}"
+        alt="Config Editor Assignment" class="rounded-xl shadow-lg mt-4 w-[896px] h-[535px]">
+      <li>In the <strong>Select Rigs</strong> modal, you can click on multiple checkboxes, or do a search for the rig.
+        Rolling over the rig name will give you the full name.</li>
+      <img src="{{ url_for('static', filename='help/images/config-rigs.png') }}" alt="Config Rigs"
+        class="rounded-xl shadow-lg mt-4 w-[450px] h-[760px]">
+      <li>Continue to add classes/assignments/rigs until finished.</li>
+      <li>You can move assignments in the order you want by clicking and dragging on the assignment. Classes can be
+        ordered the same way.</li>
+      <li>You can delete assignments or classes by clicking the red trashcan icon on the far right.</li>
+      <li>Once complete, you can Save a Draft to continue working on later or Save JSON to save the config file</li>
+      <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+        <strong class="text-green-400">NOTE</strong> Saving the JSON file will put the config file in the correct place
+        in Maya. Nothing else needs to be done.
+      </div>
+    </ol>
+
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const headings = document.querySelectorAll("h3[id]");
+    const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+    const observer = new IntersectionObserver(
+      entries => {
+        for (let entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            tocLinks.forEach(link => {
+              link.classList.remove("text-yellow-500", "font-semibold");
+              if (link.getAttribute("href") === `#${id}`) {
+                link.classList.add("text-yellow-500", "font-semibold");
+              }
+            });
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    headings.forEach(h => observer.observe(h));
+  });
+</script>
+{% endblock %}

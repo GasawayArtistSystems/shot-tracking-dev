@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+
+<!-- ✅ Add Assignment Form -->
+<div class="bg-red-900 shadow-lg rounded-lg p-6 max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-white mb-4">Add Assignment</h2>
+
+    <form method="POST" action="/assignments/assignments/add">
+        <input type="hidden" name="class_id" value="{{ class_id }}">
+
+        <!-- ✅ Assignment Name, Start & Completion Dates -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+                <label for="assignment-name" class="block text-white font-medium">Assignment Name</label>
+                <input type="text" id="assignment-name" name="assignment_name" 
+                       class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" required>
+            </div>
+
+            <div>
+                <label for="start-date" class="block text-white font-medium">Start Date</label>
+                <input type="date" id="start-date" name="start_date" 
+                       class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" required>
+            </div>
+
+            <div>
+                <label for="completion-date" class="block text-white font-medium">Completion Date</label>
+                <input type="date" id="completion-date" name="completion_date" 
+                       class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" required>
+            </div>
+        </div>
+
+        <!-- ✅ Workflow Selection -->
+        <div class="mb-4">
+            <label for="parent_step_id" class="block text-white font-medium">Workflow</label>
+            <select id="parent_step_id" name="parent_step_id" 
+                    class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" 
+                    required onchange="updateStepOptions()">
+                <option value="">Select a Workflow</option>
+                {% for workflow in workflows if 'assignment' in workflow.name.lower() %}
+                <option value="{{ workflow.id }}">{{ workflow.name }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <!-- ✅ Multi-step Select Dropdown -->
+        <div class="mb-4">
+            <label for="progress_step_ids" class="block text-whitefont-medium">Progress Tracking Steps (Use CTL to select more than one)</label>
+            <select id="progress_step_ids" name="progress_step_ids" multiple
+                    class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" required>
+            <option value="" disabled>Select steps to record progress</option>
+            {% for step in steps %}
+            <option value="{{ step.id }}" data-parent="{{ step.parent_id }}">{{ step.name }}</option>
+            {% endfor %}
+            </select>
+        </div>
+        
+
+        <!-- ✅ Assign to Students -->
+        <div class="mb-4">
+            <label class="block text-white font-semibold">Assign to Students</label>
+            <div class="flex items-center space-x-4">
+                <label class="inline-flex items-center">
+                    <input class="form-radio text-blue-500" type="radio" name="assign_option" id="assign-all" value="all" checked>
+                    <span class="ml-2 text-white">Assign to All Students in Class</span>
+                </label>
+
+                <label class="inline-flex items-center text-gray-900">
+                    <input class="form-radio text-blue-500" type="radio" name="assign_option" id="assign-selected" value="selected">
+                    <span class="ml-2 text-white">Assign to Selected Students</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ✅ Student List (Hidden Until Selected) -->
+        <div id="student-list" class="mb-4 hidden">
+            <label for="students" class="block text-white font-semibold">Select Students</label>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {% for student in students %}
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="form-checkbox text-blue-500" name="selected_students" value="{{ student.id }}">
+                    <span>{{ student.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ✅ Submit and Cancel Buttons -->
+        <div class="text-right mt-4">
+            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                Add Assignment
+            </button>
+            <a href="{{ url_for('assignments.view_assignments', class_id=class_id) }}" 
+               class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- ✅ JavaScript -->
+<script>
+    document.getElementById('assign-all').addEventListener('change', function () {
+        document.getElementById('student-list').classList.add('hidden');
+    });
+
+    document.getElementById('assign-selected').addEventListener('change', function () {
+        document.getElementById('student-list').classList.remove('hidden');
+    });
+
+    function updateStepOptions() {
+        let selectedParent = document.getElementById("parent_step_id").value;
+        let stepDropdown = document.getElementById("progress_step_id");
+
+        Array.from(stepDropdown.options).forEach(option => {
+            option.style.display = option.getAttribute("data-parent") === selectedParent ? "block" : "none";
+        });
+
+        console.log(`✅ Updated step options for parent_step_id ${selectedParent}`);
+    }
+</script>
+
+<script>
+    function updateStepOptions() {
+      const selectedWorkflow = document.getElementById("parent_step_id").value;
+      const options = document.querySelectorAll("#progress_step_ids option");
+    
+      options.forEach(opt => {
+        if (!selectedWorkflow || opt.dataset.parent !== selectedWorkflow) {
+          opt.hidden = true;
+          opt.disabled = true;
+        } else {
+          opt.hidden = false;
+          opt.disabled = false;
+        }
+      });
+    }
+</script>
+    
+
+{% endblock %}

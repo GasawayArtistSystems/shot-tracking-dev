@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+    {% include 'partials/help_sidebar.html' %}
+
+    <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-lg shadow">
+        <h2 class="text-3xl font-bold mb-4" id="timeline-overview">Timeline</h2>
+        <p class="mb-4">
+            Timelines are essential to keeping projects on track. This will show how they are initially setup, edited, and used to help
+            any production.
+        </p>
+        <p class="mb-4">
+            Timelines are divided between Pre-Production, Assets, and Production.
+        </p>
+        <p><img src="{{ url_for('static', filename='help/images/timeline-overall.png') }}" alt="Timeline"
+                class="w-[90%] h-auto align-middle" /></p>
+
+
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">Period</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Clicking on the <strong>Day Week Month Year</strong> will change the view of the timeline.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-film">Current Day</h3>
+        <p class="mb-6 text-lg leading-relaxed">The Current day is shown by the red dashed line:</p>
+            <img src="{{ url_for('static', filename='help/images/timeline-current.png') }}" alt="Current Day"
+                class="shadow-lg mb-2 ml-4" style="width: 100px;">
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-film">Editing Start/End Dates</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            To edit the start or end date of a section, drag the left or right bar to extend or shrink the length of time.
+        </p>
+        <img src="{{ url_for('static', filename='help/images/timeline-drag.png') }}" alt="Timeline Drag"
+            class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">Notes about Timeline</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Changing the start or end date on the timeline affects assets, scenes, and shots ONLY before those assets, scenes, and shots are started.
+            Once they are created, the timeline won't affect the start and end dates on the individual assets, scenes, and shots. Those can be adjusted
+            in the assets, scenes, or shots themselves.
+        </p>
+
+    </div>
+
+
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const headings = document.querySelectorAll("h3[id]");
+        const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+        const observer = new IntersectionObserver(
+            entries => {
+                for (let entry of entries) {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute("id");
+                        tocLinks.forEach(link => {
+                            link.classList.remove("text-yellow-400", "font-semibold");
+                            if (link.getAttribute("href") === `#${id}`) {
+                                link.classList.add("text-yellow-400", "font-semibold");
+                            }
+                        });
+                    }
+                }
+            },
+            { threshold: 0.3 }
+        );
+
+        headings.forEach(h => observer.observe(h));
+    });
+</script>
+{% endblock %}

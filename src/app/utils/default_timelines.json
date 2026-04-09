@@ -1,0 +1,215 @@
+{
+    "Assets": {
+        "Sets": [
+            {
+                "name": "Design",
+                "weeks": 3
+            },
+            {
+                "name": "FB Design",
+                "weeks": 1
+            },
+            {
+                "name": "Modeling",
+                "weeks": 3
+            },
+            {
+                "name": "FB Modeling",
+                "weeks": 1
+            },
+            {
+                "name": "Texture/Surface",
+                "weeks": 3
+            },
+            {
+                "name": "FB Text/Surf",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ],
+        "BGs": [
+            {
+                "name": "Design",
+                "weeks": 2
+            },
+            {
+                "name": "FB Design",
+                "weeks": 1
+            },
+            {
+                "name": "Modeling",
+                "weeks": 3
+            },
+            {
+                "name": "FB Modeling",
+                "weeks": 1
+            },
+            {
+                "name": "Texture/Surface",
+                "weeks": 3
+            },
+            {
+                "name": "FB Texture/Surface",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ],
+        "Character/Rigs": [
+            {
+                "name": "Design",
+                "weeks": 2
+            },
+            {
+                "name": "Modeling",
+                "weeks": 3
+            },
+            {
+                "name": "FB Modeling",
+                "weeks": 1
+            },
+            {
+                "name": "Texture/Surface",
+                "weeks": 3
+            },
+            {
+                "name": "FB Texture/Surface",
+                "weeks": 1
+            },
+            {
+                "name": "Rigging",
+                "weeks": 4
+            },
+            {
+                "name": "FB Rigging",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ],
+        "Props - 3D": [
+            {
+                "name": "Design",
+                "weeks": 2
+            },
+            {
+                "name": "FB Design",
+                "weeks": 1
+            },
+            {
+                "name": "Modeling",
+                "weeks": 2
+            },
+            {
+                "name": "FB Modeling",
+                "weeks": 1
+            },
+            {
+                "name": "Texture/Surface",
+                "weeks": 2
+            },
+            {
+                "name": "FB Texture/Surface",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ],
+        "Props - 2D": [
+            {
+                "name": "Design",
+                "weeks": 2
+            },
+            {
+                "name": "FB Design",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ],
+        "Light Rigs": [
+            {
+                "name": "Rig Creation",
+                "weeks": 2
+            },
+            {
+                "name": "FB Rig Creation",
+                "weeks": 1
+            },
+            {
+                "name": "Shot Ready",
+                "weeks": 1
+            }
+        ]
+    },
+    "2D": {
+        "Storyboards": {
+            "duration_weeks": 2,
+            "offset_weeks": 0,
+            "fixed_to_finals": false
+        },
+        "Animation": {
+            "duration_weeks": 8,
+            "offset_weeks": 0,
+            "fixed_to_finals": false
+        },
+        "Inbetweens": {
+            "duration_weeks": 6,
+            "offset_weeks": 5,
+            "fixed_to_finals": false
+        },
+        "Ink & Paint": {
+            "duration_weeks": 4,
+            "offset_weeks": 9,
+            "fixed_to_finals": false
+        },
+        "Final_Delivery": {
+            "duration_weeks": 1,
+            "offset_weeks": 14,
+            "fixed_to_finals": true
+        }
+    },
+    "3D": {
+        "Storyboards": {
+            "duration_weeks": 3,
+            "offset_weeks": 0,
+            "fixed_to_finals": false
+        },
+        "Layout": {
+            "duration_weeks": 4,
+            "offset_weeks": 2,
+            "fixed_to_finals": false
+        },
+        "Animation": {
+            "duration_weeks": 8,
+            "offset_weeks": 2,
+            "fixed_to_finals": false
+        },
+        "Lighting": {
+            "duration_weeks": 6,
+            "offset_weeks": 6,
+            "fixed_to_finals": false
+        },
+        "Comp": {
+            "duration_weeks": 4,
+            "offset_weeks": 8,
+            "fixed_to_finals": false
+        },
+        "Final_Delivery": {
+            "duration_weeks": 1,
+            "offset_weeks": 15,
+            "fixed_to_finals": true
+        }
+    }
+}

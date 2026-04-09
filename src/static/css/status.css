@@ -1,0 +1,131 @@
+.status-dropdown {
+    width: 100px;
+    height: 26px;
+    font-size: 13px;
+    border-radius: 5px;  /* Rounded edges */
+    border: 1px solid #ccc;
+    padding: 2px;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+    transition: all 0.2s ease-in-out;
+}
+
+.status-dropdown:hover {
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    transform: scale(1.03);
+}
+
+.status-dropdown option {
+    padding: 4px;
+    font-size: 12px;
+    color: #222;
+}
+
+.status-container {
+    display: inline-block;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: 4px;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.step-label {
+    font-weight: bold;
+    margin-bottom: 3px;
+    text-align: center;
+}
+
+.status-title {
+    display: block;
+    font-size: 12px;
+    color: #ffffff;
+    margin-bottom: 5px;
+}
+
+
+select {
+    display: inline-block;
+    visibility: visible;
+  }
+  
+/* ✅ Ensure all table content is centered */
+#individual-assignments-table tbody tr {
+    text-align: center;
+    vertical-align: middle;
+    color: rgb(255, 255, 255) !important;
+}
+
+/* ✅ Reduce font size for date columns */
+#individual-assignments-table td:nth-child(2),  
+#individual-assignments-table td:nth-child(3) { 
+    font-size: 13px; 
+    color: #ffffff;
+}
+
+/* ✅ Style labels inside the Status column */
+#individual-assignments-table .status-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; /* Add spacing between elements */
+    flex-wrap: wrap; /* Ensures elements don’t overflow */
+}
+
+/* ✅ Smaller font for labels */
+#individual-assignments-table .status-cell label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #ffffff;
+    display: inline-block;
+    margin-right: 1px;
+}
+
+/* ✅ Reduce size of select dropdowns */
+#individual-assignments-table .status-cell select {
+    font-size: 12px;
+    padding: 3px;
+    height: 26px;
+    min-width: 80px;
+}
+
+/* ✅ Ensure Video Status is aligned properly */
+#individual-assignments-table .video-status-cell span {
+    font-size: 12px;
+    padding: 3px 6px;
+}
+/* Make the 'Select Assignment' label black */
+#assignment-select-label {
+    color: black !important;
+    font-weight: bold;  /* Optional: Make it bold */
+}
+
+/* Make the dropdown text black */
+#assignment-dropdown {
+    color: black !important;
+    background-color: white !important;
+    border: 1px solid #ccc;
+    font-weight: normal;
+}
+
+/* If it's disabled, ensure it has proper styling */
+#assignment-dropdown:disabled {
+    color: black !important;
+    opacity: 1 !important; /* Ensure full visibility */
+}
+
+#assignment-dropdown option {
+    color: black !important;
+    background-color: white !important;
+}
+
+#assignment-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Make sure the label "Select Assignment" is black */
+label[for="assignment-dropdown"] {
+    color: black !important;
+    font-weight: bold;
+}

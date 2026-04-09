@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-top: 1rem;">
+  <label for="debugSemesterSelect" style="font-weight: bold;">
+  Semester:
+  </label>
+  <select id="debugSemesterSelect" class="text-black border rounded px-2 py-1">
+    <option value="">-- Use Current --</option>
+    </select>
+</div>
+
+<div class="container mx-auto p-6">
+  <p class="text-sm text-red-500">
+  <h1 class="text-3xl font-bold text-white">Welcome, {{ session['username'] }}!</h1>
+  {% if view_user_name %}
+  <p class="text-sm text-yellow-400 mt-1">
+    Viewing as: <strong>{{ view_user_name }}</strong>
+  </p>
+  {% endif %}
+  {% if session.get('permissions', {}).get('classes', 0) >= 3 %}
+  <div id="admin-user-selector" class="mt-4">
+    <label for="userSelect" class="text-sm text-gray-300 mr-2">👤 View as User:</label>
+    <select id="userSelect" class="bg-gray-700 text-white px-3 py-1 rounded shadow">
+      <option value="">(Select a student)</option>
+    </select>
+  </div>
+  {% endif %}
+
+  <div class="bg-gray-800 p-4 mt-4 rounded-lg">
+    <h2 class="text-xl font-bold text-white mb-3">📌 To-Do Assignments</h2>
+    <table id="todo-table" class="min-w-full divide-y divide-gray-700 text-white">
+      <thead class="bg-gray-700 text-sm uppercase text-gray-300">
+        <tr>
+          <th class="px-4 py-2 text-left">Assignment</th>
+          <th class="px-4 py-2 text-left">Class</th>
+          <th class="px-4 py-2 text-left">Due Date</th>
+          <th class="px-2 py-3 text-left">Step</th>
+          <th class="px-2 py-3 text-left">Status</th>
+          <th class="px-4 py-2 text-left">Grade</th>
+          <th class="px-4 py-2 text-left">Review</th>
+
+        </tr>
+      </thead>
+      <tbody id="todo-table-body" class="divide-y divide-gray-600">
+        <!-- JS will populate rows -->
+      </tbody>
+    </table>
+  </div>
+  <!-- To-Do Film Shots (Insert below To-Do Assignments) -->
+  <h2 class="text-xl font-bold mb-2 mt-6 flex items-center justify-between">
+    <span>🎬 To-Do Film Shots</span>
+    <div class="flex gap-2">
+      <label for="sortField" class="text-sm text-gray-300">Sort by:</label>
+      <select id="sortField" class="bg-slate-600 text-white text-sm px-2 py-1 rounded">
+        <option value="shot_number">Shot Number</option>
+        <option value="due_date">Due Date</option>
+        <option value="status">Status</option>
+      </select>
+      <button id="toggleSortDirection" class="bg-slate-700 hover:bg-slate-600 text-white text-sm px-2 py-1 rounded">⬆
+        Asc</button>
+    </div>
+  </h2>
+  <div class="bg-slate-800 rounded-lg overflow-hidden">
+    <div id="todo-film-shots"></div>
+  </div>
+
+  <h2 class="text-xl font-bold mb-2 mt-6">🎨 To-Do Assets</h2>
+  <div class="bg-slate-800 rounded-lg overflow-hidden">
+    <div id="todo-assets-list"></div>
+  </div>
+
+
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+    <!-- 🔹 Left Column: Classes -->
+    <div class="bg-gray-800 p-4 rounded-lg">
+      <h2 class="text-xl font-semibold text-white mb-2">Classes</h2>
+      <div id="class-collapsible-list" class="space-y-3">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+
+    <!-- 🔹 Right Column: Films -->
+    <div class="bg-gray-800 p-4 rounded-lg">
+      <h2 class="text-xl font-semibold text-white">Films</h2>
+      <div id="film-list" class="mt-2 space-y-2">
+        <p class="text-gray-400">Loading films...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- JavaScript to Fetch Data -->
+
+<script src="{{ url_for('static', filename='js/dashboard_films.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard_classes.js') }}"></script>
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Always run film fetch
+    fetch("/dashboard/api/approved_film_items")
+      .then(res => res.json())
+      .then(data => {
+        console.log("🎬 Received film data:", data);
+        const container = document.getElementById("film-list");
+        container.innerHTML = "";
+
+        if (data.length === 0) {
+          container.innerHTML = "<p class='text-gray-400'>No approved scenes yet.</p>";
+          return;
+        }
+
+        data.forEach(film => {
+          const filmBox = document.createElement("div");
+          filmBox.className = "bg-slate-700 p-3 rounded shadow";
+
+          const title = document.createElement("h3");
+          title.className = "text-white font-semibold text-lg mb-1";
+          title.textContent = `🎬 ${film.film_name}`;
+          filmBox.appendChild(title);
+
+          film.scenes
+            .filter(scene => !scene.step.includes("FB"))  // ✅ filter out FB Thumbnails
+            .forEach(scene => {
+              const table = document.createElement("div");
+              table.className = "divide-y divide-gray-700";
+
+              // Only show non-FB scenes
+              film.scenes
+                .filter(scene => !scene.step.includes("FB"))
+                .forEach(scene => {
+                  const row = document.createElement("div");
+                  row.className = "flex justify-between items-center px-2 py-1";
+
+                  const label = document.createElement("span");
+                  label.className = "text-gray-300 text-sm";
+                  label.textContent = `Scene ${scene.scene_number} — ${scene.step}`;
+
+                  const link = document.createElement("a");
+                  link.href = `/dashboard/approved_file?path=${encodeURIComponent(scene.file_path)}`;
+                  link.target = "_blank";
+                  link.className = "bg-blue-600 text-white text-sm px-3 py-1 rounded hover:bg-blue-500";
+                  link.textContent = "View";
+
+
+                  row.appendChild(label);
+                  row.appendChild(link);
+                  table.appendChild(row);
+                });
+
+              filmBox.appendChild(table);
+
+            });
+
+
+          container.appendChild(filmBox);
+        });
+      })
+      .catch(err => {
+        console.error("❌ Error loading approved films:", err);
+        document.getElementById("film-list").innerHTML =
+          "<p class='text-red-400'>Error loading films.</p>";
+      });
+
+    // ✅ Only do user select logic if the element exists
+    const userSelect = document.getElementById("userSelect");
+    if (userSelect) {
+      fetch("/dashboard/admin/api/students")
+        .then(res => res.json())
+        .then(users => {
+          users.forEach(user => {
+            const option = document.createElement("option");
+            option.value = user.id;
+            option.textContent = user.name;
+            userSelect.appendChild(option);
+          });
+        });
+
+      userSelect.addEventListener("change", e => {
+        const userId = e.target.value;
+        fetch(`/dashboard/set_view_user/${userId}`)
+          .then(() => location.reload());
+      });
+    }
+  });
+
+
+
+    const semSelect = document.getElementById("debugSemesterSelect");
+    if (semSelect) {
+      fetch("/semesters/")
+        .then(res => res.json())
+        .then(semesters => {
+          semesters.forEach(s => {
+            const opt = document.createElement("option");
+            opt.value = s.id;
+            opt.textContent = `${s.term} ${s.year}`;
+            semSelect.appendChild(opt);
+          });
+        });
+    }
+
+
+    
+
+</script>
+
+<script src="{{ url_for('static', filename='js/dashboard_individual_assignments.js') }}"></script>
+<script>
+  window.testUserId = {{ user_id | tojson }};
+  window.defaultSemesterId = {{ semester_id | tojson }};
+</script>
+
+
+
+{% endblock %}

@@ -1,0 +1,53 @@
+{
+    "nodes": [
+        {
+            "id": 1,
+            "name": "Standby",
+            "position": "(0,0)",
+            "color": "#D3D3D3",
+            "status": "Standby",
+            "completion_percentage": 0
+        },
+        {
+            "id": 2,
+            "name": "Submitted",
+            "position": "(1,0)",
+            "color": "#FFD700",
+            "status": "Submitted",
+            "completion_percentage": 50
+        },
+        {
+            "id": 3,
+            "name": "Grading",
+            "position": "(2,0)",
+            "color": "#FFA500",
+            "status": "Grading",
+            "completion_percentage": 75
+        },
+        {
+            "id": 4,
+            "name": "Grade Complete",
+            "position": "(3,0)",
+            "color": "#32CD32",
+            "status": "Complete",
+            "completion_percentage": 100
+        }
+    ],
+    "links": [
+        {
+            "id": 101,
+            "parent_node_id": 1,
+            "child_node_id": 2
+        },
+        {
+            "id": 102,
+            "parent_node_id": 2,
+            "child_node_id": 3
+        },
+        {
+            "id": 103,
+            "parent_node_id": 3,
+            "child_node_id": 4
+        }
+    ]
+}

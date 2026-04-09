@@ -1,0 +1,38 @@
+[
+    {
+      "name": "Add Class",
+      "icon": "➕",
+      "location": "Classes Page",
+      "description": "Adds a new class via the Create Class modal.",
+      "image": "help/images/add-class.png"
+    },
+    {
+      "name": "Save Assignment",
+      "icon": "💾",
+      "location": "Assignment Editor",
+      "description": "Saves your current progress.",
+      "image": "help/images/save-btn.png"
+    },
+    {
+      "name": "Delete User",
+      "icon": "🗑️",
+      "location": "Admin Panel",
+      "description": "Permanently removes a user from the system.",
+      "image": "help/images/delete-user.png"
+    },
+    {
+      "name": "GAA_Assignments",
+      "icon": "➕",
+      "location": "Maya",
+      "description": "Creates a new scene lined up with the assignment.",
+      "image": "help/images/Create_Assignment.png"
+    },
+    {
+      "name": "GAA_Submit",
+      "icon": "➕",
+      "location": "Maya",
+      "description": "Creates movies for assignments for personal and submitting.",
+      "image": "help/images/Playblast.png"
+    }
+  ]
+  

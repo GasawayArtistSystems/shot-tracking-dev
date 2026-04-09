@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto my-12 px-6 relative z-20">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div
+    class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+    <h2 class="text-4xl font-bold mb-6" id="overview">Overview</h2>
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4">What this App does</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Welcome to the Film and Class Tracker Guide!</p>
+      <img src="{{ url_for('static', filename='help/images/header-overall.png') }}" alt="Overall Header"
+              class="rounded-xl shadow-lg mb-4">
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <p class="mb-6 text-lg">This app helps you keep track of your assignments and film work like shots and assets.</p>
+      You can:</p>
+      <ul class="list-disc list-inside text-lg space-y-2">
+        <li>See what's due and who is working on what</li>
+        <li>Create and view videos of markups for revisions</li>
+        <li>Check and approve your grades</li>
+        <li>Update progress by submitting through your art software (like Maya or Harmony)</li>
+      </ul>
+    </div>
+    <p class="mb-6 text-lg leading-relaxed"></p>
+    <p class="mb-6 text-lg leading-relaxed">Tracker is split into two sections: <a
+        href="{{ url_for('help.help_classes') }}" class="font-semibold text-blue-400 hover:text-yellow-500">CLASSES</a>
+      and <a href="{{ url_for('help.help_films') }}"
+        class="font-semibold text-blue-400 hover:text-yellow-500">FILMS</a>.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">
+      The application is the "one stop shop" for anything assignment and shot/asset related: submissions, grades, retakes, and
+      approvals.
+    </p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="roles">Roles and What They Can Do</h3>
+    <p class="mb-6 text-lg leading-relaxed">A user can be a student or instructor/admin.</p>
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <p class="text-lg mb-4">A STUDENT can:</p>
+      <ul class="list-disc list-inside text-lg space-y-2">
+        <li><a href="{{ url_for('help.help_classes') }}#class-submit"
+            class="font-semibold text-blue-400 hover:text-yellow-500">Submit assignments through animation software</a></li>
+        <li><a href="{{ url_for('help.help_films') }}#film-submit"
+            class="font-semibold text-blue-400 hover:text-yellow-500">Submit film shots and assets through animation software</a></li>
+        <li><a href="{{ url_for('help.help_overview') }}#dashboard"
+            class="font-semibold text-blue-400 hover:text-yellow-500">View deadlines and status updates on their
+            dashboard</a></li>
+        <li><a href="{{ url_for('help.help_overview') }}#dashboard-reviewing"
+            class="font-semibold text-blue-400 hover:text-yellow-500">View video markups of their work</a></li>
+        <li><a href="{{ url_for('help.help_classes') }}#resubmit"
+            class="font-semibold text-blue-400 hover:text-yellow-500">Revise and resubmit assignments</a></li>
+      </ul>
+    </div>
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <p class="text-lg mb-4">An INSTRUCTOR can:</p>
+      <ul class="list-disc list-inside text-lg space-y-2">
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_classes') }}#add-class">Add</a><a
+            href="{{ url_for('help.help_classes') }}#edit-class">/Edit</a><a
+            href="{{ url_for('help.help_classes') }}#delete-class">/Delete</a> a Class</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_classes') }}#adding-students-to-class">Add</a><a
+            href="{{ url_for('help.help_classes') }}#removing-students-from-class">/Remove</a> a Student from a Class</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_classes') }}#add-assignment">Add</a><a
+            href="{{ url_for('help.help_classes') }}#edit-assignment">/Edit</a><a
+            href="{{ url_for('help.help_classes') }}#delete-assignment">/Delete</a> an Assignment</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a 
+            href="{{ url_for('help.help_grading') }}#instructors-status">Update and Change Grades</a></li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_films') }}#add-film">Add</a><a
+            href="{{ url_for('help.help_films') }}#edit-film">/Edit</a><a
+            href="{{ url_for('help.help_films') }}#delete-film">/Delete</a> a Film</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_films') }}#view-scenes">View</a><a
+            href="{{ url_for('help.help_films') }}#add-scenes">/Add</a><a
+            href="{{ url_for('help.help_films') }}#edit-scenes">/Edit</a><a
+            href="{{ url_for('help.help_films') }}#delete-scenes">/Delete</a> a Scene</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_films') }}#view-shots">View</a><a
+            href="{{ url_for('help.help_films') }}#add-shots">/Add</a><a
+            href="{{ url_for('help.help_films') }}#edit-shots">/Edit</a><a
+            href="{{ url_for('help.help_films') }}#delete-shots">/Delete</a> a Shot</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a 
+            href="{{ url_for('help.help_films') }}#bulk-edit-shots">Bulk Edit Shots</a></li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_films') }}#view-assets">View</a><a
+            href="{{ url_for('help.help_films') }}#add-assets">/Add</a><a
+            href="{{ url_for('help.help_films') }}#edit-assets">/Edit</a><a
+            href="{{ url_for('help.help_films') }}#delete-assets">/Delete</a> an Asset</li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a href="{{ url_for('help.help_markup_tool') }}#markup-tool">Use the MARKUP system to draw on videos or
+            images</a></li>
+        <li class="font-semibold text-blue-400">Can create a config editor for <a
+            href="{{ url_for('help.help_classes') }}#config-editor"
+            class="font-semibold text-blue-400 hover:text-yellow-500">Classes/Assignmnets</a> or <a
+            href="{{ url_for('help.help_films') }}#config-editor"
+            class="font-semibold text-blue-400 hover:text-yellow-500">Films</a></li>
+      </ul>
+    </div>
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <p class="text-lg mb-4">An ADMIN can:</p>
+      <ul class="list-disc list-inside text-lg space-y-2">
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_admin') }}#add-users">Add</a><a
+            href="{{ url_for('help.help_admin') }}#edit-users">/Edit</a><a
+            href="{{ url_for('help.help_admin') }}#delete-users">/Delete users</a> and <a
+            href="{{ url_for('help.help_admin') }}#assign-roles">assign roles.</a></li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a
+            href="{{ url_for('help.help_admin') }}#configure-workflows">Configure Workflows</a></li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a href="{{ url_for('help.help_admin') }}#archives">Manage archives</a></li>
+        <li class="font-semibold text-blue-400 hover:text-yellow-500"><a href="{{ url_for('help.help_admin') }}#settings">Oversee system-wide settings and tools</a></li>
+      </ul>
+    </div>
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="workflow">How Assignments and Shots Flow</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      The strength of the Shot Tracking app is allowing users to simply create and submit assignments and film
+      shots/assets without worrying about naming convention or where to save or submit their files. This frees up the user to focus on the art for each assignment and shot.
+    </p>
+
+    <h4 class="text-2xl font-semibold text-white mt-6 mb-2">🧾 Classes and Assignments</h4>
+    <ol class="list-decimal list-inside text-lg mb-8 space-y-4 leading-relaxed">
+      <li>Instructors
+        <a href="{{ url_for('help.help_classes') }}#add-class"
+          class="text-blue-400 hover:text-yellow-500 no-underline">add a class</a>
+        in the system and
+        <a href="{{ url_for('help.help_classes') }}#adding-students-to-class"
+          class="text-blue-400 hover:text-yellow-500 no-underline">add students</a> to that class.
+      </li>
+      <li>Instructors
+        <a href="{{ url_for('help.help_classes') }}#add-assignment"
+          class="text-blue-400 hover:text-yellow-500 no-underline">add assignments</a>
+        with start and due dates.
+      </li>
+      <li>Students submit work either through
+        <a href="{{ url_for('help.help_classes') }}#maya-walk-through"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Maya</a>,
+        <a href="{{ url_for('help.help_classes') }}#harmony-walk-through"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Harmony</a>, or
+        <a href="{{ url_for('help.help_classes') }}#sbpro-walk-through"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Storyboard Pro</a>.
+      </li>
+      <li>Submissions are reviewed by the instructor using the
+        <a href="{{ url_for('help.help_markup_tool') }}#markup"
+          class="text-blue-400 hover:text-yellow-500 no-underline">markup tool</a>.
+      </li>
+      <li>Status is updated to show progress (Submitted → Graded or Retake).</li>
+      <li>Students can
+        <a href="{{ url_for('help.help_grading') }}#changing-status"
+          class="text-blue-400 hover:text-yellow-500 no-underline">review a video of a markup</a> and 
+        <a href="{{ url_for('help.help_grading') }}#changing-status"
+          class="text-blue-400 hover:text-yellow-500 no-underline">see grades and resubmit</a>
+        if needed.
+      </li>
+    </ol>
+
+    <h4 class="text-2xl font-semibold text-white mt-6 mb-2">🎬 Films, Scenes, and Shots</h4>
+    <ol class="list-decimal list-inside text-lg mb-8 space-y-4 leading-relaxed">
+      <li>A film project is <a href="{{ url_for('help.help_films') }}#add-film"
+          class="text-blue-400 hover:text-yellow-500 no-underline">created,</a> broken into
+        <a href="{{ url_for('help.help_films') }}#view-scenes"
+          class="text-blue-400 hover:text-yellow-500 no-underline">scenes </a>and
+        <a href="{{ url_for('help.help_films') }}#view-shots"
+          class="text-blue-400 hover:text-yellow-500 no-underline">shots </a>and
+        <a href="{{ url_for('help.help_films') }}#view-assets"
+          class="text-blue-400 hover:text-yellow-500 no-underline">assets.</a>
+      </li>
+      <li>UPMs and admins can <a href="{{ url_for('help.help_films') }}#assign-shot"
+                class="text-blue-400 hover:text-yellow-500 no-underline">update schedules</a> for pre-production and production</li>
+      <li>UPMs and coordinators <a href="{{ url_for('help.help_films') }}#assign-shot"
+          class="text-blue-400 hover:text-yellow-500 no-underline">assign shots</a> to students (e.g. Layout, Animation,
+        FX).</li>
+      <li>Students complete their assigned shots using the <a href="{{ url_for('help.help_maya') }}#maya"
+          class="text-blue-400 hover:text-yellow-500 no-underline">GAA shelf tools, </a>or tools in 
+          <a href="{{ url_for('help.help_harmony') }}#harmony" class="text-blue-400 hover:text-yellow-500 no-underline">Harmony,
+          </a> or
+          <a href="{{ url_for('help.help_sbpro') }}#sbpro-walk-through"
+            class="text-blue-400 hover:text-yellow-500 no-underline">Storyboard Pro,
+          </a>
+        </li>
+      <li>Submitted shots go into the <a href="{{ url_for('help.help_markup_tool') }}#sidebar"
+          class="text-blue-400 hover:text-yellow-500 no-underline">review queue</a> and are marked up or approved.</li>
+      <li>Shots update their status as they move through the pipeline (WIP → Final).</li>
+      <li>All assets and progress are tracked within the film’s <a href="{{ url_for('help.help_overview') }}#dashboard"
+          class="text-blue-400 hover:text-yellow-500 no-underline">dashboard</a>, organized by step.</li>
+    </ol>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="headers">Headers</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      The header is different based on what user you are: Admin, Instructor, UPM or Coordinator, Student or Artist </p>
+<div class="bg-gray-800 p-6 rounded-xl mb-8">
+
+  <!-- Admin section -->
+  <div class="mb-8">
+    <img src="{{ url_for('static', filename='help/images/header-overall.png') }}" alt="Header overall"
+      class="rounded-xl shadow-lg mb-4">
+    <p class="text-sm text-gray-400 italic">
+      This is the header for Admins. It has all the options in the header.
+    </p>
+  </div>
+
+  <!-- Student section -->
+  <div class="mb-8">
+    <img src="{{ url_for('static', filename='help/images/header-student.png') }}" alt="Header students"
+      class="rounded-xl shadow-lg mb-4">
+    <p class="text-sm text-gray-400 italic">
+      This is the header for Students. It opens directly to their
+      <a href="{{ url_for('help.help_overview') }}#dashboard" class="text-blue-400 hover:text-yellow-500 no-underline">
+        Dashboard
+      </a>.
+    </p>
+  </div>
+
+  <!-- UPM section -->
+  <div>
+    <img src="{{ url_for('static', filename='help/images/header-upm.png') }}" alt="Header upm"
+      class="rounded-xl shadow-lg mb-4">
+    <p class="text-sm text-gray-400 italic">
+      This is the header for UPMs and coordinators. It only allows access to Films. If they click on Classes, it will give them a warning
+      that they can't access that page. They also have access to the <a href="{{ url_for('help.help_markup_tool') }}#markup-tool"
+        class="text-blue-400 hover:text-yellow-500 no-underline">Markup Tool</a>.
+    </p>
+  </div>
+
+</div>
+
+
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-main.png') }}" alt="Header Main"
+      class="rounded-xl shadow-lg mb-4"><p class="mb-6 text-lg leading-relaxed">Takes you to the <a href="{{ url_for('help.help_overview') }}#dashboard"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Dashboard</a>.</p></div>
+      
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-classes.png') }}" alt="Header Classes"
+      class="rounded-xl shadow-lg mb-4"><p class="mb-6 text-lg leading-relaxed">Takes you to the <a href="{{ url_for('help.help_classes') }}#classes-overview"
+        class="text-blue-400 hover:text-yellow-500 no-underline">Classes Main Page</a>.</p></div>
+
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-films.png') }}" alt="Header Films"
+      class="rounded-xl shadow-lg mb-4"><p class="mb-6 text-lg leading-relaxed">Takes you to the <a href="{{ url_for('help.help_films') }}#films-overview"
+        class="text-blue-400 hover:text-yellow-500 no-underline">Films Main Page</a>.</p></div>
+
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-admin.png') }}" alt="Header Admin"
+      class="rounded-xl shadow-lg mb-4"><p class="mb-6 text-lg leading-relaxed">The <a href="{{ url_for('help.help_admin') }}#admin-overview"
+        class="text-blue-400 hover:text-yellow-500 no-underline">Admin Dropdown</a>.</p></div>
+    
+    <div class="flex items-center space-x-4 mb-6"><img
+        src="{{ url_for('static', filename='help/images/header-markup.png') }}" alt="markup-tool"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="mb-6 text-lg leading-relaxed">Takes you to the <a href="{{ url_for('help.help_markup_tool') }}#markup-tool"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Markup Tool</a>.</p>
+    </div>
+
+    <div class="flex items-center space-x-4 mb-6"><img
+        src="{{ url_for('static', filename='help/images/header-user.png') }}" alt="User"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="mb-6 text-lg leading-relaxed">Identifies the User. The dropdown allows the user to change the password or logout</p>
+    </div>
+
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-semester.png') }}"
+        alt="User" class="rounded-xl shadow-lg mb-4">
+      <p class="mb-6 text-lg leading-relaxed">Identifies the Current Semester.</p>
+    </div>
+
+    <div class="flex items-center space-x-4 mb-6"><img
+        src="{{ url_for('static', filename='help/images/header-help.png') }}" alt="Help"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="mb-6 text-lg leading-relaxed">Takes you to the <a href="{{ url_for('help.help_overview') }}#overview"
+          class="text-blue-400 hover:text-yellow-500 no-underline">Help page</a>.</p>
+    </div>
+      
+    <div class="flex items-center space-x-4 mb-6"><img src="{{ url_for('static', filename='help/images/header-logout.png') }}"
+        alt="Help" class="rounded-xl shadow-lg mb-4">
+      <p class="mb-6 text-lg leading-relaxed">Logs the user out.</p>
+    </div>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="dashboard">Dashboard</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      The dashboard is the main students' page. If they aren't working on a film, this is the only page they have access
+      too. It will show everything that they have done and what is due. If the user
+      hasn't uploaded their files through Maya, Harmony, or Storyboard Pro, they can upload their movie file here. </p>
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <h3 class="text-3xl font-semibold text-green-400 mb-4" id="dashboard-main">To Do Assignments</h3>
+      <img src="{{ url_for('static', filename='help/images/dashboard.png') }}" alt="Dashboard"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="text-sm text-gray-400 italic">The main space where assignments and film tasks, both due and completed,
+        are stored.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-semester">Semester</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Dropdown to see what assignments and shots are due for the semester.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-status">Change Status</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Students can change the status of their shots here. They should only change it to In Progress, Help Needed, or Graded.
+    Maya and ToonBoom handle changing the status to Submitted.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-review">Review</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      If there is a review done on the assignment, there will be a button here. This will link to a video, showing the changes
+    needed for the assignment.</p>
+
+      <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="dashboard-reviewing">Reviewing Markup Videos</h3>
+            <img src="{{ url_for('static', filename='help/images/dashboard-review.png') }}" alt="Dashboard-review"  
+              class="rounded-xl shadow-lg mb-4">
+          <ol class="list-decimal list-inside text-lg mb-8 space-y-4 leading-relaxed">
+            <li>Reviews are only shown if any reviews are created.</li>
+            <li>The dashboard will show up to two reviews per assignment</li>
+            <li>Clicking on Latest Review or Older Review will open the video in another window.</li>
+          </ol>
+    </div>
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <h3 class="text-3xl font-semibold text-green-400 mb-4" id="dashboard-filmshots">To-Do Film Shots</h3>
+      <img src="{{ url_for('static', filename='help/images/dashboard-filmshots.png') }}" alt="Film Shots"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="text-sm text-gray-400 italic">The space where all the film shots that are not completed are listed.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-collapse">Collapsible Scenes</h3>
+      <p class="mb-6 text-lg leading-relaxed">
+      Each scene is collapsible for ease of use. Just click on the space next to the name of the film to open and close.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-script">View Script</h3>
+      <p class="mb-6 text-lg leading-relaxed">
+      Click on View Script to see the script. A new window will open if a pdf. If a doc, it will save the file.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-status">Change Status</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Students can change the status of their shots here. They should only change it to In Progress, Help Needed, or Graded.
+    Maya and ToonBoom handle changing the status to Submitted.</p>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-xl mb-8">
+      <h3 class="text-3xl font-semibold text-green-400 mb-4" id="dashboard-filmshots">To-Do Film Shots</h3>
+      <img src="{{ url_for('static', filename='help/images/dashboard-filmassets.png') }}" alt="Film Assets"
+        class="rounded-xl shadow-lg mb-4">
+      <p class="text-sm text-gray-400 italic">The space where all the film assets that are not completed are listed.</p>
+    </div>
+
+    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-assignments">To-Do Assignments</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      All assignments due and not completed for the semester. Divided by class.</p>
+    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-film">To-Do Film Shots</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      All shots due and not completed for the film. Divided by Film and Scene.</p>
+    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-film">Classes and Films</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      All completed assignments and shots for films.</p>
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const headings = document.querySelectorAll("h3[id]");
+      const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+      const observer = new IntersectionObserver(
+        entries => {
+          for (let entry of entries) {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute("id");
+              tocLinks.forEach(link => {
+                link.classList.remove("text-yellow-500", "font-semibold");
+                if (link.getAttribute("href") === `#${id}`) {
+                  link.classList.add("text-yellow-500", "font-semibold");
+                }
+              });
+            }
+          }
+        },
+        { threshold: 0.3 }
+      );
+
+      headings.forEach(h => observer.observe(h));
+    });
+  </script>
+  {% endblock %}

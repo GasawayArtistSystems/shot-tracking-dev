@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto mt-10 max-w-3xl text-white">
+    <h1 class="text-3xl font-bold mb-4">🔍 Help Search</h1>
+    <input id="helpSearchInput" type="text" placeholder="Search help topics..."
+        class="w-full p-3 rounded text-black mb-6" onkeyup="searchHelp(this.value)">
+    <div id="searchResults" class="space-y-4"></div>
+</div>
+
+<script>
+    async function searchHelp(q) {
+        const resultsDiv = document.getElementById("searchResults");
+        resultsDiv.innerHTML = "";
+        if (!q.trim()) return;
+
+        try {
+            const res = await fetch(`/help/search?q=${encodeURIComponent(q)}`);
+
+
+            const data = await res.json();
+
+            if (!Array.isArray(data)) {
+                console.error("Unexpected search response:", data);
+                resultsDiv.innerHTML = "<p class='text-red-400'>Search error. Please try again.</p>";
+                return;
+            }
+
+            if (data.length === 0) {
+                resultsDiv.innerHTML = "<p class='text-gray-400'>No results found.</p>";
+                return;
+            }
+
+            data.forEach(r => {
+                const link = document.createElement("a");
+                const href = r.anchor ? `/help/${r.file}#${r.anchor}` : `/help/${r.file}`;
+                link.href = href;
+                link.className = "block bg-red-900 hover:bg-red-800 p-4 rounded border border-red-700";
+                link.innerHTML = `
+        <h3 class="font-bold text-xl mb-1 text-white">${r.title}</h3>
+        <p class="text-sm text-gray-300">${r.snippet}</p>
+      `;
+                resultsDiv.appendChild(link);
+            });
+        } catch (err) {
+            console.error("Search failed:", err);
+            resultsDiv.innerHTML = "<p class='text-red-400'>Error loading search results.</p>";
+        }
+    }
+</script>
+
+{% endblock %}

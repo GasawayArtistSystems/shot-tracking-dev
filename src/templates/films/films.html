@@ -1,0 +1,663 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-6">
+  <div class="bg-red-900 shadow-lg rounded-lg p-6">
+    <!-- Film Page Header -->
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-4xl font-bold text-white">Films</h1>
+      <div>
+        <!-- Config Editor Button -->
+        <button class="bg-blue-500 text-white px-2 py-1 rounded-lg hover:bg-blue-600" onclick="openFilmConfigModal()">
+          Config Editor
+        </button>
+        <button
+          class="bg-purple-600 text-white px-2 py-1 rounded-lg hover:bg-purple-700"
+          onclick="openPipelineEditor()">
+          Pipeline
+        </button>
+        <button onclick="generateFoldersFromConfig()"
+          class="bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded-lg">
+          Folders
+        </button>
+          <a href="{{ url_for('films.edit_timelines') }}"
+            class="bg-purple-600 text-white px-2 py-1 hover:bg-purple-700 rounded-lg">
+            Edit Timeline
+          </a>
+        <!-- Add Film Button -->
+        <a href="{{ url_for('films.add_film_route') }}"
+          class="bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600">
+          + Add Film
+        </a>
+      </div>
+    </div>
+
+    <!-- ✅ Film Table -->
+    <div class="mt-4 overflow-x-auto">
+      <table id="film-table" class="w-full border-collapse bg-red-950 shadow-md rounded-lg overflow-hidden">
+      <thead>
+        <tr class="bg-black text-white w-full">
+          <th class="p-3 text-left">Film Info</th>
+          <th class="p-3 text-left">Pre-Production</th>
+          <th class="p-3 text-left">Production</th>
+        </tr>
+      </thead>
+        <tbody id="filmTableBody" class="text-white">
+          {% if films %}
+          {% for film in films %}
+          <tr class="border-b hover:bg-gray-700">
+            <!-- 🎬 Film Info -->
+            <td class="p-3 text-sm leading-tight space-y-1 align-top">
+              <div><strong>{{ film.name }}</strong></div>
+              <div class="text-xs text-gray-300 italic">
+                Workflow: {{ film.workflow_name or '—' }}
+              </div>
+              <div class="text-xs text-gray-300">Director - {{ film.director_name or '—' }}</div>
+              <div class="text-xs text-gray-300">UPM - {{ film.upm_name or '—' }}</div>
+              <div class="text-xs text-gray-300">{{ film.semester or '—' }}</div>
+            </td>
+          
+            <!-- 📝 Pre-Production -->
+            <td class="p-3 align-top">
+              {% set prepro_flows = film.individual_flows | selectattr("step_name", "in", prepro_names) | list %}
+              {% if prepro_flows %}
+              {% if not film.prepro_done %}
+              <!-- Case 1: Still in Pre-Production -->
+              <ul>
+                {% for flow in prepro_flows %}
+                <li>
+                  <div class="mb-1 font-semibold text-green-300">{{ flow.step_name }}</div>
+                  <form id="status-update-form-{{ film.id }}-{{ flow.step_id }}"
+                    onsubmit="updateFilmStepStatus(event, {{ film.id }}, {{ flow.step_id }})">
+                    <input type="hidden" name="film_id" value="{{ film.id }}">
+                    <input type="hidden" name="step_id" value="{{ flow.step_id }}">
+                    <select name="node_id" class="text-black rounded px-2 py-1 text-sm"
+                      onchange="updateFilmStepStatus(event, {{ film.id }}, {{ flow.step_id }})"
+                      style="background-color: {{ flow.nodes | selectattr('node_id','equalto',flow.selected_node_id) | map(attribute='color') | first or '#fff' }};">
+                      {% for node in flow.nodes %}
+                      <option value="{{ node.node_id }}" {% if node.node_id==flow.selected_node_id %}selected{% endif %}
+                        style="background-color: {{ node.color }};">
+                        {{ node.name }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <!-- Case 2: All Pre-Pro steps are complete -->
+              <span class="text-green-500 font-semibold">Complete</span>
+              {% endif %}
+              {% else %}
+              <!-- Case 3: Pre-Pro steps not seeded yet -->
+              <span class="text-gray-400 italic">No pre-production steps found</span>
+              {% endif %}
+            </td>
+
+          
+            <!-- 🎥 Production + Actions -->
+            <td class="p-3 align-top">
+              {% if film.production_unlocked %}
+              <!-- Progress charts -->
+              <div id="progress-charts-{{ film.id }}" class="mt-4 space-y-4"></div>
+              <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                  fetch(`/films/api/films/{{ film.id }}/progress_summary`)
+                    .then(res => res.json())
+                    .then(data => {
+                      const container = document.getElementById("progress-charts-{{ film.id }}");
+
+                      const renderCharts = (label, steps) => {
+                        const section = document.createElement("div");
+                        section.innerHTML = `<h3 class="text-white font-bold mt-6 mb-2">${label}</h3>`;
+                        const grid = document.createElement("div");
+                        grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4";
+
+                        steps.forEach(step => {
+                          const chartId = `${label.toLowerCase()}-step-{{ film.id }}-${step.step_id}`.replace(/\s+/g, '-');
+                          const block = document.createElement("div");
+                          block.className = "text-center";
+                          block.innerHTML = `
+                            <div class="text-xs text-white mb-1">${step.step_name}</div>
+                            <canvas id="${chartId}" width="100" height="100"></canvas>`;
+                          grid.appendChild(block);
+
+                          setTimeout(() => {
+                            new Chart(document.getElementById(chartId), {
+                              type: 'pie',
+                              data: {
+                                labels: step.status_summary.map(s => s.label),
+                                datasets: [{
+                                  data: step.status_summary.map(s => s.value),
+                                  backgroundColor: step.status_summary.map(s => s.color || '#999'),
+                                  borderWidth: 1
+                                }]
+                              },
+                              options: { responsive: false, plugins: { legend: { display: false } } }
+                            });
+                          }, 0);
+                        });
+
+                        if (grid.children.length > 0) {
+                          section.appendChild(grid);
+                          container.appendChild(section);
+                        }
+                      };
+
+                      if (data.scene_steps?.length > 0) renderCharts("Scenes", data.scene_steps);
+                      const filteredShots = (data.shot_steps || []).filter(s => {
+                        const name = s.step_name.toLowerCase();
+                        return !name.includes("thumbnail") && name !== "story and script";
+                      });
+                      if (filteredShots.length > 0) renderCharts("Shots", filteredShots);
+                      for (const [cat, steps] of Object.entries(data.asset_steps || {})) {
+                        renderCharts(`Assets: ${cat}`, steps);
+                      }
+                    });
+                });
+              </script>
+              {% else %}
+              <span class="text-gray-400 italic">No flows tracked</span>
+              {% endif %}
+          
+              <!-- Actions -->
+              <div class="mt-6 space-y-2">
+                <!-- Row 1 -->
+                <div class="flex items-center space-x-2">
+                  {% if film.prepro_done %}
+                  <a href="{{ url_for('films.view_scenes', film_id=film.id) }}"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg">Scenes</a>
+                  <a href="{{ url_for('films.view_assets', film_id=film.id) }}"
+                    class="bg-green-800 text-white px-4 py-2 rounded-lg hover:bg-green-600">Assets</a>
+                  {% else %}
+                  <span class="bg-gray-600 text-white px-3 py-2 rounded-lg opacity-50 cursor-not-allowed">Scenes Locked</span>
+                  {% endif %}
+          
+                  <a href="{{ url_for('films.film_timeline', film_id=film.id) }}"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Timeline</a>
+                  <button onclick="openCrewModal({{ film.id }})"
+                    class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg">Crew</button>
+                </div>
+          
+                <!-- Row 2 -->
+                <div class="flex items-center space-x-2">
+                  <a href="{{ url_for('films.view_notes', film_id=film.id) }}"
+                    class="bg-white hover:bg-gray-400 text-black px-3 py-2 rounded-lg">Notes</a>
+                  <a href="{{ url_for('films.edit_film_route', film_id=film.id) }}"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg">Edit</a>
+                  <form id="delete-form-{{ film.id }}" action="{{ url_for('films.delete_film_route', film_id=film.id) }}"
+                    method="POST" class="inline-block">
+                    <button type="button" onclick="confirmDelete({{ film.id }}, '{{ film.name }}')"
+                      class="bg-red-800 hover:bg-red-600 text-white px-3 py-2 rounded-lg">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+
+  <!-- Timeline container -->
+  <div id="timeline-container-{{ film.id }}" class="hidden mt-4"></div>
+</td>
+
+          </tr>
+
+          {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="6" class="text-center p-4 text-gray-500">No films available</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Scene Creation Modal --------------------------------------------------------------------------------------------------------------------->
+<div id="sceneCreationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg p-6 w-96 text-black">
+    <h2 class="text-xl font-bold mb-4">🎬 Start Creating Scenes</h2>
+    <p class="mb-4">Pre-production is complete. You can now add scenes for this film.</p>
+    <a id="goToScenesButton" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg block text-center">
+      Go to Scenes
+    </a>
+  </div>
+</div>
+
+
+<!-- Film Config Editor Modal --------------------------------------------------------------------------------------------------------------------->
+<div id="film-config-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex justify-center items-center">
+  <div class="bg-red-950 rounded-lg shadow-lg p-6 w-full max-w-4xl">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-3xl font-bold text-white">Film Config Editor</h2>
+      <button onclick="closeFilmConfigModal()" class="text-gray-300 text-2xl">✖</button>
+    </div>
+
+    <!-- Semester -->
+    <div class="mb-4">
+      <label for="semesterSelect" class="block font-medium text-white">Semester</label>
+      <select id="semesterSelect" class="w-full p-2 border rounded text-black"></select>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex gap-2 mb-4">
+      <button onclick="openAddFilmModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">+ Add
+        Film</button>
+      <button onclick="loadOldFilmConfig()"
+        class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">Load Old Config</button>
+      <button onclick="closeFilmConfigModal()"
+        class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
+      <button onclick="saveFilmConfigDraft()"
+        class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">Save Draft</button>
+      <button onclick="saveFinalJson()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">Save
+        JSON</button>
+    </div>
+    <!-- Config File List -->
+    <div id="config-file-picker" class="mt-4 hidden bg-red-900 p-4 rounded-lg">
+      <h3 class="text-white text-lg mb-2">📂 Choose a Config File to Load</h3>
+      <ul id="configFileList" class="space-y-2"></ul>
+    </div>
+
+
+    <!-- Film List Container -->
+    <div id="film-list-container" class="bg-red-900 p-4 rounded-lg max-h-[70vh] overflow-y-auto space-y-4">
+      <div id="film-list" class="space-y-4">
+        <p id="no-films-message" class="text-gray-300 text-center">No films added yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Film Modal -->
+<div id="add-film-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex justify-center items-center">
+  <div class="bg-red-950 rounded-lg shadow-lg p-6 w-full max-w-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-bold text-white">Add New Film</h2>
+      <button onclick="closeAddFilmModal()" class="text-gray-300 text-2xl">✖</button>
+    </div>
+
+    <!-- Select Existing Film -->
+    <div class="mb-4">
+      <label for="existingFilmSelect" class="block font-medium text-white">Select Existing Film</label>
+      <select id="existingFilmSelect" class="w-full p-2 border rounded text-black">
+        <option value="">-- Select a Film --</option>
+      </select>
+    </div>
+
+    <!-- Or Enter New Film -->
+    <div class="mb-4">
+      <label for="newFilmTitle" class="block font-medium text-white">Or Enter New Film Name</label>
+      <input type="text" id="newFilmTitle" class="w-full p-2 border rounded text-black" placeholder="Enter film title">
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2">
+      <button onclick="closeAddFilmModal()"
+        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancel</button>
+      <button onclick="saveNewFilm()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Film Template (Hidden, for Cloning) -->
+<template id="film-template">
+  <div class="bg-red-800 p-4 rounded-lg mb-4">
+    <div class="film-header flex justify-between items-center mb-3">
+      <h3 class="film-title text-xl font-bold text-white m-0"></h3>
+      <div class="flex space-x-2">
+        <button onclick="toggleFilmBlock(this)" class="text-white text-lg">➖</button>
+        <button onclick="removeFilm(this)" class="text-gray-300 text-lg">✖</button>
+      </div>
+      </div>
+    
+    <div class="film-inner">
+      <button class="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 mb-2" onclick="addScene(this)">+
+        Add Scene</button>
+      <div class="scene-container space-y-2"></div>
+      </div>
+  </div>
+</template>
+
+<!-- Scene Template (Hidden, for Cloning) -->
+<template id="scene-template">
+  <div class="bg-gray-800 p-4 rounded-lg mb-2 ml-4 scene-item">
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-white font-semibold scene-number"></span>
+      <div>
+        <button class="text-gray-300 text-lg ml-2 toggle-shots-button" onclick="toggleShots(this)">➖</button>
+        <button onclick="removeScene(this)" class="text-gray-300 text-lg ml-2">✖</button>
+      </div>
+    </div>
+    <div class="shot-container bg-gray-900 rounded-lg p-3 space-y-2"></div>
+    <button class="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 add-shot-button mb-2"
+      onclick="addShot(this)">+ Add Shot</button>
+  </div>
+</template>
+
+<!-- Shot Template (Hidden, for Cloning) -->
+<template id="shot-template">
+  <div class="bg-gray-700 p-3 rounded-lg mb-2 ml-4 shot-item">
+    <!-- Shot Header -->
+    <div class="flex justify-between items-center">
+      <span class="text-white font-semibold shot-number"></span>
+      <div>
+        <button class="text-gray-300 text-lg ml-2 toggle-assets-button" onclick="toggleAssets(this)">➖</button>
+        <button onclick="removeShot(this)" class="text-gray-300 text-lg ml-2">✖</button>
+      </div>
+    </div>
+
+    <div class="asset-container bg-gray-600 p-2 rounded-lg mt-2"></div>
+    <button class="select-assets-btn bg-gray-200 px-2 py-1 rounded text-sm mt-2 text-black">Select Assets</button>
+    <div class="asset-summary text-xs text-gray-400 mt-1">None selected</div>
+  </div>
+</template>
+
+<!-- Shot Asset Modal -->
+<div id="shot-asset-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex justify-center items-center">
+  <div class="bg-white text-black rounded-lg shadow-lg p-6 w-full max-w-md relative">
+    <h2 class="text-xl font-bold mb-4">Select Assets for Shot</h2>
+    <input type="text" id="shot-asset-search" class="mb-4 w-full px-3 py-2 border rounded bg-white text-black"
+      placeholder="Search assets...">
+    <div id="shot-asset-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2"></div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button onclick="closeShotAssetModal()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+      <button onclick="confirmShotAssetSelection()" class="bg-blue-600 text-white px-4 py-2 rounded">Select</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<!-- Show modal if film is unlocked -->
+{% if unlocked_film %}
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const filmId = {{ unlocked_film | tojson
+  }};
+  const modal = document.getElementById("sceneCreationModal");
+  const button = document.getElementById("goToScenesButton");
+
+  if (modal && button) {
+    modal.classList.remove("hidden");
+    button.href = `/films/${filmId}/scenes`;
+  }
+  });
+</script>
+{% endif %}
+
+
+<!-- JS for Crew Modal and Deletion Confirmation -->
+<script>
+  function openCrewModal(filmId) {
+    // Remove any previous modal if open
+    document.getElementById("crewModal")?.remove();
+
+    fetch(`/films/${filmId}/crew`)
+      .then(res => res.text())
+      .then(html => {
+        const modalDiv = document.createElement("div");
+        modalDiv.innerHTML = html;
+        const modal = modalDiv.querySelector("#crewModal");
+        if (modal) {
+          document.body.appendChild(modal);
+
+          const form = modal.querySelector("#crewForm");
+          if (form) {
+            form.setAttribute("data-film-id", filmId);
+            form.addEventListener("submit", submitCrewForm);
+          }
+        } else {
+          console.error("❌ Modal HTML missing #crewModal ID");
+        }
+      })
+      .catch(err => {
+        console.error("❌ Failed to load crew modal:", err);
+      });
+  }
+
+
+
+  function closeCrewModal() {
+    document.getElementById("crewModal")?.remove();
+  }
+
+  function confirmDelete(filmId, filmName) {
+    Swal.fire({
+      title: `Delete "${filmName}"?`,
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById(`delete-form-${filmId}`).submit();
+      }
+    });
+  }
+
+  async function checkPreproComplete(filmId) {
+    try {
+      // Fetch the node IDs for the film
+      const res = await fetch(`/films/api/film_status/${filmId}`);
+      const filmNodeIds = await res.json();
+
+      if (!Array.isArray(filmNodeIds) || filmNodeIds.length === 0) return;
+
+      // Fetch all nodes that are "Approved"
+      const nodesRes = await fetch(`/films/api/nodes`);
+      const nodes = await nodesRes.json();
+
+      // Extract only the node IDs that are marked as "Approved"
+      const approvedNodeIds = nodes
+        .filter(node => node.name === "Approved")
+        .map(node => node.node_id);
+
+      console.log("📝 Approved Node IDs:", approvedNodeIds);
+      console.log("🎞️ Film Node IDs:", filmNodeIds);
+
+      // Check if every node ID for the film is in the approved list
+      const allApproved = filmNodeIds.every(nodeId => approvedNodeIds.includes(nodeId));
+
+      console.log("✅ All Approved:", allApproved);
+
+      if (allApproved) {
+        console.log("🎉 Showing scene creation modal");
+
+        // Fetch the film to get the step_id
+        const filmRes = await fetch(`/films/api/film/${filmId}`);
+        const filmData = await filmRes.json();
+
+        const modal = document.getElementById("sceneCreationModal");
+        const button = document.getElementById("goToScenesButton");
+
+        if (modal && button) {
+          modal.classList.remove("hidden");
+          button.href = `/films/${filmId}/scenes/add`;
+        }
+
+      } else {
+        console.log("❌ Not all steps are approved, hiding modal");
+        const modal = document.getElementById("sceneCreationModal");
+        if (modal) modal.classList.add("hidden");
+      }
+    } catch (err) {
+      console.error("Error checking prepro status:", err);
+    }
+  }
+
+  function updateFilmStepStatus(event, filmId, stepId) {
+    event.preventDefault();
+
+    const form = event.target.closest('form');
+    const selectedNodeId = form.querySelector("select[name='node_id']").value;
+
+    if (!selectedNodeId) {
+      Swal.fire({
+        title: "Error",
+        text: "Status is required",
+        icon: "error"
+      });
+      return;
+    }
+
+    // ✅ Send the correct status name
+    fetch(`/films/${filmId}/steps/${stepId}/status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ status: selectedNodeId })
+    })
+      .then(response => {
+        if (!response.ok) {
+          console.error("❌ Status update failed:", response);
+          throw new Error(`Failed to update status (${response.status})`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          console.log(`✅ Status updated successfully: film_id=${filmId}, step_id=${stepId}, node_id=${selectedNodeId}`);
+
+          // Recheck if the film is fully approved without refreshing the page
+          checkPreproComplete(filmId);
+        } else {
+          Swal.fire({
+            title: "Error",
+            text: data.message || "Unexpected error occurred.",
+            icon: "error"
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Error updating status:", error);
+        Swal.fire({
+          title: "Unexpected Error",
+          text: "An error occurred while updating status.",
+          icon: "error"
+        });
+      });
+  }
+
+
+  document.body.addEventListener('click', e => {
+    if (e.target.classList.contains('select-assets-btn')) {
+      const shot = e.target.closest('.shot-item');
+      const shotId = shot.id.replace("shot-", "");
+      const sceneId = shot.closest('.scene-item').id.replace("scene-", "");
+
+      shotAssetContext = { sceneId, shotId };
+      openShotAssetModal(filmAssets);  // Use cached filmAssets
+    }
+  });
+
+  async function generateFoldersFromConfig() {
+    try {
+      const res = await fetch("/films/api/config-file-info");
+      const configInfo = await res.json();
+
+      if (!configInfo.exists) {
+        Swal.fire("⚠️ Missing Config", "No config file found. Please use the Config Editor first.", "warning");
+        return;
+      }
+
+      const result = await Swal.fire({
+        title: "Generate Folders?",
+        html: `Did you create a config file with the Config Editor?<br><br><strong>Last known config:</strong><br>${configInfo.modified}`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, generate",
+        cancelButtonText: "Cancel"
+      });
+
+      if (!result.isConfirmed) return;
+
+      const genRes = await fetch("/films/api/generate-dirs", { method: "POST" });
+      const data = await genRes.json();
+
+      if (data.error) {
+        Swal.fire("Error", data.error, "error");
+      } else {
+        Swal.fire("✅ Success", data.summary || "Folders created.", "success");
+      }
+    } catch (err) {
+      console.error("Folder Gen Error:", err);
+      Swal.fire("❌ Failed", "Could not generate folders.", "error");
+    }
+  }
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.min.js"></script>
+<script>
+  document.querySelectorAll(".timeline-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const filmId = btn.getAttribute("data-film-id");
+      const container = document.getElementById(`timeline-container-${filmId}`);
+
+      container.classList.toggle("hidden");
+
+      if (!container.classList.contains("hidden") && !container.hasChildNodes()) {
+        const res = await fetch(`/films/api/films/${filmId}/preproduction`);
+        const steps = await res.json();
+
+        const tasks = steps.map(step => ({
+          id: step.id,
+          name: step.step_name,
+          start: step.start_date || new Date().toISOString().split("T")[0],
+          end: step.end_date || new Date().toISOString().split("T")[0],
+          progress: step.status === "Complete" ? 100 : 0,
+          custom_class: "bg-blue-500"
+        }));
+
+        new Gantt(container, tasks, {
+          view_mode: "Day",
+          on_date_change: (task, start, end) => {
+            // ensure at least 1-day duration
+            if (end <= start) {
+              end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+            }
+            task.start = start;
+            task.end = end;
+
+            fetch(`/films/api/preproduction/${task.id}/update`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                start_date: start.toISOString().split("T")[0],
+                end_date: end.toISOString().split("T")[0]
+              })
+            });
+          }
+        });
+
+      }
+    });
+  });
+
+
+
+function openPipelineEditor(){
+
+  window.location.href = "/pipeline/editor";
+
+}
+
+</script>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script src="{{ url_for('static', filename='js/crew_modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/filmConfigEditor.js') }}"></script>
+
+{% endblock %}

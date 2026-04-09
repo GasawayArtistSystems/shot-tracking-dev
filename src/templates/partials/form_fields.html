@@ -1,0 +1,9 @@
+<!-- templates/partials/form_fields.html -->
+{% if id and name %}
+<div class="mb-3">
+    <label for="{{ id }}" class="form-label">{{ label }}</label>
+    <input type="{{ type | default('text') }}" id="{{ id }}" name="{{ name }}" class="form-control"
+        placeholder="{{ placeholder | default('') }}" value="{{ value | default('') }}" {% if required %}required{%
+        endif %}>
+</div>
+{% endif %}

@@ -1,0 +1,518 @@
+<!-- path: templates/films/timeline.html -->
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto mt-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-white">
+            🎬 {{ film_name }} — Preproduction Timeline
+        </h1>
+        <a href="{{ url_for('films.view_films') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            ⬅ Back to Films
+        </a>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+        <div class="inline-flex rounded-lg overflow-hidden shadow">
+            <button class="px-3 py-1.5 bg-gray-800 text-gray-200 hover:bg-gray-700" data-mode="Day">Day</button>
+            <button class="px-3 py-1.5 bg-gray-800 text-gray-200 hover:bg-gray-700" data-mode="Week">Week</button>
+            <button class="px-3 py-1.5 bg-gray-800 text-gray-200 hover:bg-gray-700" data-mode="Month">Month</button>
+            <button class="px-3 py-1.5 bg-gray-800 text-gray-200 hover:bg-gray-700" data-mode="Year">Year</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="zoom-out" class="px-2 py-1 bg-gray-800 text-gray-200 rounded hover:bg-gray-700"
+                title="Zoom out (-)">−</button>
+            <input id="zoom-slider" type="range" min="28" max="120" step="4" value="38" class="w-44 accent-gray-300">
+            <button id="zoom-in" class="px-2 py-1 bg-gray-800 text-gray-200 rounded hover:bg-gray-700"
+                title="Zoom in (+)">+</button>
+            <span class="text-sm text-gray-400">Width</span>
+        </div>
+
+        <span class="text-xs text-gray-500 ml-auto">Hotkeys: Ctrl/Cmd + “+” / “-”</span>
+    </div>
+
+    <div id="timeline-container" class="bg-gray-900 rounded-lg p-4 shadow overflow-x-auto">
+        <div id="gantt-target"></div>
+    </div>
+</div>
+
+<style>
+    .gantt .bar-wrapper.Treatment .bar {
+        fill: #3b82f6;
+    }
+
+    .gantt .bar-wrapper.Treatment .bar-progress {
+        fill: #1e40af;
+    }
+
+    .gantt .bar-wrapper.Outline .bar {
+        fill: #a855f7;
+    }
+
+    .gantt .bar-wrapper.Outline .bar-progress {
+        fill: #6b21a8;
+    }
+
+    .gantt .bar-wrapper.Script_Rough .bar {
+        fill: #f59e0b;
+    }
+
+    .gantt .bar-wrapper.Script_Rough .bar-progress {
+        fill: #b45309;
+    }
+
+    .gantt .bar-wrapper.Script_Pass .bar {
+        fill: #06b6d4;
+    }
+
+    .gantt .bar-wrapper.Script_Pass .bar-progress {
+        fill: #0e7490;
+    }
+
+    .gantt .bar-wrapper.Locked_Script .bar {
+        fill: #6366f1;
+    }
+
+    .gantt .bar-wrapper.Locked_Script .bar-progress {
+        fill: #3730a3;
+    }
+
+    .gantt .bar-wrapper.Voice_Record .bar {
+        fill: #ec4899;
+    }
+
+    .gantt .bar-wrapper.Voice_Record .bar-progress {
+        fill: #9d174d;
+    }
+
+    /* --- Production steps --- */
+    .gantt .bar-wrapper.Storyboards .bar {
+        fill: #FF6347; /* tomato red */
+    }
+    .gantt .bar-wrapper.Storyboards .bar-progress {
+        fill: #cc5039;
+    }
+
+    .gantt .bar-wrapper.Animatic .bar {
+        fill: #32CD32; /* lime green */
+    }
+    .gantt .bar-wrapper.Animatic .bar-progress {
+        fill: #228B22;
+    }
+
+    .gantt .bar-wrapper.Assets .bar {
+        fill: #4682B4; /* steel blue */
+    }
+    .gantt .bar-wrapper.Assets .bar-progress {
+        fill: #315f86;
+    }
+
+    .gantt .bar-wrapper.Layout .bar {
+        fill: #FFD700; /* gold */
+    }
+    .gantt .bar-wrapper.Layout .bar-progress {
+        fill: #b8860b;
+    }
+
+    .gantt .bar-wrapper.Animation .bar {
+        fill: #00CED1; /* dark turquoise */
+    }
+    .gantt .bar-wrapper.Animation .bar-progress {
+        fill: #008b8b;
+    }
+
+    .gantt .bar-wrapper.Lighting .bar {
+        fill: #8A2BE2; /* blue violet */
+    }
+    .gantt .bar-wrapper.Lighting .bar-progress {
+        fill: #5d1c9c;
+    }
+
+    .gantt .bar-wrapper.Comp .bar {
+        fill: #FF8C00; /* dark orange */
+    }
+    .gantt .bar-wrapper.Comp .bar-progress {
+        fill: #cc7000;
+    }
+
+    .gantt .bar-wrapper.Final_Delivery .bar {
+        fill: #2E8B57; /* sea green */
+    }
+    .gantt .bar-wrapper.Final_Delivery .bar-progress {
+        fill: #1f5e3c;
+    }
+
+    .gantt .bar-wrapper.Assets .bar {
+    fill: #4682B4; /* steel blue */
+    }
+    .gantt .bar-wrapper.Assets .bar-progress {
+        fill: #315f86;
+    }
+    .gantt .bar-wrapper.Sets .bar { fill: #4682B4; }
+    .gantt .bar-wrapper.BGs .bar { fill: #32CD32; }
+    .gantt .bar-wrapper.Characters_Rigs .bar { fill: #FF69B4; }
+    .gantt .bar-wrapper.Props_-_3D .bar { fill: #FFD700; }
+    .gantt .bar-wrapper.Props_-_2D .bar { fill: #FF8C00; }
+    .gantt .bar-wrapper.Light_Rigs .bar { fill: #9370DB; }
+
+    .gantt .bar.OverallAssets {
+    fill: #60a5fa;   /* blue-400 */
+    stroke: #1e3a8a; /* dark outline */
+    opacity: 0.6;
+    }
+
+    .view-active {
+        background-color: #4b5563 !important;
+    }
+
+    .gantt .bar.Overall {
+    fill: #90FC6F;
+    stroke: #92400e; /* darker amber outline */
+    opacity: 0.6;
+}
+
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css">
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+
+<script>
+    const filmId = {{ film_id | tojson }};
+
+    // ---- storage helpers (why: isolate try/catch, avoid crashes in private mode) ----
+    const sk = (id) => ({
+        view: `gantt:${id}:viewMode`,
+        width: `gantt:${id}:columnWidth`,
+        scroll: `gantt:${id}:scrollLeft`,
+    });
+    function lsGet(key, fallback) {
+        try { const v = localStorage.getItem(key); return v ?? fallback; } catch { return fallback; }
+    }
+    function lsSet(key, val) {
+        try { localStorage.setItem(key, val); } catch { /* ignore */ }
+    }
+
+    // ---- state ----
+    const viewModes = ["Year", "Month", "Week", "Day"];
+    const keys = sk(filmId);
+    let currentView = lsGet(keys.view, "Week");
+    let columnWidth = parseInt(lsGet(keys.width, "38"), 10) || 38;
+    let savedScrollLeft = parseInt(lsGet(keys.scroll, "0"), 10) || 0;
+
+    let gantt = null;
+    let tasks = [];
+
+    function fmtYYYYMMDD(d) {
+        // why: avoid TZ drift
+        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    }
+
+    function buildTasks(steps, category) {
+        return steps.map((step, index) => {
+            const today = new Date();
+            const defaultStart = new Date(today);
+            defaultStart.setDate(today.getDate() + index * 7);
+            const defaultEnd = new Date(defaultStart);
+            defaultEnd.setDate(defaultStart.getDate() + 7);
+
+            let startDate = step.start_date ? new Date(step.start_date) : defaultStart;
+            let endDate = step.end_date ? new Date(step.end_date) : defaultEnd;
+
+            if (isNaN(startDate)) startDate = defaultStart;
+            if (isNaN(endDate) || endDate <= startDate) {
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 1);
+            }
+
+            return {
+                id: String(step.assignment_id || step.id),
+                name: step.step_name,
+                start: fmtYYYYMMDD(startDate),
+                end: fmtYYYYMMDD(endDate),
+                custom_class: `${category} ${(step.step_name || "").replace(/[^\w-]+/g, "_")}`,
+                assigned_user_id: step.assigned_user_id
+            };
+        });
+
+        // 🔹 Expand Frappe Gantt domain dynamically
+        if (tasks.length > 0 && gantt) {
+            const minDate = new Date(Math.min(...tasks.map(t => new Date(t.start))));
+            const maxDate = new Date(Math.max(...tasks.map(t => new Date(t.end))));
+
+            // pad by 7 days so bars don’t sit on the edges
+            minDate.setDate(minDate.getDate() - 7);
+            maxDate.setDate(maxDate.getDate() + 7);
+
+            gantt.set_options({
+                start: fmtYYYYMMDD(minDate),
+                end: fmtYYYYMMDD(maxDate),
+            });
+
+            // 🔄 Force redraw so the axis updates immediately
+            gantt.refresh(tasks);
+        }
+
+        return tasks;
+    }
+
+
+
+
+
+    function updateActiveViewButton() {
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.classList.toggle('view-active', btn.dataset.mode === currentView);
+        });
+    }
+
+    function getXForDate(date, gantt) {
+        const view = gantt.options.view_mode;
+        const start = gantt.gantt_start;
+
+        const msPerDay = 1000 * 60 * 60 * 24;
+        let diff;
+
+        if (view === "Day") {
+            diff = (date - start) / msPerDay;
+        } else if (view === "Week") {
+            diff = (date - start) / (msPerDay * 7);
+        } else if (view === "Month") {
+            diff =
+                (date.getFullYear() - start.getFullYear()) * 12 +
+                (date.getMonth() - start.getMonth());
+        } else if (view === "Year") {
+            diff = date.getFullYear() - start.getFullYear();
+        } else {
+            diff = 0;
+        }
+
+        return diff * gantt.options.column_width;
+    }
+
+    function drawTodayLine(gantt) {
+        const svg = document.querySelector("#timeline-container svg");
+        if (!svg || !gantt) return;
+
+        const today = new Date();
+        if (today < gantt.gantt_start || today > gantt.gantt_end) return;
+
+        const todayX = getXForDate(today, gantt);
+
+        const gridGroup = svg.querySelector(".grid") || svg;
+        svg.querySelectorAll(".today-line").forEach(el => el.remove());
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", todayX);
+        line.setAttribute("x2", todayX);
+        line.setAttribute("y1", 0);
+        line.setAttribute("y2", svg.getAttribute("height"));
+        line.setAttribute("stroke", "#ef4444");
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("stroke-dasharray", "7,4");
+        line.classList.add("today-line");
+
+        gridGroup.appendChild(line);
+    }
+
+
+    function renderGantt() {
+        const target = document.getElementById("gantt-target");
+        target.innerHTML = "";
+
+        gantt = new Gantt("#gantt-target", tasks, {
+            view_mode: currentView,
+            column_width: columnWidth,
+            custom_popup_html: (task) => `
+          <div class="p-2 bg-gray-800 text-white rounded shadow">
+            <h3 class="font-bold">${task.name}</h3>
+            <p>${task.start} → ${task.end}</p>
+          </div>
+        `,
+            on_date_change: async (task, start, end) => {
+                // 🔒 Ensure minimum duration = 1 day
+                if (end <= start) {
+                    end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+                }
+
+                // update task locally so Gantt bar resizes instead of shifting
+                task.start = start;
+                task.end = end;
+
+                console.log("Updating asset:", task.id, "new dates:", fmtYYYYMMDD(start), fmtYYYYMMDD(end));
+
+                try {
+                    let url;
+
+                    // 🔹 Decide which endpoint to call
+                    if (task.custom_class && (
+                        task.custom_class.includes("Sets") ||
+                        task.custom_class.includes("BGs") ||
+                        task.custom_class.includes("Characters_Rigs") ||
+                        task.custom_class.includes("Props_-_3D") ||
+                        task.custom_class.includes("Props_-_2D") ||
+                        task.custom_class.includes("Light_Rigs")
+                    )) {
+                        url = `/films/api/asset-steps/${task.id}/update`;
+                    } else if (task.custom_class && task.custom_class.includes("Preproduction")) {
+                        // Preproduction step
+                        url = `/films/api/preproduction/${task.id}/update`;
+                    } else {
+                        // Default to production
+                        url = `/films/api/production/${task.id}/update`;
+                    }
+
+                    await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            start_date: fmtYYYYMMDD(start),
+                            end_date: fmtYYYYMMDD(end),
+                        }),
+
+                    });
+                } catch (e) {
+                    console.error("Failed to update step dates", e);
+                }
+            },
+            on_render: () => {
+                drawTodayLine(gantt);
+            }
+
+        });
+
+        updateActiveViewButton();
+
+        // restore scroll after layout
+        const scroller = document.getElementById("timeline-container");
+        requestAnimationFrame(() => { scroller.scrollLeft = savedScrollLeft; });
+
+        // 🔹 Ensure redraw also happens when switching view mode
+        document.querySelectorAll(".view-mode button").forEach(btn => {
+            btn.addEventListener("click", () => {
+                setTimeout(() => drawTodayLine(gantt), 200);
+            });
+        });
+
+        // initial draw
+        setTimeout(() => drawTodayLine(gantt), 300);
+    }
+
+
+
+
+    function zoom(step) {
+        const idx = viewModes.indexOf(currentView);
+        const next = Math.min(viewModes.length - 1, Math.max(0, idx + step));
+        if (next !== idx) {
+            currentView = viewModes[next];
+            lsSet(keys.view, currentView);
+            if (gantt && typeof gantt.change_view_mode === "function") {
+                gantt.change_view_mode(currentView);
+                updateActiveViewButton();
+            } else {
+                renderGantt();
+            }
+        }
+    }
+
+    async function loadTimeline() {
+        const res = await fetch(`/films/api/films/${filmId}/timeline`);
+        if (!res.ok) {
+            console.error("Timeline API failed", await res.text());
+            alert("⚠️ Timeline failed to load. Check server logs.");
+            return;
+        }
+        const data = await res.json();
+        console.log("Timeline API response:", data);
+
+
+        const preproTasks = buildTasks(data.preproduction || [], "Preproduction");
+        const assetTasks = buildTasks(data.assets || [], "Asset");
+        const productionTasks = buildTasks(data.production || [], "Production");
+        console.log("Built asset tasks:", assetTasks);
+
+        const combined = [];
+
+        if (preproTasks.length) {
+            combined.push({
+                id: "prepro-plan",
+                name: "Preproduction Plan",
+                start: preproTasks[0].start,
+                end: preproTasks[preproTasks.length - 1].end,
+                custom_class: "Overall"
+            });
+            combined.push(...preproTasks);
+        }
+
+        if (assetTasks.length) {
+            combined.push({
+                id: "assets-plan",
+                name: "Assets Plan",
+                start: assetTasks[0].start,
+                end: assetTasks[assetTasks.length - 1].end,
+                custom_class: "OverallAssets"
+            });
+            combined.push(...assetTasks);
+        }
+
+        if (productionTasks.length) {
+            combined.push({
+                id: "production-plan",
+                name: "Production Plan",
+                start: productionTasks[0].start,
+                end: productionTasks[productionTasks.length - 1].end,
+                custom_class: "OverallProd"
+            });
+            combined.push(...productionTasks);
+        }
+
+        tasks = combined;
+        renderGantt();
+
+
+    }
+
+
+
+
+    // ---- UI wiring ----
+    document.getElementById("zoom-in").addEventListener("click", () => zoom(+1));
+    document.getElementById("zoom-out").addEventListener("click", () => zoom(-1));
+    document.getElementById("zoom-slider").addEventListener("input", (e) => {
+        columnWidth = parseInt(e.target.value, 10) || 38;
+        lsSet(keys.width, String(columnWidth));
+        renderGantt(); // rebuild to apply width
+    });
+
+    document.querySelectorAll("[data-mode]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            currentView = btn.dataset.mode;
+            lsSet(keys.view, currentView);
+            if (gantt && typeof gantt.change_view_mode === "function") {
+                gantt.change_view_mode(currentView);
+                updateActiveViewButton();
+            } else {
+                renderGantt();
+            }
+        });
+    });
+
+    // persist scroll position
+    const scroller = document.getElementById("timeline-container");
+    scroller.addEventListener("scroll", () => {
+        savedScrollLeft = scroller.scrollLeft;
+        lsSet(keys.scroll, String(savedScrollLeft));
+    });
+
+    // Hotkeys: Ctrl/Cmd + +/- for zooming view mode
+    document.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) { e.preventDefault(); zoom(+1); }
+        if ((e.ctrlKey || e.metaKey) && e.key === "-") { e.preventDefault(); zoom(-1); }
+    });
+
+    loadTimeline();
+
+
+</script>
+{% endblock %}

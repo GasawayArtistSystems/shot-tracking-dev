@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-red-950 text-white p-6 rounded-lg shadow">
+    <h2 class="text-3xl font-bold mb-4" id="maya">Maya</h2>
+    <p class="mb-4">
+      This page will go over the buttons in the Maya shelf and what they do.
+    </p>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="assignments"><img src="{{ url_for('static', filename='help/images/assignment.png') }}" alt="Users"
+      class="inline w-6 h-6 mx-1 align-middle" />Assignments</h5>
+    <p class="mb-4">This is where the students should start their assignments. Maya will ask where to save the file and then ask the user to choose the assignment. Maya will add the rig needed for the course, a camera to rendering
+      and name the file correctly for the assignment and for the corresponding movies. 
+    </p>
+    <p class="mb-4"><a href="{{ url_for('help.help_classes') }}#maya-walk-through" class="font-semibold text-blue-400 hover:text-yellow-700">
+      Creating an Assignment walk-through</a>
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="rigs"><img src="{{ url_for('static', filename='help/images/rig.png') }}" alt="Rig"
+      class="inline w-6 h-6 mx-1 align-middle" />Rigs</h5>
+    <p class="mb-4">This references in any of the rigs used in the assingments. This will ADD a character to a scene and not start a new one. 
+    </p>
+    <p><img src="{{ url_for('static', filename='help/images/Character_Loader.png') }}" alt="CharacterLoader"
+      class="w-[70%] h-auto align-middle" /></p>
+      <p class="mb-4">Click on the image OR the checkbox to select a character. Multiple characters may be selected.
+      </p>
+      <ul class="list-disc list-inside mb-6">
+        <li>Reference Selected Characters - will reference ONLY the selected characters into a scene.</li>
+        <li>Reference Selected Characters and Camera - will reference the selected characters AND a camera into a scene.</li>
+      </ul>
+    
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="facecam"><img src="{{ url_for('static', filename='help/images/faceCam.png') }}" alt="Face cam"
+      class="inline w-6 h-6 mx-1 align-middle" />Face Cam</h5>
+    <p class="mb-4">Adds a camera to the head of a character. The camera will move with the head, creating a camera to always see the facial controls.
+    </p>
+    <p class="mb-4">There are multiple ways to add a face cam. They all are similar.
+    </p>
+    <p class="mb-4"><strong>Preferred Way</strong></p>
+    <ol class="list-decimal list-inside mb-4 space-y-2">
+        <li>Select ONLY the head controller of the character</li>
+        <li>Click on the Face Cam button </li>
+        <li>Brings up this dialog box  <img src="{{ url_for('static', filename='help/images/Attach_Camera.png') }}" alt="Face cam"class="inline w-307 h-130 mx-1 align-middle" /></li>
+        <li>Before clicking on the button, make sure to translate the camera in front of the character.
+        <img src="{{ url_for('static', filename='help/images/FaceCam_Camera_Move.png') }}" alt="Face cam"class="inline w-336 h-217 mx-1 align-middle" /> </li>
+        <li>Change one of your panels (preferred TOP LEFT PANEL) to FaceCam
+        <img src="{{ url_for('static', filename='help/images/FaceCam_Panel.png') }}" alt="Face cam Panel"class="inline w-415 h-124 mx-1 align-middle" /> </li>
+        <li>Translate the camera (using the W key to translate NOT ALT+Left mouse button!) to get the face in the center of the frame.
+        <img src="{{ url_for('static', filename='help/images/faceCam_cameraView.png') }}" alt="Face cam Panel"class="w-[50%] mx-1 align-middle" />
+          When the camera is in the right place, go to the next step.</li>
+        <li>Select the Head Controller </li>
+        <li>Click on Attach Camera to Head </li>
+    </ol>
+    
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="referenceeditor"><img src="{{ url_for('static', filename='help/images/scene.png') }}" alt="Reference Editor"
+      class="inline w-6 h-6 mx-1 align-middle" />Scene</h5>
+    <p class="mb-4">Brings up Maya's Reference editor. You can see the references in the scene. Clicking on the checkbox will only hide them from the scene.
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="incrementalsave"><img src="{{ url_for('static', filename='help/images/increment.png') }}" alt="Incremental Save"
+      class="inline w-6 h-6 mx-1 align-middle" />Incremental Save</h5>
+    <p class="mb-4">Will save your maya scene, not movie, up a version. If you were on V3, it will save the file as V4.
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="studiolibrary"><img src="{{ url_for('static', filename='help/images/poses2.png') }}" alt="Studio Library"
+      class="inline w-6 h-6 mx-1 align-middle" />Studio Library</h5>
+    <p class="mb-4">The library that holds poses and some animation to be reused.
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="picker"><img src="{{ url_for('static', filename='help/images/Picker_animModeIcon.png') }}" alt="Picker"
+      class="inline w-6 h-6 mx-1 align-middle" />Picker</h5>
+    <p class="mb-4">Picker to select controls on each rig.
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="designer"><img src="{{ url_for('static', filename='help/images/Picker_designerModeIcon.png') }}" alt="Picker Designer"
+      class="inline w-6 h-6 mx-1 align-middle" />Designer</h5>
+    <p class="mb-4">To create Pickers (Rarely used in animation classes)
+    </p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="playblast"><img src="{{ url_for('static', filename='help/images/film.png') }}" alt="Playblast"
+      class="inline w-6 h-6 mx-1 align-middle" />Playblast</h5>
+    <p class="mb-4">The ONLY way to create any movies for the assignments.
+    </p>
+    <p class="mb-4"><a href="{{ url_for('help.help_classes') }}#playblast" class="font-semibold text-blue-400 hover:text-yellow-700">
+      Creating a Movie to Submit OR for yourself</a>
+    </p>
+
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="designer"><img src="{{ url_for('static', filename='help/images/clapboard.png') }}" alt="Film Shot"
+      class="inline w-6 h-6 mx-1 align-middle" />Film Shot</h5>
+    <p class="mb-4">Create a Short Film shot - ONLY used for film shots NOT assignments
+    </p>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const headings = document.querySelectorAll("h3[id]");
+  const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+  const observer = new IntersectionObserver(
+    entries => {
+      for (let entry of entries) {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute("id");
+          tocLinks.forEach(link => {
+            link.classList.remove("text-yellow-400", "font-semibold");
+            if (link.getAttribute("href") === `#${id}`) {
+              link.classList.add("text-yellow-400", "font-semibold");
+            }
+          });
+        }
+      }
+    },
+    { threshold: 0.3 }
+  );
+
+  headings.forEach(h => observer.observe(h));
+});
+</script>
+{% endblock %}

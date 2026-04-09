@@ -1,0 +1,33 @@
+# === Node / JS ===
+node_modules/
+.next/
+*.log
+*.lock
+
+# === Python ===
+venv/
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.db
+
+# === Development / IDE ===
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# === Build / Temp ===
+dist/
+build/
+*.spec
+*.exe
+*.bak
+
+# === Project-specific Folders ===
+archive/
+bak/
+Sketches/
+Working/
+*.log

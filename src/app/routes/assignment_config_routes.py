@@ -1,0 +1,356 @@
+﻿from flask import Blueprint, request, jsonify, current_app
+import os
+import json
+from app.database.db import get_db
+from app.utils.auth_utils import login_required
+from datetime import datetime, date
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+config_bp = Blueprint('config_bp', __name__)
+
+RIGS_FOLDER = os.getenv("RIGS_ROOT", "C:/Cincy/Rigs")
+RIG_EXTS = (".mb", ".ma", ".fbx")
+
+@config_bp.route('/semesters', methods=['GET'])
+@login_required
+def get_semesters():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # make sure semesters table has start_date and end_date columns
+    semesters = cursor.execute("""
+        SELECT id, year, term, start_date, end_date
+        FROM semesters
+        ORDER BY year DESC, term ASC
+    """).fetchall()
+
+
+    today = date.today()
+
+    result = []
+    for s in semesters:
+        is_current = False
+        start = s["start_date"]
+        end = s["end_date"]
+
+        try:
+            # Convert from string to date (if not None)
+            if isinstance(start, str):
+                start = datetime.strptime(start, "%Y-%m-%d").date()
+            if isinstance(end, str):
+                end = datetime.strptime(end, "%Y-%m-%d").date()
+        except Exception:
+            # If parsing fails, just skip marking as current
+            start = end = None
+
+        if start and end:
+            is_current = start <= today <= end
+
+        result.append({
+            "id": s["id"],
+            "year": s["year"],
+            "term": s["term"],
+            "current": is_current
+        })
+
+    return jsonify(result)
+
+@config_bp.route('/assignment-config/by-semester/<int:semester_id>', methods=['GET'])
+@login_required
+def get_assignment_config_by_semester(semester_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    semester_row = cursor.execute("SELECT year || '-' || term AS name FROM semesters WHERE id = ?", (semester_id,)).fetchone()
+    if not semester_row:
+        return jsonify({"error": "Semester not found"}), 404
+
+    semester = semester_row['name']
+
+    class_rows = cursor.execute("""
+        SELECT c.id as class_id, c.class_name
+        FROM classes c
+        WHERE c.semester_id = ?
+    """, (semester_id,)).fetchall()
+
+    rigs_folder = "C:/Cincy/Rigs"
+    rig_files = []
+    for root, _, files in os.walk(rigs_folder):
+        for file in files:
+            if file.lower().endswith(('.mb', '.ma')):
+                rig_files.append(os.path.join(root, file).replace("\\", "/"))
+
+    result = {
+        "semester": semester,
+        "classes": {},
+        "rigs": rig_files
+    }
+
+    for row in class_rows:
+        class_id = row['class_id']
+        class_name = row['class_name']
+        result['classes'][class_name] = {}
+
+        assignments = cursor.execute("SELECT name FROM assignments WHERE class_id = ? ORDER BY name", (class_id,)).fetchall()
+        presets = cursor.execute("""
+            SELECT assignment_name, rigs, camera, filename
+            FROM assignment_config_presets
+            WHERE class_id = ?
+        """, (class_id,)).fetchall()
+        preset_map = {
+            p['assignment_name']: {
+                'rigs': json.loads(p['rigs']) if p['rigs'] else [],
+                'camera': bool(p['camera']),
+                'filename': p['filename'] or ""
+            } for p in presets
+        }
+
+        for assignment in assignments:
+            a_name = assignment['name']
+            preset = preset_map.get(a_name, {"rigs": [], "camera": False, "filename": ""})
+            result['classes'][class_name][a_name] = preset
+
+    return jsonify(result)
+
+@config_bp.route('/assignment-config/save-semester/<semester_id>', methods=['POST'])
+@login_required
+def save_assignment_config_semester(semester_id):
+    """
+    Saves the assignment configuration for a semester.
+    Accepts either numeric IDs or text-based names like '2025-Fall' or 'Semester-2025'.
+    """
+    import json, os
+    from flask import request, jsonify
+    from app.database.db import get_db
+
+    data = request.get_json() or {}
+    classes = data.get("classes", {})
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # ✅ Handle "-1" or unknown semester IDs gracefully
+    original_semester_id = semester_id
+    if str(semester_id).strip() == "-1":
+        # ✅ Fallback: find the most recent semester by year and term order
+        print("⚙️ No 'current' column — selecting most recent semester by year/term.")
+        cursor.execute("""
+            SELECT id FROM semesters
+            ORDER BY year DESC,
+                    CASE term
+                        WHEN 'Spring' THEN 1
+                        WHEN 'Summer' THEN 2
+                        WHEN 'Fall' THEN 3
+                        ELSE 4
+                    END DESC
+            LIMIT 1
+        """)
+        row = cursor.fetchone()
+
+        if row:
+            semester_id = row["id"]
+            print(f"✅ Using latest semester ID: {semester_id}")
+        else:
+            print("⚠️ No semesters found in database.")
+            semester_id = None
+
+
+    elif not str(semester_id).isdigit():
+        print(f"🔍 Converting semester identifier '{semester_id}' to ID...")
+        cursor.execute("""
+            SELECT id FROM semesters
+            WHERE (year || '-' || term = ?)
+               OR ('Semester-' || year || '-' || term = ?)
+               OR ('Semester-' || year = ?)
+        """, (semester_id, semester_id, semester_id))
+        row = cursor.fetchone()
+        if row:
+            semester_id = row["id"]
+            print(f"✅ Found matching semester ID: {semester_id}")
+        else:
+            print(f"⚠️ No matching semester found for '{original_semester_id}', defaulting to current semester.")
+            cursor.execute("SELECT id FROM semesters WHERE current = 1")
+            row = cursor.fetchone()
+            semester_id = row["id"] if row else None
+
+    if semester_id is None:
+        return jsonify({"success": False, "error": f"Invalid semester identifier: {original_semester_id}"}), 400
+
+
+    # ✅ Fetch semester name for labeling
+    semester_row = cursor.execute(
+        "SELECT year || '-' || term AS name FROM semesters WHERE id = ?",
+        (semester_id,)
+    ).fetchone()
+
+    semester_name = semester_row["name"] if semester_row else f"Semester-{semester_id}"
+    print(f"💾 Saving config (semester: {semester_name})")
+    print(f"📦 Classes received: {list(classes.keys())}")
+
+
+    json_obj = {
+        "semester": {
+            "name": semester_name
+        }
+    }
+
+    for class_name, assignments in classes.items():
+        json_obj["semester"][class_name] = {}
+        print(f"🧩 Saving class '{class_name}' ({len(assignments)} assignments)")
+
+        # ✅ Try to find the class in the DB (optional)
+        cursor.execute("SELECT id FROM classes WHERE class_name = ?", (class_name,))
+        row = cursor.fetchone()
+
+        if not row:
+            print(f"ℹ️ Class '{class_name}' not in database — skipping DB write.")
+            class_id = None
+        else:
+            class_id = row["id"]
+            cursor.execute("DELETE FROM assignment_config_presets WHERE class_id = ?", (class_id,))
+
+        # ✅ Always include the data in the JSON file
+        for assignment_name, cfg in assignments.items():
+            raw_rigs = cfg.get("rigs", [])
+            camera = bool(cfg.get("camera", False))
+            filename = cfg.get("filename", "")
+
+            # ✅ Normalize rigs — always list of { "path": "..." }
+            rigs = []
+            for r in raw_rigs:
+                if isinstance(r, str):
+                    rigs.append({"path": r})
+                elif isinstance(r, dict):
+                    # flatten nested {"path": {"path": {"path": "..."}}}
+                    rig_path = r
+                    while isinstance(rig_path, dict) and "path" in rig_path:
+                        rig_path = rig_path["path"]
+                    if isinstance(rig_path, str):
+                        rigs.append({"path": rig_path})
+
+            json_obj["semester"][class_name][assignment_name] = {
+                "rigs": rigs,
+                "camera": camera,
+                "filename": filename
+            }
+
+
+            if class_id:
+                cursor.execute("""
+                    INSERT INTO assignment_config_presets (class_id, assignment_name, rigs, camera, filename)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (class_id, assignment_name, json.dumps(rigs), camera, filename))
+
+    conn.commit()
+
+    # ✅ Always write to the JSON file
+    os.makedirs(r"C:\Cincy\Configs", exist_ok=True)
+    output_path = os.path.join(r"C:\Cincy\Configs", "assignments_config.json")
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(json_obj, f, indent=2)
+
+    print(f"✅ Config saved successfully to {output_path}")
+    return jsonify({"success": True, "path": output_path})
+
+
+@config_bp.route("/assignment-config/files", methods=["GET"])
+@login_required
+def list_assignment_config_files():
+    # ✅ Centralized server config folder
+    config_dir = r"C:\Cincy\Configs"
+    files = []
+
+    print(f"🧭 Checking config directory: {config_dir}")
+    print(f"   Exists: {os.path.exists(config_dir)}")
+
+    if os.path.exists(config_dir):
+        for file in os.listdir(config_dir):
+            if file.lower().endswith(".json"):
+                files.append({
+                    "name": file,
+                    "path": f"/api/assignment-config/load?path={file}"
+                })
+    else:
+        print("⚠️  Config folder not found or not accessible.")
+
+    return jsonify({"files": files})
+
+
+
+@config_bp.route("/assignment-config/load")
+@login_required
+def load_assignment_config():
+    from flask import request, send_file, abort
+
+    rel_path = request.args.get("path")
+    if not rel_path:
+        return abort(400, description="Missing 'path' parameter.")
+
+    # ✅ Match same server directory
+    base_dir = os.path.abspath(r"C:\Cincy\Configs")
+
+    safe_path = os.path.abspath(os.path.join(base_dir, rel_path))
+
+    # Safety check: make sure the file is inside the correct directory
+    if not safe_path.startswith(base_dir):
+        return abort(403, description="Forbidden path.")
+
+    if not os.path.isfile(safe_path):
+        return abort(404, description=f"File not found: {safe_path}")
+
+    return send_file(safe_path, mimetype="application/json")
+
+
+
+@config_bp.route('/assignment-review-files', methods=['GET'])
+@login_required
+def get_review_files():
+    BASE_VIDEO_DIR = "D:/Classes"
+    all_assignments = {}
+
+    for semester_folder in os.listdir(BASE_VIDEO_DIR):
+        semester_path = os.path.join(BASE_VIDEO_DIR, semester_folder)
+        if not os.path.isdir(semester_path):
+            continue
+
+        for class_folder in os.listdir(semester_path):
+            assignments_path = os.path.join(semester_path, class_folder, "Assignments")
+            if not os.path.isdir(assignments_path):
+                continue
+
+            reviewed_files = [f for f in os.listdir(assignments_path) if f.endswith("_R.webm")]
+            if reviewed_files:
+                key = f"{semester_folder} - {class_folder}"
+                all_assignments[key] = [
+                    {"file_name": f, "path": os.path.join(assignments_path, f).replace("\\", "/")}
+                    for f in reviewed_files
+                ]
+
+    return jsonify({"all_assignments": all_assignments})
+
+@config_bp.route('/rigs', methods=['GET'])
+@login_required
+def list_rigs():
+    try:
+        if not os.path.isdir(RIGS_FOLDER):
+            current_app.logger.warning("RIGS folder missing: %s", RIGS_FOLDER)
+            return jsonify([]), 200
+
+        rig_files = []
+        for root, _, files in os.walk(RIGS_FOLDER):
+            for f in files:
+                if f.lower().endswith(RIG_EXTS):
+                    rig_files.append(os.path.join(root, f).replace("\\", "/"))
+
+        rig_files.sort()
+        current_app.logger.info("Rigs found: %d in %s", len(rig_files), RIGS_FOLDER)
+        return jsonify(rig_files), 200
+    except Exception:
+        current_app.logger.exception("Failed to list rigs")
+        return jsonify([]), 200
+
+
+
+

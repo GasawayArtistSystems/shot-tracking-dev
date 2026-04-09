@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-center items-start mt-10">
+    <div class="bg-red-900 shadow-lg rounded-lg p-6 w-full max-w-2xl">
+        <h2 class="text-3xl font-bold text-center text-white mb-6">Add New Film</h2>
+
+        <form action="{{ url_for('films.add_film_route') }}" method="POST" id="addFilmForm">
+            <!-- Semester, Film Title -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="semester_id" class="block text-white font-medium">Semester:</label>
+                    <select id="semester_id" name="semester_id"
+                        class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                        {% for option in semesters %}
+                        <option value="{{ option.id }}">{{ option.term }} {{ option.year }}</option>
+                        {% endfor %}
+                    </select>
+                    <span id="semesterError" class="text-red-400 text-sm hidden">Semester is required.</span>
+                </div>
+                <div>
+                    <label for="film_name" class="block text-white font-medium">Film Name:</label>
+                    <input type="text" id="film_name" name="film_name"
+                        class="w-full border text-gray-900 bg-white rounded-lg p-2" placeholder="Enter film name"
+                        required>
+                    <span id="nameError" class="text-red-400 text-sm hidden">Film name is required.</span>
+                </div>
+            </div>
+
+            <!-- Film Description -->
+            <div class="mt-4">
+                <label for="description" class="block text-white font-medium">Film Description:</label>
+                <textarea id="description" name="description"
+                    class="w-full border text-gray-900 bg-white rounded-lg p-2" rows="3"
+                    placeholder="Enter film description (optional)"></textarea>
+            </div>
+
+            <!-- Overall Workflow Dropdown -->
+            <div class="mt-4">
+                <label for="step_id" class="block text-white font-medium">Overall Film Workflow:</label>
+                <select id="step_id" name="step_id" class="w-full border text-gray-900 bg-white rounded-lg p-2"
+                    required>
+                    <option value="">-- Select Workflow --</option>
+                    {% for step in workflows if step.name in ["2D Movie Flow", "3D Movie Flow"] %}
+                    <option value="{{ step.id }}">{{ step.name }}</option>
+                    {% endfor %}
+                </select>
+                <span id="workflowError" class="text-red-400 text-sm hidden">Workflow is required.</span>
+            </div>
+
+            <!-- Individual Flows -->
+            <!-- <div class="mt-4">
+                <label class="block text-white font-medium mb-1">Choose Pre_production Flows:</label>
+                <div id="child-steps-list" class="grid grid-cols-2 gap-2 bg-gray-800 p-3 rounded-lg text-white">
+                    <em>Select a workflow to load steps...</em>
+                </div>
+            </div> -->
+
+            <!-- Director + UPM -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label for="director_id" class="block text-white font-medium">Director:</label>
+                    <select id="director_id" name="director_id"
+                        class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                        {% for user in directors %}
+                        <option value="{{ user.id }}">{{ user.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="upm_id" class="block text-white font-medium">UPM:</label>
+                    <select id="upm_id" name="upm_id" class="w-full border text-gray-900 bg-white rounded-lg p-2"
+                        required>
+                        {% for user in upms %}
+                        <option value="{{ user.id }}">{{ user.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex justify-between mt-6">
+                <a href="{{ url_for('films.view_films') }}"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</a>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add
+                    Film</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+<!-- JS -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const stepSelect = document.getElementById("step_id");
+        // ❌ removed childStepsList since we don’t want to render children
+
+        // ✅ Load child steps on workflow change (noop if you don’t want children)
+        stepSelect.addEventListener("change", async function () {
+            const stepId = this.value;
+
+            try {
+                const res = await fetch(`/films/api/child_flows/${stepId}`);
+                const data = await res.json();
+
+                // ❌ Do nothing with children
+                console.log("Child flows fetched (ignored):", data.children);
+
+            } catch (err) {
+                console.error("Failed to load child flows", err);
+            }
+        });
+
+        // ✅ SweetAlert2 on form submission
+        const form = document.getElementById("addFilmForm");
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '🎬 Film Created!',
+                        text: result.message,
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                        window.location.href = "/films";
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message,
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Unexpected Error',
+                    text: 'An unexpected error occurred. Please try again.',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    });
+</script>
+
+
+
+{% endblock %}

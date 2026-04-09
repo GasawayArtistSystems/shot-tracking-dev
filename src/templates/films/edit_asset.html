@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-6 max-w-8xl">
+    <div class="bg-blue-900 shadow-lg rounded-lg p-6">
+        <h1 class="text-4xl font-bold text-white mb-6">Edit Asset</h1>
+
+        <form method="POST" action="{{ url_for('films.edit_asset_route', asset_id=asset.id) }}">
+            <div class="mb-4">
+                <label for="name" class="block text-white mb-2">Asset Name</label>
+                <input type="text" name="name" id="name" value="{{ asset.name }}" class="w-full p-3 rounded text-black"
+                    required>
+            </div>
+
+            <div class="mb-4">
+                <label for="category" class="block text-white mb-2">Category</label>
+                <select name="category" id="category" class="w-full p-3 rounded text-black" required>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if asset.category==category %}selected{% endif %}>
+                        {{ category }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="due_date" class="block text-white mb-2">Due Date (Optional)</label>
+                <input type="date" name="due_date" id="due_date" value="{{ asset.due_date }}"
+                    class="w-full p-3 rounded text-black">
+            </div>
+
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

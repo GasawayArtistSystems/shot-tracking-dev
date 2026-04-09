@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ✅ Sub-header with Class Dropdown and Navigation -->
+<div class="flex justify-between items-center mx-auto mb-4">
+    <!-- ✅ Left: Class Dropdown -->
+    <select class="border text-gray-900 bg-red-950 rounded-lg p-2 focus:ring focus:ring-blue-300 w-64" id="class-dropdown" onchange="changeClass(this.value)">
+        <option value="">Select a Class</option>
+        {% for cls in all_classes %}
+        <option value="{{ cls.id }}" {% if cls.id == class_id %}selected{% endif %}>
+            {{ cls.full_class_name }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <!-- ✅ Right: Navigation Buttons -->
+    <div class="flex space-x-4">
+        <a href="{{ url_for('classes.view_classes') }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'classes' %}bg-blue-500{% endif %}">
+            Classes
+        </a>
+        
+        <a href="{{ url_for('classes.view_students_in_class', class_id=class_id) }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'students' %}bg-blue-500{% endif %}">
+            Students
+        </a>
+        
+        <a href="{% if user_permission_level == 1 %}
+                        {{ url_for('assignments.individual_assignments_view', assignment_id=assignment_id) }}
+                    {% else %}
+                        {{ url_for('assignments.view_assignments', class_id=class_id) }}
+                    {% endif %}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'assignments' %}bg-yellow-800{% endif %}">
+            Assignments
+        </a>
+    </div>
+</div>
+
+<div class="container mx-auto mt-6">
+        <!-- ✅ Students Table -->
+        <div class="overflow-x-auto p-4">
+            <table class="w-full border-collapse bg-red-950 shadow-md rounded-lg">
+                <thead class="bg-gray-800 text-white">
+                    <tr>
+                        <th class="p-3 text-left">Name</th>
+                        <th class="p-3 text-left">Email</th>
+                        <th class="p-3 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody" class="text-gray-900">
+                    {% for student in students %}
+                    <tr class="border-b hover:bg-gray-100">
+                        <td class="p-3">{{ student.name }}</td>
+                        <td class="p-3">{{ student.email }}</td>
+                        <td class="p-3">
+                            <form method="POST" action="{{ url_for('classes.remove_students_from_class_route', class_id=class_id) }}">
+                                <input type="hidden" name="student_ids" value="{{ student.id }}">
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ✅ Add Student Button -->
+        <div class="p-4 text-right">
+            <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                Add New Student
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search Enrolled Students
+    document.getElementById("studentSearchInput").addEventListener("input", function () {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#studentTableBody tr");
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            const name = cells[0].textContent.toLowerCase();
+            const email = cells[1].textContent.toLowerCase();
+            row.style.display = name.includes(filter) || email.includes(filter) ? "" : "none";
+        });
+    });
+
+    async function manageStudents(action, studentIds, classId) {
+        try {
+            const response = await fetch(`/students/${classId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ action: action, student_ids: studentIds }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message,
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message,
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An unexpected error occurred. Please try again.',
+            });
+        }
+    }
+</script>
+
+{% endblock %}

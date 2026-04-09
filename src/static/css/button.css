@@ -1,0 +1,19 @@
+.nav-btn, .btn-submit, .btn-primary, .btn-sm, .btn-group .btn {
+    padding: 10px 15px;
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 5px;
+    color: #e0e0e0;
+}
+
+.nav-btn:hover, .btn-primary:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+.btn-submit {
+    background-color: var(--secondary-color);
+    color: white;
+    width: 100%;
+}

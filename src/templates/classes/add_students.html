@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ✅ Sub-header with Class Dropdown and Navigation -->
+<div class="flex justify-between items-center mt-6 mb-4">
+    <!-- ✅ Left: Class Dropdown -->
+    <select class="border text-gray-900 bg-white rounded-lg p-2 focus:ring focus:ring-blue-300 w-64" id="class-dropdown" onchange="changeClass(this.value)">
+        <option value="">Select a Class</option>
+        {% for cls in all_classes %}
+        <option value="{{ cls.id }}" {% if cls.id == class_id %}selected{% endif %}>
+            {{ cls.full_class_name }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <!-- ✅ Right: Navigation Buttons -->
+    <div class="flex space-x-4">
+        <a href="{{ url_for('classes.view_classes') }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'classes' %}bg-yellow-800{% endif %}">
+            Classes
+        </a>
+        
+        <a href="{{ url_for('classes.view_students_in_class', class_id=class_id) }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'students' %}bg-yellow-800{% endif %}">
+            Students
+        </a>
+        
+        <a href="{% if user_permission_level == 1 %}
+                        {{ url_for('assignments.individual_assignments_view', assignment_id=assignment_id) }}
+                    {% else %}
+                        {{ url_for('assignments.view_assignments', class_id=class_id) }}
+                    {% endif %}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'assignments' %}bg-yellow-800{% endif %}">
+            Assignments
+        </a>
+    </div>
+</div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- ✅ Available Students -->
+        <div class="bg-red-950 p-4 rounded-lg shadow">
+            <h5 class="text-lg font-semibold text-white mb-2">Available Students</h5>
+            <input type="text" id="searchAvailable" class="border p-2 w-full rounded-lg text-black" placeholder="Search available students...">
+            <ul id="availableStudentsList" class="mt-2 space-y-2">
+                {% for student in available_students %}
+                    <li class="flex items-center text-white">
+                        <input type="checkbox" name="available_students" value="{{ student.id }}" class="mr-2">
+                        {{ student.name }} ({{ student.email }})
+                    </li>
+                {% else %}
+                    <li class="text-white">No available students found.</li>
+                {% endfor %}
+            </ul>
+            <div class="mt-4 text-center">
+                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg" onclick="addSelectedStudents()">Add to Class</button>
+            </div>
+        </div>
+
+        <!-- ✅ Enrolled Students -->
+        <div class="bg-red-950 p-4 rounded-lg shadow">
+            <h5 class="text-lg font-semibold text-white mb-2">Enrolled Students</h5>
+            <input type="text" id="searchEnrolled" class="border p-2 w-full rounded-lg text-white" placeholder="Search enrolled students...">
+            <ul id="enrolledStudentsList" class="mt-2 space-y-2">
+                {% for student in enrolled_students %}
+                    <li class="flex items-center text-white">
+                        <input type="checkbox" name="enrolled_students" value="{{ student.id }}" class="mr-2">
+                        {{ student.name }} ({{ student.email }})
+                    </li>
+                {% else %}
+                    <li class="text-white">No enrolled students found.</li>
+                {% endfor %}
+            </ul>
+            <div class="mt-4 text-center">
+                <button class="bg-red-800 hover:bg-red-600 text-white px-4 py-2 rounded-lg" onclick="removeSelectedStudents()">Remove from Class</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/assignments.js') }}"></script>
+
+
+
+<script>
+    const manageStudentsUrl = "{{ url_for('classes.manage_students_in_class', class_id=class_id) }}";
+    const classId = {{ class_id }};
+
+    // Helper function for debounce
+    function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    // Handle search for available students
+    const searchAvailableInput = document.getElementById('searchAvailable');
+    searchAvailableInput.addEventListener(
+        'input',
+        debounce(() => {
+            const searchValue = searchAvailableInput.value.trim();
+            const url = new URL(window.location.href);
+            url.searchParams.set('search_available', searchValue);
+            window.location.href = url.toString();
+        }, 300)
+    );
+
+    // Handle search for enrolled students
+    const searchEnrolledInput = document.getElementById('searchEnrolled');
+    searchEnrolledInput.addEventListener(
+        'input',
+        debounce(() => {
+            const searchValue = searchEnrolledInput.value.trim();
+            const url = new URL(window.location.href);
+            url.searchParams.set('search_enrolled', searchValue);
+            window.location.href = url.toString();
+        }, 300)
+    );
+
+    // Add Selected Students
+    function addSelectedStudents() {
+        const selectedStudents = Array.from(document.querySelectorAll('input[name="available_students"]:checked'))
+            .map(input => input.value);
+
+        if (selectedStudents.length === 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'No Students Selected',
+                text: 'Please select students to add.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        fetch(manageStudentsUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                action: "add",
+                student_ids: selectedStudents
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: data.message,
+                        timer: 3000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload(); // Reload the page to update the lists
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed to Add Students',
+                        text: data.message,
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error adding students:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while adding students.',
+                });
+            });
+    }
+
+    // Remove Selected Students
+    function removeSelectedStudents() {
+        const selectedStudents = Array.from(document.querySelectorAll('input[name="enrolled_students"]:checked'))
+            .map(input => input.value);
+
+        if (selectedStudents.length === 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'No Students Selected',
+                text: 'Please select students to remove.',
+                timer: 3000,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Are you sure?',
+            text: `You are about to remove ${selectedStudents.length} student(s) from the class.`,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, remove them',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(manageStudentsUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        action: "remove",
+                        student_ids: selectedStudents
+                    }),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success',
+                                text: data.message,
+                                timer: 3000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload(); // Reload the page to update the lists
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed to Remove Students',
+                                text: data.message,
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error removing students:", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred while removing students.',
+                        });
+                    });
+            }
+        });
+    }
+</script>
+
+<script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+
+{% endblock %}

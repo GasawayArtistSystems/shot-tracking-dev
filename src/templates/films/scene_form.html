@@ -1,0 +1,120 @@
+<form method="POST">
+  <!-- Scene Number + Dates Row -->
+  <div class="flex space-x-4">
+    <div class="flex-1">
+      <label class="block text-white font-medium">Scene Number (3 letters)</label>
+      <input type="text" name="scene_number" value="{{ scene.scene_number if scene else '' }}" required minlength="3"
+        maxlength="3" pattern=".{3}" class="w-full p-2 rounded text-black" placeholder="e.g. A01" />
+    </div>
+
+    <div class="flex-1">
+      <label class="block text-white font-medium">Start Date</label>
+      <input type="date" name="start_date" value="{{ scene.start_date if scene else '' }}"
+        class="w-full p-2 rounded text-black" />
+    </div>
+
+    <div class="flex-1">
+      <label class="block text-white font-medium">Due Date</label>
+      <input type="date" name="due_date" value="{{ scene.due_date if scene else '' }}"
+        class="w-full p-2 rounded text-black" />
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="mt-4">
+    <label class="block text-white font-medium">Description</label>
+    <textarea name="description" class="w-full p-2 rounded text-black"
+      rows="4">{{ scene.description if scene else '' }}</textarea>
+  </div>
+
+  <!-- Workflow -->
+  <div class="mt-4">
+    <label class="block text-white font-medium">Workflow</label>
+    <select id="workflow_id" name="workflow_id" class="w-full text-black" required
+      onchange="window.location.href='?workflow_id=' + this.value">
+      <option value="">-- Select Workflow --</option>
+      {% for workflow in workflows %}
+      <option value="{{ workflow.id }}" {% if workflow_id and workflow_id|string==workflow.id|string %} selected {%
+        endif %}>
+        {{ workflow.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Progress Tracking Steps -->
+  <div class="mt-8">
+    <h3 class="text-white font-semibold mb-4">Select Progress Steps</h3>
+    {% for parent_id, children in grouped_steps.items() %}
+    <div class="mb-4 border border-slate-700 rounded-lg p-4 bg-slate-800">
+      {% set parent = steps_map.get(parent_id, {'name': 'Unnamed Workflow'}) %}
+      <div class="text-sm text-blue-300 font-medium mb-2">{{ parent.name }}</div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+        {% for step in children %}
+        <input type="checkbox" name="step_ids[]" value="{{ step.id }}" class="form-checkbox" {% if step.id in
+          selected_step_ids %}checked{% endif %}>
+        {{ step.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+
+
+  <!-- Submit + Cancel Buttons -->
+  <div class="flex justify-between mt-6">
+    <a href="{{ url_for('films.view_scenes', film_id=film.id) }}"
+      class="bg-gray-500 hover:bg-gray-400 text-white px-4 py-2 rounded">
+      Cancel
+    </a>
+
+    <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded">
+      {{ 'Save Changes' if edit_mode else 'Create Scene' }}
+    </button>
+  </div>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const workflowSelect = document.getElementById("workflow_id");
+    const stepSelect = document.getElementById("step_ids");
+    const stepContainer = document.getElementById("stepContainer");
+
+    if (!workflowSelect || !stepSelect) return;
+
+    workflowSelect.addEventListener("change", async function () {
+      const workflowId = this.value;
+      stepSelect.innerHTML = "";
+
+      if (!workflowId) {
+        stepContainer.classList.add("hidden");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/workflow/api/child_flows?parent_id=${workflowId}`);
+        const steps = await response.json();
+
+        if (Array.isArray(steps)) {
+          steps.forEach(step => {
+            const opt = document.createElement("option");
+            opt.value = step.id;
+            opt.textContent = step.name;
+            stepSelect.appendChild(opt);
+          });
+          stepContainer.classList.remove("hidden");
+        }
+      } catch (err) {
+        console.error("❌ Error loading steps:", err);
+      }
+    });
+
+    // Trigger once on page load (for edit mode)
+    if (workflowSelect.value) {
+      workflowSelect.dispatchEvent(new Event("change"));
+    }
+  });
+</script>

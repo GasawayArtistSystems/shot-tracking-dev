@@ -1,0 +1,802 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-lg shadow">
+    <h2 class="text-3xl font-bold mb-4" id="films-overview">Films</h2>
+    <p class="mb-4">
+      This page will show how the films page works. It shows how to view the films, add films, edit films, and delete
+      films. The films hold all the pre-production, scenes, and assets.
+      It also holds all the statuses to track the progress of the film through all stages.
+    </p>
+    <p class="mb-4">
+      Films are made up of Scenes and Assets. Scenes are made up of shots. Assets can be: BGs, Sets, Rigs/Characters, 2d
+      props, or 3d props.
+    </p>
+    <p><img src="{{ url_for('static', filename='help/images/film_main.png') }}" alt="Films"
+        class="w-[90%] h-auto align-middle" /></p>
+
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">View Films</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>FILMS</strong> link at the top of the page takes you to the main films page, where you can
+      view all existing films, including their names, stage of production, main crew, shots and asset completion.
+    </p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-film">Adding a Film</h3>
+    <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>Add Film</strong> button will open this window:</p>
+    <img src="{{ url_for('static', filename='help/images/add-film.png') }}" alt="Add Film"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add a film:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Select the Semester</span></li>
+      <li><span>Enter the film name</span></li>
+      <li><span>Enter the description, if needed.</span></li>
+      <li><span>Select Overall Film Flow</span></li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> This overall flow is the workflow of the film. Most use 2d Movie Flow or 3d Movie
+        Flow.
+      </div>
+      <li><span>Select Director Name</span></li>
+      <li><span>Select UPM</span></li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> The names in the dropdown must be added by the Administrator.
+      </div>
+      <li><span>Click Add Film</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-film">Editing a Film</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To edit a film, click the <strong>Edit</strong> button next to the film. This opens a modal where you can update
+      the
+      semester, film name, description, workflow, director, and UPM.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/edit-film.png') }}" alt="Edit Film"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-film">Deleting a Film</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To delete a Film, click the <strong>Delete</strong> button next to the Film. Note that this action will also
+      delete
+      all associated assignments and cannot be undone.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-yellow-400">⚠️ WARNING:</strong> Deleting a film will permanently remove all related shots
+      and asset data.
+    </div>
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-crew">Adding Crew</h3>
+    <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>Crew</strong> button will open this window:
+    </p>
+    <img src="{{ url_for('static', filename='help/images/crew.png') }}" alt="Crew" class="shadow-lg mb-8 w-full md:w-2/3">
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span class="text-yellow-400 font-semibold">Select names for the coordinator positions.</span></li>
+      <li><span class="text-yellow-400 font-semibold">Click Checkboxes for artists working on the film.</span></li>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> If your coordinators or artists names aren't on the list, contact your instructor to
+        add them.
+      </div>
+      <li><span class="text-yellow-400 font-semibold">Click Save Crew.</span></li>
+    </ol>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-scenes">View Scenes</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>SCENES</strong> to the right of the film in which you want to view its scenes, will take
+      you to the scenes page.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/film-scenes.png') }}" alt="Scenes page"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      This page shows each scene and all the statuses for each step of the production. If you hover overtop one of the
+      pie charts, you can see the exact number of shots at each stage.
+    </p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="header-scenes">Scene Header</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      The Scenes header allows you to switch between films, scenes, and assets.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/header-scenes.png') }}" alt="Header Scene"
+      class="rounded-xl shadow-lg mb-8 w-full">
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Films Dropdown - let's you quickly go from one film to another</span></li>
+      <li><span>Films button - goes back to the main film page</span></li>
+      <li><span>Scenes button - goes to the scenes page for the selected film</span></li>
+      <li><span>Assets button - goes to the assets page for the selected film</span></li>
+    </ol>
+    <p class="mb-6 text-lg leading-relaxed">
+      Show Filter/Hide Filter - allows you to access the Filters dropdown.
+    </p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Show Filter/Hide Filter - a toggle between opening the filter and closing it</span></li>
+      <li><span>All Steps - Shows every available step in the process</span></li>
+      <li><span>Artist Steps Only - Shows the main steps for artists. Doesn't include the FB steps</span></li>
+      <li><span>Clickable checkboxes - A user can click on/off any step</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-scenes">Adding a Scene</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>+ Add Scene</strong> on the top right of the Scenes page, will open an Add Scene modal.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-scenes.png') }}" alt="Add Scene"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add a scene:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Add Scene Number - this MUST BE three digits</span></li>
+      <li><span>Change Start Date - This will be filled in by the dates in the timeline. You can still change them</span></li>
+      <li><span>Change Due Date - This will be filled in by the dates in the timeline. You can still change them</span></li>
+      <li><span>Enter a description</span></li>
+      <li><span>Include Thumbnail Step - this is clicked ON by default. If you don't want thumbnails, click it off.</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-multiple-scenes">Adding Multiple Scenes</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>+ Add Mutliple Scenes</strong> on the top left of the Add Scene modal.</p>
+    <img src="{{ url_for('static', filename='help/images/add-multiple-scenes.png') }}" alt="Add Multiple Scenes" class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add multiple scenes:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Start Prefix - this MUST BE three digits</span></li>
+      <li><span>Enter how many scenes to add.</span></li>
+      <li><span>Enter a description (optional)</span></li>
+      <li><span>Change Start Date - This will be filled in by the dates in the timeline. You can still change them.</span></li>
+      <li><span>Change Due Date - This will be filled in by the dates in the timeline. You can still change them.</span></li>
+      <li><span>Include Thumbnail Step - this is clicked ON by default. If you don't want thumbnails, click it off.</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-scenes">Editing a Scene</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To edit a scene, click the <strong>Edit</strong> button next to the scene. This opens a modal where you can update
+      the
+      scene number, start date, due date, and description.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/edit-scenes.png') }}" alt="Edit Scene"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-scenes">Deleting a Scene</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>Delete Scene</strong> to the right of the scene itself, will warn if you want to delete
+      the scene or not.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-yellow-400">⚠️ WARNING:</strong> Deleting a scene will permanently remove all related shots.
+    </div>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-shots">BEFORE ADDING SHOTS</h3>
+    <div class="bg-yellow-100 p-4 rounded-xl shadow-lg mb-8 text-black">
+      <strong class="text-black">Note:</strong> Once Thumbnails are done for a scene and approved, the Scenes page will look like this!
+    </div>
+    <img src="{{ url_for('static', filename='help/images/before-adding-shots.png') }}" alt="Shots page no Shots"
+      class="h-auto align-middle" />
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-shots">View Shots</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>SHOT NUMBER</strong> to the left of the scenes table, will take you
+      to the shots page of that scene.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/view-shots.png') }}" alt="Shots page"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      This page shows each shot and all the statuses for each step of the production. This is where a user can change
+      the status, change the assignee, and the due date.
+    </p>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="header-shots">Shots Header</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      The Shots header allows you to switch between films, scenes, and assets.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/header-shots.png') }}" alt="Header Shots"
+      class="rounded-xl shadow-lg mb-8 w-full">
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Scenes Dropdown - let's you quickly go from one scene to another</span></li>
+      <li><span>Films button - goes back to the main film page</span></li>
+      <li><span>Scenes button - goes to the scenes page for the selected film</span></li>
+      <li><span>Assets button - goes to the assets page for the selected film</span></li>
+    </ol>
+    <p class="mb-6 text-lg leading-relaxed">
+      Show Filter/Hide Filter - allows you to access the Filters dropdown.
+    </p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Show Filter/Hide Filter - a toggle between opening the filter and closing it</span></li>
+      <li><span>All Steps - Shows every available step in the process</span></li>
+      <li><span>Artist Steps Only - Shows the main steps for artists. Doesn't include the FB steps</span></li>
+      <li><span>Clickable checkboxes - A user can click on/off any step</span></li>
+      <li><span>Dropdowns - A user narrow down what they want to see by the dropdowns</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-shots">Adding a Shot</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>+ Add Shots</strong> on the top left of the shots page, will open an Add Shot modal.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-shot.png') }}" alt="Add Shots"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add a Shot:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Add Shot Number - this MUST BE three digits</span></li>
+      <li><span>Enter a description</span></li>
+      <li><span>Add Start Date - This will be filled in by the dates in the timeline. You can still change them.</span></li>
+      <li><span>Add Due Date (optional)</span></li>
+      <li><span>Assign to (optional) -- this is for the ENTIRE shot, not just a step. This is RARELY used.</span></li>
+    </ol>
+
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+      <strong>📌 NOTE:</strong> Use "+ Add Multiple Shots" to add more than one shot at a time. This is best to use when
+      first creating shots.
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-shots-multiple">Adding Multiple Shots</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>+ Add Multiple Shots</strong> inside the Add Shot modal will bring up another modal.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-multiple-shots.png') }}" alt="Add Multiple Shots"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add Multiple Shots:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Add Prefix - this is what the first shot number will be - 050, 130, 520. It must be three digits with
+          the last number being a zero.</span></li>
+      <li><span>How many shots? - the total number of shots you are adding.</span></li>
+      <li><span>Description (optional) RARELY used.</span></li>
+      <li><span>Add or Cancel to add the shots or cancel out of the modal.</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-shots">Editing a Shot</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To edit a Shot, click the <strong>Edit</strong> button to the far right of the shot. This opens a modal where you
+      can update the
+      shot number, start date, due date, and description.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/edit-shots.png') }}" alt="Edit Shot"
+      class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-shots">Deleting a Shot</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>Delete Shot</strong> to the far right of the shot, will warn if you want to delete the
+      shot
+      or not.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-yellow-400">⚠️ WARNING:</strong> Deleting a shot will permanently remove the shot from the
+      database.
+    </div>
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="bulk-edit-shots">Bulk Editing Multiple Shots</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Editing multiple shots is a powerful way to edit a lot of shots in one place. This can change statuses, assignees,
+      and/or due dates.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to Edit Multiple Shots:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Click on the checkboxes of the shots you want to edit.</span></li>
+      <li><span>Click <img src="{{ url_for('static', filename='help/images/edit-selected.png') }}" alt="Edit Selected"
+            class="inline w-159 h-46 mx-1 align-middle" /> on top far right of the Shots page.</span></li>
+      <li><span>That opens a new modal:</span></li>
+      <img src="{{ url_for('static', filename='help/images/bulk-edit-shots.png') }}" alt="Edit Multiple Shots"
+        class="h-auto align-middle" />
+      <li><span>Change the status, assignee, and/or due dates for whatever steps you want.</span></li>
+      <li><span>Click Save Changes to make the changes, or Cancel to get out of the modal without changes.</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="assign-shot">Assigning single shots</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      A UPM or coordinator can assign a single shot.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/shot-assign.png') }}" alt="Assign Shot"
+      class="h-auto align-middle" />
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Locate the shot.</span></li>
+      <li><span>Click on the Assignee tab (--Unassigned--).</span></li>
+      <li><span>Select the artist's name</span></li>
+    </ol>
+    </ol>
+
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-assets">View Assets</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>ASSETS</strong> to the right of the film in which you want to view its assets, will take
+      you
+      to the assets page.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/film-assets.png') }}" alt="Assets page"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      This page shows each type of asset and all the statuses for each step of the production. If you hover overtop one
+      of the pie
+      charts, you can see the exact number of assets at each stage.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on one of the categories to the left will take you to all the assets in that category.
+    </p>
+
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-assets">Adding an asset</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>Add New Asset</strong> on the top right of the Assets page, will open an Add Asset modal.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/add-asset.png') }}" alt="Add Asset"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">Follow these steps to add an asset:</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>Enter Asset Name</span></li>
+      <li><span>Select a Category from the dropdown</span></li>
+      <li><span>Change Due Date - This will be filled in by the dates in the timeline. You can still change them.</span></li>
+    </ol>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-assets">Editing an Asset</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      To edit an asset, click the <strong>Edit</strong> button next to the asset in the asset category page. This opens
+      a modal where you can update the
+      asset name, category, and due date.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/edit-asset.png') }}" alt="Edit Asset"
+      class="h-auto align-middle">
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="delete-assets">Deleting an Asset</h3>
+    <p class="mb-6 text-lg leading-relaxed">A user can delete one or more assets at a time.</p>
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+      <li><span>To delete an asset, you must click on the checkbox to the far left of the assets. You can click multiple
+          assets for
+          this.</span></li>
+      <li><span>Click on Delete Selected button</span></li>
+      <li><span>Click Yes if you want to delete it or cancel to not delete it.</span></li>
+    </ol>
+    <p class="mb-6 text-lg leading-relaxed">
+      To delete an asset, you must click on the checkbox to the far left of the assets. You can click multiple assets
+      for this.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-yellow-400">⚠️ WARNING:</strong> Deleting an asset(s) will permanently remove the asset(s)
+      from the database.
+    </div>
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-assets">View Assets Category</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      Clicking on the <strong>ASSET CATEGORY</strong> to the left of the table on the Assets page, will take you
+      to that category page.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/view-asset-category.png') }}" alt="Assets Category page"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      This page shows each step of each asset in the category. A user can edit each status or select multiple assets to
+      edit them as a group.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">
+      There is also an icon next to the asset name that shows if the asset is available as an asset to be used in
+      production.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/asset-saved.png') }}" alt="Assets Saved"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      The X means it hasn't been created or saved and the folder icon means it is available to be used in production.
+    </p>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="Assets-location">Assets Location on Server</h3>
+    <img src="{{ url_for('static', filename='help/images/server-rigs-location.png') }}" alt="Rigs Location"
+      class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+      The actual asset files are located on the local server. The directory is C:/Films/NAME OF FILM/Assets/TYPE OF ASSET/name of the file
+    </p>
+    <div class="bg-yellow-100 p-4 rounded-xl shadow-lg mb-8 text-black">
+      <strong class="text-black">Note:</strong> The directories are created when the Film is created. The asset files are created and edited through
+      either Maya or Harmony.
+    </div>
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+
+    <h1 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="film-submit">SUBMITTTING SHOTS/ASSETS</h1>
+    <p class="mb-4">This takes the guesswork out of figuring out where your shots are saved. This process is super
+      simple but make sure to follow the steps carefully.</p>
+    <p class="text-lg mb-4">Software:</p>
+    <ul class="list-disc list-inside text-lg space-y-2">
+      <li><a href="{{ url_for('help.help_films') }}#maya-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Maya</a></li>
+      <li><a href="{{ url_for('help.help_films') }}#harmony-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Harmony</a></li>
+      <li><a href="{{ url_for('help.help_films') }}#sbpro-walk-through"
+          class="font-semibold text-blue-400 hover:text-yellow-500">Storyboard Pro</a></li>
+    </ul>
+
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="film-walk-through">Shot Walk-through</h3>
+    <p>The coordinator or UPM will assign a shot with a due date.</p>
+    <img src="{{ url_for('static', filename='help/images/shot-assigned.png') }}" alt="Shot Assigned"
+      class="h-auto align-middle" />
+    <p>The user will then go to their dashboard to see what is all assigned to them and when they are due. When the user starts working on the shot, they should change the status to IN PROGRESS.</p>
+    <img src="{{ url_for('static', filename='help/images/dashboard-shot-assigned.png') }}" alt="Dashboard Shot Assigned"
+      class="h-auto align-middle" />
+      <p class="mb-6 text-lg leading-relaxed">
+        Now the user is ready to work on the shot or asset, in Maya, Storyboard Pro, or Harmony.
+      </p>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="maya-walk-through">Maya Pipeline</h3>
+    <div class="bg-green-600 border-l-4 border-green-800 p-3 mt-1 rounded text-sm">
+      <strong>TIP:</strong> This next step is for ANY FILM SHOT in maya. Whether it's a new shot or if you are working
+      on a current shot.
+    </div>
+    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="maya-walk-through-shots">Shots</h3>
+      <p><span class="text-yellow-400 font-semibold">Creating a shot for the film.</span></p>
+        <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+          <li>Open Maya</li>
+          <li>
+            Click on the Film Shot button
+            <img src="{{ url_for('static', filename='help/images/clapboard.png') }}" alt="Film Shot Button"
+              class="inline w-6 h-6 mx-1 align-middle" />
+            in the GAA shelf
+          </li>
+          <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+            <li>This will open a window to simply let you select the shot you are working on.</li>
+            <img src="{{ url_for('static', filename='help/images/create-shot.png') }}" alt="Create Shot"
+                class="w-[30%] h-auto align-middle" />
+            <li>Select the Film from the film dropdown.</li>
+            <li>Select the Scene from the dropdown and then the shot from the dropdown.</li>
+            <li>Select the STEP in the process you are working.</li>
+            <li>Click on Create Shot File</li>
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+              <strong>📌REMEMBER:</strong> The name of the file will show up just above this button. Make sure it's
+              correct!
+            </div>
+            <li>This will load the file, rigs, and any props that are used in the shot. It will also save the scene to
+              the correct location.</li>
+          </ol>
+          <li>IF a file exists, the software will give a warning.</li>
+          <img src="{{ url_for('static', filename='help/images/file-exist.png') }}" alt="File exists"
+              class="w-[50%] h-auto align-middle" />
+              <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+              <li>Open Existing - If you want to work on the current version, click on this button. It will load the current version.</li>
+              <li>Open Older - This will allow you to open an older version. It will take you to where the files are located. Pick which version you want to work on.</li>
+                        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+                          <strong>NOTE:</strong> USUALLY, you will just click on OPEN EXISTING. Be very careful with this step. It's best to ask your coordinator.
+                        </div>
+              <li>New Version - This starts a brand new scene with nothing in it. Only use this if directed by your coordinator.</li>
+              </ol>
+          <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+            <strong>NOTE:</strong> If you are working on the next Step - IE Animation after layout is completed, a
+            different warning will popup.
+          </div>
+          <img src="{{ url_for('static', filename='help/images/previous-step.png') }}" alt="Previous Step"
+              class="w-[30%] h-auto align-middle" />
+          <li>If you want to work on the current step, click on Open Previous. IF moving to the next step, Click on New
+            (step) shot. This will open the last step and rename it correctly.</li>
+        </ol>
+
+      <div class="my-8">
+        <hr class="border-gray-700">
+      </div>
+
+      <p><span class="text-yellow-400 font-semibold" id="maya-walk-through-playblast">Creating a PLAYBLAST, or MOVIE file</span></p>
+      <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+        <li><span class="font-semibold">Click on the GAA Playblast button </span><img
+            src="{{ url_for('static', filename='help/images/clapboard.png') }}" alt="Version Button"
+            class="inline w-6 h-6 mx-1 align-middle" /></li>
+        <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+          <li>This will open the playblast window. It's SUPER EASY. It will name your file and put in the place where
+            you told the Assignment button to save your maya file. It will save your movie files in the correct places.
+          </li>
+          <div class="mt-2">
+            <img src="{{ url_for('static', filename='help/images/Playblast.png') }}" alt="Create Assignment"
+              class="w-[30%] shadow" />
+          </div>
+          <li><span class="font-semibold">To generate a movie FOR YOU - NOT to submit!</span></li>
+          <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+            <li>Simply Click on the MOVIE FOR YOU button</li>
+            <li>This will save an .avi file in the same place where you save your scenes. No need to save it anywhere
+              else. The code does it for you.</li>
+          </ol>
+          <li><span class="font-semibold">To submit your shot for review:</span></li>
+          <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+            <li>Click Override Step checkbox </li>
+            <img src="{{ url_for('static', filename='help/images/override-step.png') }}" alt="Override Step"
+              class="inline w-[30%] mx-1 align-middle" />
+            <li>Select the step that you are submitting.</li>
+            <li>Click SUBMIT SHOT</li>
+            <li>That's it! The code will automatically put the movie file in the right place. It will also create an
+              .avi file in the folder you selected when creating the assignment, so you can view when you like.</li>
+          </ol>
+          <li><span class="text-blue-400 font-semibold">If you have audio, the code will let you know it's in the file.
+              Just click on the checkbox to include audio.</span></li>
+        </ol>
+        </li>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+          <strong>📌REMEMBER:</strong> Need to see where your shot statuses are?
+          <a href="{{ url_for('help.help_overview') }}#dashboard"
+            class="underline font-semibold text-yellow-800 hover:text-yellow-700">
+            Go to the DASHBOARD
+          </a>.
+        </div>
+        <li><span class="text-yellow-400 font-semibold">The STATUS of your assignment is now switched to Submitted.</li>
+        <li><span class="text-white font-semibold">You MAY check on the status OR <a
+              href="{{ url_for('help.help_grading') }}#changing-status"
+              class="underline font-semibold text-blue-400 hover:text-yellow-700">
+              change your status</a> of your shot once it has been graded.</li>
+
+
+      <div class="my-8">
+        <hr class="border-gray-700">
+      </div>
+        
+
+    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="maya-walk-through-assets">Assets</h3>
+        <p><span class="text-yellow-400 font-semibold">Creating an asset for the film.</span></p>
+          <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+            <li>Open Maya</li>
+            <li>
+              Click on the Film Create Asset button
+              <img src="{{ url_for('static', filename='help/images/assets.png') }}" alt="Film Asset Button"
+                class="inline w-6 h-6 mx-1 align-middle" />
+              in the GAA shelf
+            </li>
+            <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+              <li>This will open a window to simply let you select the asset you are working on.</li>
+              <img src="{{ url_for('static', filename='help/images/create-asset.png') }}" alt="Create Asset"
+                  class="w-[50%] h-auto align-middle" />
+              <li>Select the Film from the film dropdown.</li>
+              <li>Select the Asset Type from the dropdown.</li>
+              <li>Select the Asset Name from the dropdown</li>
+              <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+                <strong>WARNING:</strong> If your asset isn't on the list, let your coordinator know!
+              </div>
+              <li>If this is the first time creating the asset, a blank maya scene will open. It will be named correctly and put in the right spot.</li>
+            </ol>
+            <li>Click on Create Asset File</li>
+            <li>IF a file exists, the software will give a warning.</li>
+            <img src="{{ url_for('static', filename='help/images/asset-file-exist.png') }}" alt="Asset File exists"
+                class="w-[50%] h-auto align-middle" />
+            <li>How would you like to proceed?</li>
+            <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+              <p><strong>NEW VERSION</strong></p>
+              <p>This will create a COPY of the previous version but will have your username on it and it will bump up a version.</p>
+              <p><strong>NEW FILE</strong></p>
+              <p>This will create a brand new EMPTY FILE but will have your username on it and it will bump up a version.</p>
+              <img src="{{ url_for('static', filename='help/images/asset-new-version.png') }}" alt="Asset New Version"
+                class="w-[50%] h-auto align-middle" />
+              <p><strong>OPEN EXISTING</strong></p>
+                <p>This will open the current version but will replace your username and it will bump up a version.</p>
+                <img src="{{ url_for('static', filename='help/images/asset-user-warning.png') }}" alt="Asset User Warning"
+                  class="w-[30%] h-auto align-middle"/>
+          </ol>
+        </ol>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="harmony-walk-through">Harmony Pipeline</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+        Coming SOON!
+    </p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="sbpro-walk-through">Storyboard Pro Pipeline</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+        Students working in Storyboard Pro should use the Toonboom shortcuts to open new files and work on existing files.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">
+        The toonboom tools for both SBPro and Harmony will be on your desktop.
+    </p>
+    <p class="mb-4 text-lg">
+      Creating <a href="{{ url_for('help.help_sbpro') }}#sbpro-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">THUMBNAILS</a> from scratch, or working on
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">REVISIONS</a>.
+    </p>
+      
+    <p class="mb-6 text-lg">
+      Creating <a href="{{ url_for('help.help_sbpro') }}#sbpro-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">STORYBOARDS</a> from thumbnails, or working on
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">REVISIONS</a>.
+    </p>
+    
+    <p class="mb-6 text-lg">
+      Exporting <a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-thumbnails"
+        class="font-bold text-blue-400 hover:text-yellow-400">Thumbnails</a> or
+      <a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-storyboards"
+        class="font-bold text-blue-400 hover:text-yellow-400">Storyboards</a>.
+      </p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="config-editor">Config Editor</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      In order to make Maya, Harmony, and Storyboard Pro compatible with this application, we must create a config
+      editor.
+      This editor will show all the films, scenes, shots, and assets that are to be used in the films for the
+      semester.
+      Follow the intuitive instructions to creating a config file for each software.
+    </p>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+      <strong>📌 NOTE:</strong> It's best to do the config editor after creating the film and scenes/shots/assets as
+      this editor gets all the information from those scenes/shots/assets.
+    </div>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-yellow-400">⚠️ WARNING:</strong> This should ONLY be done by an instructor with all other
+      instructors aware, at the beginning of each semester. All tools are based on this editor. It will not be able to
+      be
+      used after the semester starts.
+    </div>
+
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+        <li>To speed the process, Load an Old Config. This will allow you to locate an old config file so you can edit
+          that
+          instead of starting from scratch.</li>
+        <li>Select <strong>Semester</strong> from dropdown.</li>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+          <strong>📌 NOTE:</strong> If the semester is different than is in the initial dropdown, you will get a
+          warning,
+          saying the Switching will reset everything. When first starting, this is ok. Select Yes, Discard changes.
+        </div>
+        <li>Click the <strong>+ Add Film</strong> button on the main modal and select a film you want to add.</li>
+        <img src="{{ url_for('static', filename='help/images/config-add-film.png') }}" alt="Config Add Film"
+          class="rounded-xl shadow-lg mt-4 w-[511px] h-[298px]">
+        <li>Click <strong>+ Add Scenes</strong> button under the Film.</li>
+        <img src="{{ url_for('static', filename='help/images/config-add-scenes.png') }}" alt="Config Add Scenes"
+          class="rounded-xl shadow-lg mt-4 w-[510px] h-[345px]">
+        <li>A window will open asking if you want to add All Remaining Scenes or No, let me choose. Adding will add all
+          scenes, choosing will bring up another window.</li>
+        <img src="{{ url_for('static', filename='help/images/config-select-scenes.png') }}" alt="Config Select Scenes"
+          class="rounded-xl shadow-lg mt-4 w-[502px] h-[415px]">
+        <li>Click on the checkboxes next to the scenes you want to add.</li>
+        <img src="{{ url_for('static', filename='help/images/config-scenes.png') }}" alt="Config Editor Scenes"
+          class="rounded-xl shadow-lg mt-4 w-[875px] h-[675px]">
+        <li>You can add shots by clicking the <strong>+ Add Shots</strong> button.</li>
+        <img src="{{ url_for('static', filename='help/images/config-add-shots.png') }}" alt="Config Add Shots"
+          class="rounded-xl shadow-lg mt-4 w-[510px] h-[340px]">
+        <li>A window will open asking if you want to add All Remaining Shots or No, let me choose. Adding will add all
+          shots,
+          choosing will bring up another window.</li>
+        <img src="{{ url_for('static', filename='help/images/config-select-shots.png') }}" alt="Config Select Shots"
+          class="rounded-xl shadow-lg mt-4 w-[492px] h-[428px]">
+        <li>Click on the checkboxes next to the shots you want to add.</li>
+        <li>Now you are ready to add assets. Each shot is divided so you can add assets to each shot.</li>
+        <img src="{{ url_for('static', filename='help/images/config-assets.png') }}" alt="Config Assets"
+          class="rounded-xl shadow-lg mt-4 w-[821px] h-[613px]">
+        <li>You can add assets by clicking the <strong>Select Assets</strong> for each Shot.</li>
+        <img src="{{ url_for('static', filename='help/images/config-add-assets.png') }}" alt="Config Add Assets"
+          class="rounded-xl shadow-lg mt-4 w-[439px] h-[398px]">
+        <li>Assets are available if you see a folder next to the name. If there is an x, that asset isn't production
+          ready. You can still add it to the config file.</li>
+        <li>Each asset will be shown in its own category. If you minimize the shot window, the assets will still be
+          listed under the Select Assets button.</li>
+        <img src="{{ url_for('static', filename='help/images/config-assets-done.png') }}" alt="Config Assets Done"
+          class="rounded-xl shadow-lg mt-4 w-[757px] h-[519px]">
+        <li>You open/close or delete assets/shots/scenes by clicking the +- button or the x button to delete.</li>
+        <li>Once complete, you can Save a Draft to continue working on later or Save JSON to save the config file</li>
+        <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+          <strong class="text-green-400">NOTE</strong> Saving the JSON file will put the config file in the correct
+          place in
+          Maya. Nothing else needs to be done.
+        </div>
+    </ol>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+        
+        
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="creating-folders">Creating Folders</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+      For Maya and Toonboom to work with Shot Tracker, the user must create the folders needed for those applications. After you have created or edited
+      the config file (see above), you can click on the Folders button on the main Film Page.
+    </p>
+        <img src="{{ url_for('static', filename='help/images/films-header.png') }}" alt="Films Header"
+              class="w-[40%] h-auto my-4" />
+    <p class="mb-6 text-lg leading-relaxed">
+      A popup window will ask if you want to generate the folders. Take note of the date that the config file was created! You may need to update
+      that config file first.
+    </p>
+            <img src="{{ url_for('static', filename='help/images/generate-folders.png') }}" alt="Generate Folders"
+              class="w-[40%] h-auto my-4" />
+
+    <p class="mb-6 text-lg leading-relaxed">
+      Click on Yes, generate, to create the folders.
+    </p>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+      <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="assign">Assigning Shots/Assets</h3>
+      <p class="mb-6 text-lg leading-relaxed">
+        Assigning or casting is done through here. This page will help the UPM and coordinators figure out workload for each artist.
+        This takes most of the guesswork out of assigning shots.
+      </p>
+      <img src="{{ url_for('static', filename='help/images/assign-button.png') }}" alt="Assign Button"
+        class="h-auto align-middle" />
+      <p class="mb-6 text-lg leading-relaxed">
+        Click on this Assign button to open the Assign window.
+      </p>
+      <img src="{{ url_for('static', filename='help/images/assign-overview.png') }}" alt="Assign Overview"
+        class="w-[80%] h-auto my-4" />
+      
+      <p class="mb-6 text-lg leading-relaxed">
+        The page is designed like the following.
+      </p>
+
+          <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+            <li>The header includes the Name of the film, Total Shots, how many are unassigned, and how many
+              artists are on the project.</li>
+            <li>To expand/collapse any folder, simply click on the expand/collapse button. </li>
+            <li>Click the <strong>Artist Load</strong> button will show which artist has which shots. This is used ONLY as a visual reminder. You can't add/delete who
+            works on the shot from here.</li>
+            <img src="{{ url_for('static', filename='help/images/assign-artist-load.png') }}" alt="Assign Artist Load"
+              class="rounded-xl shadow-lg mt-4 w-[1448x] h-[712px]">
+            <li>Each heading will have the number of shots or assets in each department.</li>
+            <img src="{{ url_for('static', filename='help/images/assign-headings.png') }}" alt="Assign Headings"
+              class="rounded-xl shadow-lg mt-4 w-[1459px] h-[132px]">
+
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+                  <strong>📌 NOTE:</strong> Make sure to add the difficulty of each scene and shot prior to assigning.
+                </div>
+            <li>Assign difficulty in Scenes-Thumbnails and in Animation</li>
+            <img src="{{ url_for('static', filename='help/images/assign-difficulty.png') }}" alt="Assign Difficulty"
+              class="w-[80%] h-auto my-4">
+
+                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+                  <strong>📌 NOTE:</strong> Assigning difficulty will help make shot assignment much easier.
+                </div>
+            <li>By clicking to expand each heading, you will see the shot or asset, assigned artist, due, status</li>
+            <img src="{{ url_for('static', filename='help/images/assign-assign-shots.png') }}" alt="Config Select Scenes"
+              class="w-[80%] h-auto my-4">
+            <li>This is where you assign artists and the due date. The status will change in the Markup, not here.</li>
+            <li>The best way to use this is to go back and forth between the Artist Load and each header.</li>
+          </ol>
+
+
+  </div>
+
+
+
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const headings = document.querySelectorAll("h3[id]");
+    const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+    const observer = new IntersectionObserver(
+      entries => {
+        for (let entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            tocLinks.forEach(link => {
+              link.classList.remove("text-yellow-400", "font-semibold");
+              if (link.getAttribute("href") === `#${id}`) {
+                link.classList.add("text-yellow-400", "font-semibold");
+              }
+            });
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    headings.forEach(h => observer.observe(h));
+  });
+</script>
+{% endblock %}

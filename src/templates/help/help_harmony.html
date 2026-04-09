@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+    {% include 'partials/help_sidebar.html' %}
+
+    <div class="flex-1 bg-red-950 text-white p-6 rounded-lg shadow">
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="sbpro-walk-through">Storyboard Pro Pipeline</h3>
+        <div class="bg-green-600 border-l-4 border-green-800 p-3 mt-1 rounded text-sm">
+            <strong>TIP:</strong> This next step is for ANY FILM SHOT in SBPro. Whether it's a new shot or if you are working on
+            a current shot.
+        </div>
+        
+        <h4 class="text-2xl font-semibold text-yellow-400 mt-10 mb-2">Creating Thumbnails</h4>
+        <p>Click on the UC_SB_Creator <img src="{{ url_for('static', filename='help/images/toonboom tools/thumb_icon.png') }}"
+                alt="Thumb Icon" class="inline w-6 h-6 mx-1 align-middle" />
+        </p>
+        <p><img src="{{ url_for('static', filename='help/images/toonboom tools/thumb-open-modal.png') }}" alt="Open Modal"
+                class="w-[40%] h-auto my-4" /></p>
+        <p>Select the film and scene you're working on.</p>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-4 rounded text-sm">
+            <strong>📌 NOTE:</strong> If your scene isn’t in the dropdown, notify your UPM or instructor.
+        </div>
+        <p>Click <strong>Open or Create Thumbnail or Storyboard</strong>.</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">New Thumbnails</h4>
+        <p>A new file is created automatically. If a version already exists, a popup will show:</p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/thumb-exists.png') }}" alt="Thumbnail Exists"
+            class="w-[40%] h-auto my-4" />
+        <ul class="list-disc list-inside mb-6">
+            <li><strong>Open</strong> opens the current file (ok if it’s your own).</li>
+            <li><strong>Create</strong> duplicates it and bumps the version (best practice).</li>
+        </ul>
+        <p>Storyboard Pro will open and set up all folders and naming correctly.</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Adding Audio</h4>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-audio-track.png') }}" alt="Audio Track"
+            class="w-[40%] h-auto my-4" />
+        <ol class="list-decimal list-inside mb-6">
+            <li>Click the audio track</li>
+            <li>Go to <strong>File &rarr; Import &rarr; Sound Clips</strong></li>
+            <li>Navigate to: <code>D:/Films/FILM NAME/Audio/For Scenes</code></li>
+            <li>Select the WAV for your scene</li>
+            <li>Click <strong>Current Audio Track</strong> checkbox and OK</li>
+        </ol>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Naming the Project</h4>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-title.png') }}" alt="SBPro Title"
+            class="w-[40%] h-auto my-4" />
+        <p>Press <kbd>ALT + RETURN</kbd> or go to <strong>Storyboard &rarr; Properties</strong>. Change the title to the name of
+            your film and click OK.</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Naming Shots (Panels)</h4>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-panel-name.png') }}" alt="Panel Name"
+            class="w-[40%] h-auto my-4" />
+        <p>Name the first panel <code>010</code>. Increment by 10 for each shot (020, 030, etc).</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Creating Panels and Shots</h4>
+        <p><strong>New Panel:</strong></p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/new-panel.png') }}" alt="New Panel"
+            class="w-[40%] h-auto my-4" />
+        <p>Make sure the current panel has a red outline, then press <kbd>P</kbd>.</p>
+        <p><strong>New Shot:</strong></p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/new-shot.png') }}" alt="New Shot"
+            class="w-[40%] h-auto my-4" />
+        <p>Click outside the current panel, then press <kbd>P</kbd>.</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Change Layer Name</h4>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/top-layer.png') }}" alt="Top Layer"
+            class="w-[40%] h-auto my-4" />
+        <p>Rename the A layer to <code>THUMB</code>.</p>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Exporting Movie – Thumbnails</h4>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-export.png') }}" alt="Export Dialog"
+            class="w-[40%] h-auto my-4" />
+        <p>Go to <strong>File &rarr; Export &rarr; Movie</strong>. Save to: <code>D:/Films/FILM NAME/Thumbnails</code></p>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-4 rounded text-sm">
+            <strong>📌 File Pattern:</strong> <code>%t_010_THUMB_v1</code>
+        </div>
+        <p>Format: <strong>H.264/MPEG-4 (.mov)</strong></p>
+        <p>Export Range: <strong>All</strong></p>
+        <p><strong>Burn-in Options:</strong></p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-burnin.png') }}" alt="Burn-in"
+            class="w-[30%] h-auto my-2" />
+        <ul class="list-disc list-inside mb-6">
+            <li>Print Scene names and Panel numbers</li>
+        </ul>
+        <p><strong>Camera Grids:</strong></p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/sbpro-cam-grids.png') }}" alt="Camera Grids"
+            class="w-[30%] h-auto my-2" />
+        <ul class="list-disc list-inside mb-6">
+            <li>Title Safe Area</li>
+        </ul>
+        
+        <h4 class="text-2xl font-semibold text-yellow-400 mt-10 mb-2">Storyboards</h4>
+        <p>Repeat steps using the same UC_SB_Creator tool. If thumbnails are approved, the tool will guide you into storyboard
+            mode.</p>
+        <img src="{{ url_for('static', filename='help/images/toonboom tools/thumb-start-sbs.png') }}" alt="Start SB"
+            class="w-[40%] h-auto my-4" />
+        <ul class="list-disc list-inside mb-6">
+            <li><strong>Open:</strong> Opens thumbnails (not typical for new SB)</li>
+            <li><strong>Create SB:</strong> Duplicates thumbnails and prepares SB version</li>
+        </ul>
+        
+        <h4 class="text-xl font-semibold text-green-400 mt-10 mb-2">Exporting Movie – Storyboards</h4>
+        <p>Same export steps as thumbnails, but...</p>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-4 rounded text-sm">
+            <strong>📌 File Pattern:</strong> <code>%t_010_SB_v1</code>
+        </div>
+        <p>Save in: <code>D:/Films/FILM NAME/Thumbnails</code> (yes, still Thumbnails folder!)</p>
+        <p>All export settings and options remain the same as above.</p>
+
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const headings = document.querySelectorAll("h3[id]");
+            const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+            const observer = new IntersectionObserver(
+                entries => {
+                    for (let entry of entries) {
+                        if (entry.isIntersecting) {
+                            const id = entry.target.getAttribute("id");
+                            tocLinks.forEach(link => {
+                                link.classList.remove("text-yellow-400", "font-semibold");
+                                if (link.getAttribute("href") === `#${id}`) {
+                                    link.classList.add("text-yellow-400", "font-semibold");
+                                }
+                            });
+                        }
+                    }
+                },
+                { threshold: 0.3 }
+            );
+
+            headings.forEach(h => observer.observe(h));
+        });
+    </script>
+    {% endblock %}

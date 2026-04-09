@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto my-12 px-6 relative z-20">
+
+    {% include 'partials/help_sidebar.html' %}
+
+    <div
+        class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+        <h2 class="text-4xl font-bold mb-6" id="classes">🎯 Getting Started Classes</h2>
+        <p class="mb-6 text-lg leading-relaxed">
+            This section will guide you through the initial setup, including creating classes, adding assignments,
+            configuring files, and adding students. Start here before moving on to the rest!
+        </p>
+        <p>This section is intended ONLY to show the steps. Dig deeper into the steps on the left side of the help to learn exactly how to do each step.</p>
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="users">CLASSES: Beginning of the Semester</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Learn how to set up your classes, including adding assignments, creating configuration files, and adding
+            students.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="add-class">1 - Adding a Class</h3>
+        <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>Add Class</strong> button will open this window:
+        </p>
+        <img src="{{ url_for('static', filename='help/images/add_class_modal.png') }}" alt="Add Class"
+            class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="add-students-to-class">2 - Adding Students to
+            a Class</h3>
+        <p class="mb-6 text-lg leading-relaxed">To add students, navigate to the main Classes page and select the
+            desired class:</p>
+        <img src="{{ url_for('static', filename='help/images/classes_main.png') }}" alt="Classes"
+            class="rounded-xl shadow-lg mb-8 w-full md:w-3/4">
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="add-assignments-to-class">3 - Adding
+            Assignments to a Class</h3>
+        <p class="mb-6 text-lg leading-relaxed">To add assignments, click the <strong>Add New Assignment</strong>
+            button. This opens a modal where you can enter assignment details:</p>
+        <img src="{{ url_for('static', filename='help/images/add-assignment-modal.png') }}" alt="Add Assignment"
+            class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="config-editor">4 - Creating a Config Editor
+        </h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            The config editor is essential for ensuring assignments are correctly named and placed in the right
+            directories for Maya. Make sure to add all your classes before creating the config editor.
+        </p>
+        <img src="{{ url_for('static', filename='help/images/config-editor.png') }}" alt="Config Editor"
+            class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
+        <p class="mb-6 text-lg leading-relaxed">
+            For detailed information about how to use the config editor, click <a
+                href="{{ url_for('help.help_classes') }}#config-editor"
+                class="font-semibold text-blue-400 hover:text-yellow-500">HERE</a>
+        </p>
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="walkthrough">5 - Shot Walk Through</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            To see how students complete a shot walkthrough, check out the detailed guide <a
+                href="{{ url_for('help.help_classes') }}#class-submit"
+                class="underline font-semibold text-yellow-400 hover:text-yellow-500">HERE</a>.
+        </p>
+
+        <div class="my-8">
+            <hr class="border-gray-700">
+        </div>
+
+        <h2 class="text-4xl font-bold mb-6" id="films">🎯 Getting Started Films</h2>
+        <p class="mb-6 text-lg leading-relaxed">
+            This section will guide you through the initial setup, including creating films, adding scenes/shots/assets,
+            configuring
+            files, and adding crew. Start here before moving on to the rest!
+        </p>
+        <p>This section is intended ONLY to show the steps. Dig deeper into the steps on the left side of the help to learn
+            exactly how to do each step.</p>
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="add-film">1 - Adding a Film</h3>
+        <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>+ Add Film</strong> button will open this window:
+        </p>
+        <img src="{{ url_for('static', filename='help/images/add-film.png') }}" alt="Add Film"
+            class="shadow-lg mb-8 w-full md:w-2/3">
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="add-crew">2 - Adding Crew</h3>
+        <p class="mb-6 text-lg leading-relaxed">Clicking the <strong>Crew</strong> button will open this window:
+        </p>
+        <img src="{{ url_for('static', filename='help/images/crew.png') }}" alt="Crew"
+            class="shadow-lg mb-8 w-full md:w-2/3">
+
+        <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="pre-production">3 - Finishing Pre-Production and Creating Scenes</h3>
+        <p class="mb-6 text-lg leading-relaxed">After a film is created and crew is added, you can track pre-production.
+        </p>
+        <img src="{{ url_for('static', filename='help/images/pre-production.png') }}" alt="Pre-Production" class="w-[90%] h-auto">
+            <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+                <p>A coordinator or UPM can change the status of Pre-Production</p>
+                <p>Once the pre-production is approved, a window will pop up:</p>
+                <p><img src="{{ url_for('static', filename='help/images/start-creating-scenes.png') }}" alt="Create Scenes"
+                        class="w-[40%] h-auto align-middle" /></p>
+                <p>Click Go to Scenes</p>
+                <p>This will bring up the Add Scene modal</p>
+                <img src="{{ url_for('static', filename='help/images/add-scenes.png') }}" alt="Add Scene" class="h-auto align-middle" />
+
+            </ol>
+
+            <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="pre-production">4 - Creating Assets</h3>
+            <p class="mb-6 text-lg leading-relaxed">Assets MAY be created before pre-production is done.
+            </p>
+            <p class="mb-6 text-lg leading-relaxed">
+                Clicking on the <strong>ASSETS</strong> to the right of the film in which you want to view its assets, will take
+                you
+                to the assets page.
+            </p>
+            <img src="{{ url_for('static', filename='help/images/film-assets.png') }}" alt="Assets page" class="h-auto align-middle" />
+            <p class="mb-6 text-lg leading-relaxed">
+                Clicking on the <strong>Add New Asset</strong> on the top right of the Assets page, will open an Add Asset modal.
+            </p>
+            <img src="{{ url_for('static', filename='help/images/add-asset.png') }}" alt="Add Asset" class="w-[40%] h-auto align-middle" />
+
+            <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="pre-production">5 - Creating Config File</h3>
+            <p class="mb-6 text-lg leading-relaxed">
+                In order to make Maya, Harmony, and Storyboard Pro compatible with this application, we must create a config
+                editor.
+                This editor will show all the films, scenes, shots, and assets that are to be used in the films for the
+                semester.
+                Follow the intuitive instructions to creating a config file for each software.
+            </p>
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+                <strong>📌 NOTE:</strong> It's best to do the config editor after creating the film and scenes/shots/assets as
+                this editor gets all the information from those scenes/shots/assets.This can be created MULTIPLE TIMES throughout production.
+            </div>
+            <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+                <strong class="text-yellow-400">⚠️ WARNING:</strong> This should ONLY be done by an instructor with all other
+                instructors aware, at the beginning of each semester. All tools are based on this editor. It will not be able to
+                be
+                used after the semester starts.  </div>
+
+            <h3 class="text-3xl font-semibold text-yellow-400 mt-10 mb-4" id="pre-production">6 - Creating Shots</h3>
+            <p class="mb-6 text-lg leading-relaxed">
+                Once Storyboards are completed for a scene, shots can be created. You MAY create shots before the thumbnails are approved but 
+                more often than not, shots get cut. It's best to wait.</p>
+            <p class="mb-6 text-lg leading-relaxed">
+                    Clicking on the Scene number to take you to the Scene page. Then click on the <strong>+ Add Shots</strong> on the top left of the shots page, will open an Add Shot modal.</p>
+            <img src="{{ url_for('static', filename='help/images/add-shot.png') }}" alt="Add Shots" class="h-auto align-middle" />
+
+    <div class="my-8">
+        <hr class="border-gray-700">
+    </div>
+    
+    <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="assign">Assigning Shots/Assets</h3>
+    <p class="mb-6 text-lg leading-relaxed">
+        Assigning or casting is done through here. This page will help the UPM and coordinators figure out workload for each
+        artist.
+        This takes most of the guesswork out of assigning shots.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/assign-button.png') }}" alt="Assign Button"
+        class="h-auto align-middle" />
+    <p class="mb-6 text-lg leading-relaxed">
+        Click on this Assign button to open the Assign window.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/assign-overview.png') }}" alt="Assign Overview"
+        class="w-[80%] h-auto my-4" />
+    
+    <p class="mb-6 text-lg leading-relaxed">
+        The page is designed like the following.
+    </p>
+    
+    <ol class="list-decimal list-inside mb-8 space-y-4 text-lg">
+        <li>The header includes the Name of the film, Total Shots, how many are unassigned, and how many
+            artists are on the project.</li>
+        <li>To expand/collapse any folder, simply click on the expand/collapse button. </li>
+        <li>Click the <strong>Artist Load</strong> button will show which artist has which shots. This is used ONLY as a
+            visual reminder. You can't add/delete who
+            works on the shot from here.</li>
+        <img src="{{ url_for('static', filename='help/images/assign-artist-load.png') }}" alt="Assign Artist Load"
+            class="rounded-xl shadow-lg mt-4 w-[1448x] h-[712px]">
+        <li>Each heading will have the number of shots or assets in each department.</li>
+        <img src="{{ url_for('static', filename='help/images/assign-headings.png') }}" alt="Assign Headings"
+            class="rounded-xl shadow-lg mt-4 w-[1459px] h-[132px]">
+    
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+            <strong>📌 NOTE:</strong> Make sure to add the difficulty of each scene and shot prior to assigning.
+        </div>
+        <li>Assign difficulty in Scenes-Thumbnails and in Animation</li>
+        <img src="{{ url_for('static', filename='help/images/assign-difficulty.png') }}" alt="Assign Difficulty"
+            class="w-[80%] h-auto my-4">
+    
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+            <strong>📌 NOTE:</strong> Assigning difficulty will help make shot assignment much easier.
+        </div>
+        <li>By clicking to expand each heading, you will see the shot or asset, assigned artist, due, status</li>
+        <img src="{{ url_for('static', filename='help/images/assign-assign-shots.png') }}" alt="Config Select Scenes"
+            class="w-[80%] h-auto my-4">
+        <li>This is where you assign artists and the due date. The status will change in the Markup, not here.</li>
+        <li>The best way to use this is to go back and forth between the Artist Load and each header.</li>
+    </ol>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const headings = document.querySelectorAll("h3[id]");
+        const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+        const observer = new IntersectionObserver(
+            entries => {
+                for (let entry of entries) {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute("id");
+                        tocLinks.forEach(link => {
+                            link.classList.remove("text-yellow-500", "font-semibold");
+                            if (link.getAttribute("href") === `#${id}`) {
+                                link.classList.add("text-yellow-500", "font-semibold");
+                            }
+                        });
+                    }
+                }
+            },
+            { threshold: 0.3 }
+        );
+
+        headings.forEach(h => observer.observe(h));
+    });
+</script>
+{% endblock %}

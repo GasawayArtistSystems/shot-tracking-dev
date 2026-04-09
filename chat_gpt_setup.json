@@ -1,0 +1,52 @@
+{
+    "context": {
+      "project": "Node-based Workflow System",
+      "definition": {
+        "nodes": "Steps within an assignment or workflow task, including attributes like position, status, dependencies, and color coding.",
+        "goals": [
+          "View, manage, and track nodes dynamically.",
+          "Support nodes for assignments and future workflows (e.g., films)."
+        ]
+      },
+      "files": [
+        {
+          "name": "app.py",
+          "purpose": "Defines Flask routes for nodes, assignments, and tasks.",
+          "key_functions": [
+            "add_node_page",
+            "edit_node",
+            "view_nodes"
+          ]
+        },
+        {
+          "name": "models.py",
+          "purpose": "Database interaction for nodes and assignments.",
+          "key_functions": [
+            "add_node",
+            "get_nodes",
+            "update_node",
+            "delete_node"
+          ]
+        },
+        {
+          "name": "nodes.py",
+          "purpose": "Additional backend logic for node management.",
+          "key_functions": [
+            "add_node",
+            "get_nodes",
+            "validate_user_permission"
+          ]
+        },
+        {
+          "name": "HTML Files",
+          "files": [
+            "add_node.html",
+            "nodes_list.html",
+            "view_nodes.html"
+          ],
+          "purpose": "Frontend for adding, editing, and viewing nodes."
+        }
+      ]
+    }
+  }
+  

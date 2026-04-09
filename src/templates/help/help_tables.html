@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+    {% include 'partials/help_sidebar.html' %}
+
+    <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 rounded-lg shadow">
+        <h2 class="text-3xl font-bold mb-4" id="timeline-overview">Database Tables</h2>
+        <p class="mb-4">
+            This will list all the tables in the database for Shot Tracker.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">asset_step_assignments</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Where each step of the asset approval process is. User assigned, status, due date.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="add-film">asset_steps</h3>
+        <p class="mb-6 text-lg leading-relaxed">When an asset is assigned to a film, it's setup here. Start date, due date.</p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="edit-film">assets</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            When an asset is created, it's stored here. Name, category. This triggers asset_steps to be filled out.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">assignment_config_presets</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Dealing with the assignment config. This stores any configs the assignment has. Assignment_name, rigs, camera, filename.
+            This stores both assignment both the draft and the assignment_config files.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">assignment_progress_steps</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Stores the progress steps for each assignment. Assignment_id and step_id.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">assignments</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Stores the name of the assignment and what class it's a part of. Start date, completion date, parent_step_id,
+            and progress_step_id.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">bug_reports</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Where all the text for the bug reports are stored. Title, description, email, department, area, priority.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">class_enrollments</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Connects the student with the class and semester. Class_id, user_id, semester_id
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">classes</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Stores all the classes. Name, Code, class number, archived, semester_id, instructor_id
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">film_crew</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Lists all the users in each film crew and what group they are in. Film_id, user_id, group_id
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">film_step_progress</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Used only for pre-production. Shows what step the pre-production is in. Film_id, step_id, node_id.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">films</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Lists the names of the films. Name, description, semester_id, director_id, upm_id, step_id
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">groups</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            All the groups created for the app and what permission level that group has. Name, permission_level, section.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">individual_assignment_statuses</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Stores all the assignment statuses for every student, every step. Individual_assignment_id, step_id, current_status.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">individual_assignments</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Every individual assignment for every student. This is the main table that a lot of other tables play off. Assignment_id,
+            users_id, name, start_date, completion_date, archived.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">links</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Where every link for the workflows and nodes are stored. This shows any crossflows as well. Parent_node_id, child_node_id,
+            step_id, to_flow_id.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">nodes</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Every single node in every workflow. This shows where they are in the hierarchy and in the y position in the workflows.
+            Colors and completion percentage as well. Name, step_id, position, completion_percentage, color.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">preproduction_steps</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Each step for each film preproduction steps. This is how the dropdowns are built. Film_id, step_name, start_date, end_date,
+            color.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">production_steps</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Each step for each film production steps. This is how the dropdowns are built. Film_id, step_name, start_date,
+            end_date,
+            color.
+        </p>
+
+        <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="view-films">scene_progress_steps</h3>
+        <p class="mb-6 text-lg leading-relaxed">
+            Only the progress step of each scene in thumbnails. Scene_id, step_id, status, assigned_to, due_date.
+        </p>
+
+
+    </div>
+
+
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const headings = document.querySelectorAll("h3[id]");
+        const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+        const observer = new IntersectionObserver(
+            entries => {
+                for (let entry of entries) {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute("id");
+                        tocLinks.forEach(link => {
+                            link.classList.remove("text-yellow-400", "font-semibold");
+                            if (link.getAttribute("href") === `#${id}`) {
+                                link.classList.add("text-yellow-400", "font-semibold");
+                            }
+                        });
+                    }
+                }
+            },
+            { threshold: 0.3 }
+        );
+
+        headings.forEach(h => observer.observe(h));
+    });
+</script>
+{% endblock %}

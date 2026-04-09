@@ -1,0 +1,45 @@
+{% extends "admin/settings.html" %}
+{% from "admin/settings_section.html" import settings_section %}
+
+{% block content %}
+{% call settings_section("User Groups", url_for('admin.admin_settings')) %}
+    <!-- Form to Add a New User Group -->
+<form method="POST" action="{{ url_for('admin.manage_user_groups') }}" class="mb-4">
+    <div class="flex flex-col space-y-2">
+        <input type="text" name="group_name"
+            class="w-full border rounded-lg p-2 text-black placeholder-gray-400 focus:ring focus:ring-blue-300"
+            placeholder="Enter new group name" required />
+
+        <select name="section" class="w-full border rounded-lg p-2 text-black focus:ring focus:ring-blue-300">
+            <option value="classes">Class Role</option>
+            <option value="films">Film Role</option>
+        </select>
+
+        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+            Add
+        </button>
+    </div>
+</form>
+
+
+
+    <!-- List of Existing User Groups -->
+    {% if user_groups %}
+    <ul class="bg-black p-4 rounded-lg">
+        {% for group in user_groups %}
+        <li class="flex justify-between items-center bg-red-950 p-3 mb-2 rounded-lg shadow">
+            <span class="text-white">{{ group.name }}</span>
+            <form method="POST" action="{{ url_for('admin.manage_user_groups') }}" class="inline">
+                <input type="hidden" name="group_id" value="{{ group.id }}">
+                <button type="submit" class="bg-red-800 hover:bg-red-600 text-white px-3 py-1 rounded-lg">
+                    Delete
+                </button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-600 text-center">No user groups available.</p>
+    {% endif %}
+{% endcall %}
+{% endblock %}

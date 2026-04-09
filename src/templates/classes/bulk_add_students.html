@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Bulk Add Students to Class</h2>
+    <form action="{{ url_for('bulk_add_students_to_class_route', class_id=class_id) }}" method="POST">
+        <input type="hidden" name="class_id" value="{{ class_id }}">
+
+        <!-- Multi-select dropdown for students -->
+        <div class="mb-3">
+            <label for="student_ids" class="form-label">Select Students</label>
+            <select id="student_ids" name="student_ids" class="form-control" multiple required>
+                {% for student in students %}
+                <option value="{{ student['id'] }}">{{ student['name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Buttons -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Add Students</button>
+            <a href="{{ url_for('view_classes') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

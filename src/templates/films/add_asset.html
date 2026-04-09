@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto max-w-xl bg-red-900 rounded-lg p-6 mt-6">
+    <div class="shadow-lg rounded-lg p-6">
+        <h1 class="text-4xl font-bold text-white mb-6">Add New Asset</h1>
+
+        <form method="POST" action="{{ url_for('films.add_asset', film_id=film_id) }}">
+            <div class="mb-4">
+                <label for="name" class="block text-white mb-2">Asset Name</label>
+                <input type="text" name="name" id="name" class="w-full p-3 rounded text-black" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="category" class="block text-white mb-2">Category</label>
+                <select name="category" id="category" class="w-full p-3 rounded text-black" required>
+                    <option value="Sets">Sets</option>
+                    <option value="BGs">BGs</option>
+                    <option value="Character/Rigs">Character/Rigs</option>
+                    <option value="Props - 3D">Props - 3D</option>
+                    <option value="Props - 2D">Props - 2D</option>
+                    <option value="Light Rigs">Light Rigs</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label for="due_date" class="block text-white mb-2">Due Date (Optional)</label>
+                <input type="date" name="due_date" id="due_date" class="w-full p-3 rounded text-black">
+                <input type="hidden" id="default-weeks" value="{{ default_weeks }}">
+            </div>
+
+            <div class="flex justify-between">
+                <a href="{{ url_for('films.view_assets', film_id=film_id) }}"
+                    class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Add Asset
+                </button>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const weeks = parseInt(document.getElementById("default-weeks").value);
+        const dueInput = document.getElementById("due_date");
+
+        if (weeks && !dueInput.value) {
+            const today = new Date();
+            today.setDate(today.getDate() + weeks * 7); // add N weeks
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            const dd = String(today.getDate()).padStart(2, "0");
+            dueInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+    });
+</script>
+
+
+{% endblock %}

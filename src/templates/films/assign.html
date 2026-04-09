@@ -1,0 +1,881 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set artist_options %}
+    <option value="">— Unassigned —</option>
+    {% for a in artists %}
+        <option value="{{ a.id }}">{{ a.name }}</option>
+    {% endfor %}
+{% endset %}
+
+<div class="min-h-screen bg-[#3a0000] text-white p-8">
+
+<!-- Top: Film + Summary -->
+<div class="flex justify-between items-start mb-6">
+  <div>
+    <h1 class="text-3xl font-bold mb-1">{{ film.name }}</h1>
+    <p class="text-sm text-gray-300">Coordinator Assignment Tool</p>
+  </div>
+
+  <div class="flex flex-col items-end space-y-2">
+    <div class="flex space-x-3">
+      <div class="px-3 py-2 bg-gray-800 rounded-lg text-xs text-gray-200">
+        <div class="font-semibold text-sm">Total Shots</div>
+        <div class="text-lg font-bold">{{ phase_data.total_shots or 0 }}</div>
+      </div>
+      <div class="px-3 py-2 bg-gray-800 rounded-lg text-xs text-gray-200">
+        <div class="font-semibold text-sm">Unassigned</div>
+        <div class="text-lg font-bold text-yellow-300">{{ phase_data.total_unassigned or 0 }}</div>
+      </div>
+      <div class="px-3 py-2 bg-gray-800 rounded-lg text-xs text-gray-200">
+        <div class="font-semibold text-sm">Artists</div>
+        <div class="text-lg font-bold">{{ artists|length }}</div>
+      </div>
+    </div>
+
+    <div class="flex space-x-2">
+      <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-semibold">
+        Auto-Assign
+      </button>
+
+    </div>
+
+    <div class="flex space-x-3 text-xs text-gray-300 mt-1">
+
+      <label class="inline-flex items-center space-x-1 cursor-pointer">
+        <input type="checkbox" class="rounded border-gray-500 bg-gray-700">
+        <span>Show unassigned shots only</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+
+<!-- Artist Load Table -->
+<div class="bg-gray-800 rounded-xl p-4 mb-8 shadow-lg">
+<div class="flex justify-between items-center mb-3">
+
+  <div>
+    <h2 class="text-xl font-semibold">Artist Load</h2>
+    <p class="text-xs text-gray-300">Based on active assignments</p>
+  </div>
+
+  <div class="flex items-center space-x-3">
+    <label class="flex items-center text-xs text-gray-300">
+      <input type="checkbox" id="highlightNoWork" class="mr-2">
+      Highlight artists with no work
+    </label>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('artist-load-body', this)">
+      Collapse
+    </button>
+  </div>
+
+</div>
+
+
+  <div id="artist-load-body" class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Artist</th>
+          <th class="px-3 py-2 text-center">Tasks</th>
+          <th class="px-3 py-2 text-center">Thumb Diff</th>
+          <th class="px-3 py-2 text-center">Anim Diff</th>
+          <th class="px-3 py-2 text-center">Deadline</th>
+          <th class="px-3 py-2 text-center">Total Load</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for a_id, a in artist_load.items() %}
+        <tr class="artist-row border-t border-gray-300 bg-gray-800"
+            data-tasks="{{ a.tasks or 0 }}">
+
+            <!-- Artist name and role -->
+            <td class="px-3 py-2 font-semibold">
+            {{ a.name }}
+            {% if a.role %}
+                <span class="ml-2 text-xs text-gray-400">{{ a.role }}</span>
+            {% endif %}
+            </td>
+
+            <td class="px-3 py-2 text-center">{{ a.tasks }}</td>
+            <td class="px-3 py-2 text-center">{{ a.thumb_diff }}</td>
+            <td class="px-3 py-2 text-center">{{ a.anim_diff }}</td>
+            <td class="px-3 py-2 text-center">{{ a.deadline_load }}</td>
+
+            <!-- Total Load badge -->
+            <td class="px-3 py-2 text-center">
+            {% set load = a.total_load %}
+            {% if a.status == "High" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-red-600/20 text-red-300 text-xs">{{ load }}</span>
+            {% elif a.status == "Medium" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300 text-xs">{{ load }}</span>
+            {% elif a.status == "Low" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-green-600/20 text-green-300 text-xs">{{ load }}</span>
+            {% else %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-green-500/20 text-green-300 text-xs">{{ load }}</span>
+            {% endif %}
+            </td>
+
+            <!-- Status -->
+            <td class="px-3 py-2 text-center">
+            {% if a.status == "High" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-red-600/20 text-red-300 text-xs">High</span>
+            {% elif a.status == "Medium" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300 text-xs">Medium</span>
+            {% elif a.status == "Low" %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-green-600/20 text-green-300 text-xs">Low</span>
+            {% else %}
+                <span class="inline-flex px-2 py-1 rounded-full bg-green-500/20 text-green-300 text-xs">Available</span>
+            {% endif %}
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</div>
+
+
+<!-- Thumbnails Section (Scenes Only) -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-3">
+
+    <div>
+      <h2 class="text-lg font-semibold">Scenes • Thumbnails</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.thumbs_assigned or 0 }}/{{ phase_data.thumb_scene_count or 0 }} assigned • Difficulty affects load
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('thumb-section-body', this)">
+      Collapse
+    </button>
+
+  </div>
+
+  <!-- Collapsible Body -->
+  <div id="thumb-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Scene</th>
+          <th class="px-3 py-2 text-left">Difficulty</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for scene in scenes %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60" data-thumb-row data-scene-id="{{ scene.scene_id }}">
+
+          <!-- Scene number -->
+          <td class="px-3 py-2 font-mono">{{ scene.scene_number }}</td>
+
+          <!-- Difficulty -->
+          <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+              name="thumb_difficulty_{{ scene.scene_id }}" onchange="saveThumbnail({{ scene.scene_id }})">
+              <option value="1" {% if scene.difficulty==1 %}selected{% endif %}>Easy</option>
+              <option value="2" {% if scene.difficulty==2 %}selected{% endif %}>Medium</option>
+              <option value="3" {% if scene.difficulty==3 %}selected{% endif %}>Hard</option>
+            </select>
+          </td>
+
+          <!-- Assigned Artist -->
+          <td class="px-3 py-2">
+            <select class="thumb-assigned bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+              name="thumb_assigned_{{ scene.scene_id }}" onchange="saveThumbnail({{ scene.scene_id }})">
+              <option value="">— Unassigned —</option>
+              {% for a in artists %}
+<option value="{{ a.id }}" {% if scene.thumb_assigned_to|string==a.id|string %}selected{% endif %}>
+  {{ a.name }}
+</option>
+              {% endfor %}
+            </select>
+          </td>
+
+          <!-- Due date -->
+          <td class="px-3 py-2 text-center">
+            <input type="date" class="thumb-due bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+              name="thumb_due_{{ scene.scene_id }}" value="{{ scene.thumb_due_date or '' }}"
+              onchange="saveThumbnail({{ scene.scene_id }})">
+          </td>
+
+          <!-- Status -->
+          <td class="px-3 py-2 text-center">
+            {% set status = scene.thumb_status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+              {% if status == 'Complete' %}
+                bg-green-700 text-green-200
+              {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+              {% else %}
+                bg-gray-700 text-gray-200
+              {% endif %}
+              text-xs">
+              {{ status }}
+            </span>
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- STORYBOARDS SECTION -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">Storyboards</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.storyboard_assigned }}/{{ phase_data.storyboard_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('storyboard-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+
+  <div id="storyboard-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in storyboard_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <!-- Shot number: Scene_Shot -->
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <!-- Artist -->
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+                    name="storyboard_assigned_{{ shot.id }}">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <!-- Due date -->
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="storyboard_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <!-- Status -->
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- LAYOUT SECTION -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">Layout</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.layout_assigned }}/{{ phase_data.layout_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('layout-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+  <div id="layout-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in layout_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <!-- Shot number: Scene_Shot -->
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <!-- Artist -->
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+                    name="layout_assigned_{{ shot.id }}">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <!-- Due date -->
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="layout_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <!-- Status (read-only pill) -->
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- ANIMATION SECTION (with Difficulty) -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">Animation</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.anim_assigned }}/{{ phase_data.anim_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('anim-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+
+  <div id="anim-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Difficulty</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in anim_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <!-- Shot number -->
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <!-- Difficulty (UI only for now) -->
+            <td class="px-3 py-2">
+              <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs" name="anim_diff_{{ shot.id }}"
+                onchange="saveAnimation({{ shot.id }}, {{ shot.step_id }})">
+
+                <option value="1" {% if shot.difficulty==1 %}selected{% endif %}>Easy</option>
+                <option value="2" {% if shot.difficulty==2 %}selected{% endif %}>Medium</option>
+                <option value="3" {% if shot.difficulty==3 %}selected{% endif %}>Hard</option>
+              </select>
+            </td>
+
+            <!-- Artist -->
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48" name="anim_assigned_{{ shot.id }}"
+              onchange="saveAnimation({{ shot.id }}, {{ shot.step_id }})">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <!-- Due date -->
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="anim_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <!-- Status (read-only pill) -->
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+  </div>
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- FX SECTION -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">FX</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.fx_assigned }}/{{ phase_data.fx_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('fx-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+  <div id="fx-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in fx_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+                    name="fx_assigned_{{ shot.id }}">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="fx_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- LIGHTING SECTION -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">Lighting</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.light_assigned }}/{{ phase_data.light_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('light-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+
+  <div id="light-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in light_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+                    name="light_assigned_{{ shot.id }}">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="light_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</section>
+
+
+
+<!-- ======================================= -->
+<!-- COMP SECTION -->
+<!-- ======================================= -->
+<section class="bg-gray-800 rounded-xl p-4 shadow-lg mb-8">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-lg font-semibold">Compositing</h2>
+      <p class="text-xs text-gray-300">
+        {{ phase_data.comp_assigned }}/{{ phase_data.comp_count }} assigned
+      </p>
+    </div>
+
+    <button type="button" class="text-xs px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700"
+      onclick="toggleSection('comp-section-body', this)">
+      Collapse
+    </button>
+  </div>
+
+
+  <div id="comp-section-body" class="overflow-x-auto hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-800 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-3 py-2 text-left">Shot</th>
+          <th class="px-3 py-2 text-left">Assigned Artist</th>
+          <th class="px-3 py-2 text-center">Due</th>
+          <th class="px-3 py-2 text-center">Status</th>
+        </tr>
+      </thead>
+
+        <tbody>
+        {% for shot in comp_shots %}
+        <tr class="border-t border-gray-800 hover:bg-gray-800/60">
+
+            <td class="px-3 py-2 font-mono">
+            {{ shot.scene_number }}_{{ shot.shot_number }}
+            </td>
+
+            <td class="px-3 py-2">
+            <select class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs w-48"
+                    name="comp_assigned_{{ shot.id }}">
+                <option value="">— Unassigned —</option>
+                {% for a in artists %}
+                <option value="{{ a.id }}"
+                    {% if shot.assigned_to == a.id %}selected{% endif %}>
+                    {{ a.name }}
+                </option>
+                {% endfor %}
+            </select>
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            <input type="date"
+                    class="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+                    name="comp_due_{{ shot.id }}"
+                    value="{{ shot.due_date or '' }}">
+            </td>
+
+            <td class="px-3 py-2 text-center">
+            {% set status = shot.status or 'Not Started' %}
+            <span class="inline-flex items-center px-2 py-1 rounded-full
+                {% if status == 'Approved' %}
+                bg-green-700 text-green-200
+                {% elif status == 'In Progress' %}
+                bg-yellow-600/20 text-yellow-300
+                {% elif status == 'Submitted' %}
+                bg-blue-600/30 text-blue-200
+                {% else %}
+                bg-gray-700 text-gray-200
+                {% endif %}
+                text-xs">
+                {{ status }}
+            </span>
+            </td>
+
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+  </div>
+</section>
+
+<!-- Tailwind safelist anchor (keeps dynamic classes from being purged) -->
+<div class="hidden">
+  bg-blue-900/50 ring-4 ring-blue-400 font-bold text-blue-200
+</div>
+
+
+</div>
+
+<script>
+  function toggleSection(id, btn) {
+    const el = document.getElementById(id);
+    el.classList.toggle("hidden");
+
+    if (el.classList.contains("hidden")) {
+      btn.textContent = "Expand";
+    } else {
+      btn.textContent = "Collapse";
+    }
+  }
+
+</script>
+
+<script>
+  function saveThumbnail(sceneId) {
+
+    const difficulty = document.querySelector(`[name="thumb_difficulty_${sceneId}"]`)?.value || null;
+    const assigned_to = document.querySelector(`[name="thumb_assigned_${sceneId}"]`)?.value || null;
+    const due_date = document.querySelector(`[name="thumb_due_${sceneId}"]`)?.value || null;
+
+    fetch(`/films/api/scenes/${sceneId}/thumbnail/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        difficulty,
+        assigned_to,
+        due_date
+      })
+    });
+  }
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const checkbox = document.getElementById("highlightNoWork");
+    const rows = document.querySelectorAll(".artist-row");
+
+    checkbox.addEventListener("change", () => {
+      rows.forEach(row => {
+        const tasks = parseInt(row.dataset.tasks || "0");
+
+        if (checkbox.checked && tasks === 0) {
+          // REMOVE default border + default background
+          row.classList.remove("border-t", "border-gray-300", "bg-gray-800");
+
+          // STRONG highlight
+          row.classList.add(
+            "bg-blue-900",
+            "ring-4",
+            "ring-blue-400",
+            "font-bold",
+            "text-yellow-200"
+          );
+        } else {
+          // REMOVE highlight
+          row.classList.remove(
+            "bg-blue-900",
+            "ring-4",
+            "ring-blue-400",
+            "font-bold",
+            "text-yellow-200"
+          );
+
+          // RESTORE original look
+          row.classList.add("border-t", "border-gray-300", "bg-gray-800");
+        }
+      });
+    });
+  });
+
+</script>
+
+<script>
+  function saveAnimation(shotId, stepId) {
+
+    const difficulty = document.querySelector(
+      `[name="anim_diff_${shotId}"]`
+    )?.value || null;
+
+    const assigned_to = document.querySelector(
+      `[name="anim_assigned_${shotId}"]`
+    )?.value || null;
+
+    const due_date = document.querySelector(
+      `[name="anim_due_${shotId}"]`
+    )?.value || null;
+
+    fetch(`/films/api/shots/${shotId}/animation/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        difficulty,
+        assigned_to,
+        due_date,
+        step_id: stepId
+      })
+    });
+  }
+</script>
+
+{% endblock %}

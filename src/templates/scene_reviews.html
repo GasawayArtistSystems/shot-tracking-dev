@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto mt-8">
+    <h1 class="text-2xl font-bold text-blue-300 mb-4">🎬 Scene Review Clips</h1>
+
+    {% if review_clips %}
+    <div class="grid grid-cols-2 gap-6">
+        {% for clip in review_clips %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-md">
+            <h2 class="text-lg font-semibold text-white">
+                {{ clip.film }} — Scene {{ clip.scene }}
+            </h2>
+            <video controls class="mt-2 w-full rounded-md" src="{{ clip.path }}"></video>
+            <div class="flex items-center justify-between mt-2">
+                <p class="text-gray-400 text-sm">{{ clip.file }}</p>
+                <button onclick="deleteClip('{{ clip.path|replace('\\', '\\\\') }}', this)"
+                    class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg">
+                    🗑️ Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-400">No review clips found yet.</p>
+    {% endif %}
+</div>
+
+<script>
+    async function deleteClip(path, btn) {
+        const confirmResult = await Swal.fire({
+            title: "Delete this review clip?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it",
+        });
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            const res = await fetch("/review/delete_review_clip", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ path }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                await Swal.fire({
+                    title: "Deleted!",
+                    text: "The clip has been removed successfully.",
+                    icon: "success",
+                    confirmButtonColor: "#2563eb",
+                });
+                // Remove the card from the grid
+                btn.closest(".bg-gray-800").remove();
+            } else {
+                Swal.fire({
+                    title: "Error",
+                    text: data.error || "An unknown error occurred.",
+                    icon: "error",
+                    confirmButtonColor: "#2563eb",
+                });
+            }
+        } catch (err) {
+            Swal.fire({
+                title: "Network Error",
+                text: err.message,
+                icon: "error",
+                confirmButtonColor: "#2563eb",
+            });
+        }
+    }
+</script>
+
+
+{% endblock %}

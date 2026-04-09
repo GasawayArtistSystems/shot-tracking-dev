@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto mt-6">
+    <div class="bg-red-900 shadow-lg rounded-lg p-6">
+        <h1 class="text-3xl font-bold text-white mb-6">Edit Default Timelines</h1>
+
+        <form id="timelineForm" action="{{ url_for('films.save_timelines') }}" method="POST">
+            <div id="timelineEditor" class="space-y-6">
+
+                <!-- Collapsible Section Macro -->
+                {% macro collapsible_section(title, content_id) %}
+                <button type="button"
+                    class="w-full flex justify-between items-center bg-red-800 text-yellow-300 px-4 py-2 rounded-lg"
+                    onclick="toggleSection('{{ content_id }}')">
+                    <span class="text-xl font-semibold">{{ title }}</span>
+                    <span id="{{ content_id }}-arrow">▼</span>
+                </button>
+                <div id="{{ content_id }}" class="hidden bg-red-950 p-4 rounded-lg mt-2">
+                    {{ caller() }}
+                </div>
+                {% endmacro %}
+
+                <!-- Assets -->
+                {% call collapsible_section("Assets", "assetsSection") %}
+                {% for category, steps in timelines["Assets"].items() %}
+                <div class="bg-red-800 p-4 rounded-lg mb-4">
+                    <h2 class="text-2xl font-semibold text-yellow-300 mb-3">{{ category }}</h2>
+
+                    <div class="space-y-3">
+                        {% for step in steps %}
+                        <div class="flex items-center space-x-4">
+                            <input type="text" name="Assets[{{ category }}][{{ loop.index0 }}][name]"
+                                value="{{ step['name'] }}" class="w-1/2 p-2 rounded border text-black" />
+
+                            <input type="number" name="Assets[{{ category }}][{{ loop.index0 }}][weeks]"
+                                value="{{ step['weeks'] }}" class="w-24 p-2 rounded border text-black" />
+                            <span class="text-white">weeks</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% endcall %}
+
+                <!-- 2D -->
+                {% call collapsible_section("2D Pipeline", "twoDSection") %}
+                <div class="space-y-3">
+                    {% for dept, data in timelines["2D"].items() %}
+                    <div class="flex items-center space-x-4">
+                        <label class="w-1/4 text-white">{{ dept }}</label>
+                        <input type="number" name="2D[{{ dept }}][duration_weeks]" value="{{ data['duration_weeks'] }}"
+                            class="w-24 p-2 rounded border text-black" />
+                        <span class="text-white">weeks</span>
+                        <input type="number" name="2D[{{ dept }}][offset_weeks]" value="{{ data['offset_weeks'] }}"
+                            class="w-24 p-2 rounded border text-black" />
+                        <span class="text-white">offset</span>
+
+                        {% if "fixed_to_finals" in data %}
+                        <label class="flex items-center text-white ml-4">
+                            <input type="checkbox" name="2D[{{ dept }}][fixed_to_finals]" {% if data["fixed_to_finals"]
+                                %}checked{% endif %} />
+                            Fixed to Finals
+                        </label>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endcall %}
+
+                <!-- 3D -->
+                {% call collapsible_section("3D Pipeline", "threeDSection") %}
+                <div class="space-y-3">
+                    {% for dept, data in timelines["3D"].items() %}
+                    <div class="flex items-center space-x-4">
+                        <label class="w-1/4 text-white">{{ dept }}</label>
+                        <input type="number" name="3D[{{ dept }}][duration_weeks]" value="{{ data['duration_weeks'] }}"
+                            class="w-24 p-2 rounded border text-black" />
+                        <span class="text-white">weeks</span>
+                        <input type="number" name="3D[{{ dept }}][offset_weeks]" value="{{ data['offset_weeks'] }}"
+                            class="w-24 p-2 rounded border text-black" />
+                        <span class="text-white">offset</span>
+
+                        {% if "fixed_to_finals" in data %}
+                        <label class="flex items-center text-white ml-4">
+                            <input type="checkbox" name="3D[{{ dept }}][fixed_to_finals]" {% if data["fixed_to_finals"]
+                                %}checked{% endif %} />
+                            Fixed to Finals
+                        </label>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endcall %}
+
+            </div>
+
+            <!-- Hidden JSON output -->
+            <textarea name="timelines" id="timelineOutput" class="hidden"></textarea>
+
+            <!-- Save/Cancel -->
+            <div class="flex justify-end mt-6 space-x-3">
+                <a href="{{ url_for('films.view_films') }}"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</a>
+                <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleSection(id) {
+        const section = document.getElementById(id);
+        const arrow = document.getElementById(id + "-arrow");
+        section.classList.toggle("hidden");
+        arrow.textContent = section.classList.contains("hidden") ? "▼" : "▲";
+    }
+
+    document.getElementById("timelineForm").addEventListener("submit", function (e) {
+        const data = { Assets: {}, "2D": {}, "3D": {} };
+
+
+        
+        
+        // Assets
+        document.querySelectorAll("#assetsSection .bg-red-800").forEach(categoryDiv => {
+            const h2 = categoryDiv.querySelector("h2");
+            if (!h2) console.warn("Missing <h2> inside", categoryDiv);
+            const categoryName = h2 ? h2.textContent.trim() : "Unknown";
+
+            const steps = [];
+            categoryDiv.querySelectorAll("div.flex").forEach(stepDiv => {
+                const inputs = stepDiv.querySelectorAll("input");
+                steps.push({
+                    name: inputs[0] ? inputs[0].value : "",
+                    weeks: inputs[1] ? parseInt(inputs[1].value || "0", 10) : 0
+                });
+            });
+            data.Assets[categoryName] = steps;
+        });
+
+        // 2D
+        document.querySelectorAll("#twoDSection .flex").forEach(deptDiv => {
+            const lbl = deptDiv.querySelector("label");
+            if (!lbl) console.warn("Missing <label> inside", deptDiv);
+            const label = lbl ? lbl.textContent.trim() : "Unnamed";
+
+            const inputs = deptDiv.querySelectorAll("input");
+            data["2D"][label] = {
+                duration_weeks: inputs[0] ? parseInt(inputs[0].value || "0", 10) : 0,
+                offset_weeks: inputs[1] ? parseInt(inputs[1].value || "0", 10) : 0,
+                fixed_to_finals: inputs[2] ? inputs[2].checked : false
+            };
+
+        });
+
+        // 3D
+        document.querySelectorAll("#threeDSection .flex").forEach(deptDiv => {
+            const lbl = deptDiv.querySelector("label");
+            const label = lbl ? lbl.textContent.trim() : "Unnamed";
+
+            const inputs = deptDiv.querySelectorAll("input");
+            data["3D"][label] = {
+                duration_weeks: inputs[0] ? parseInt(inputs[0].value || "0", 10) : 0,
+                offset_weeks: inputs[1] ? parseInt(inputs[1].value || "0", 10) : 0,
+                fixed_to_finals: inputs[2] ? inputs[2].checked : false
+            };
+
+        });
+
+        document.getElementById("timelineOutput").value = JSON.stringify(data, null, 4);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-6 px-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Archive Users</h1>
+    <p class="text-white mb-4">Select the users below to archive:</p>
+
+    <form id="archive-form" method="POST" action="{{ url_for('admin.archive_users') }}">
+        <div class="overflow-x-auto bg-white p-6 rounded-lg shadow-lg">
+            <table class="table">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border border-gray-300 p-3">
+                            <input type="checkbox" id="select-all" onclick="toggleSelectAll()"> <!-- Select All -->
+                        </th>
+                        <th class="border border-gray-300 p-3 text-left bg-gray-200 text-black">Name</th>
+                        <th class="border border-gray-300 p-3 text-left bg-gray-200 text-black">Email</th>
+                        <th class="border border-gray-300 p-3 text-left bg-gray-200 text-black">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in students_not_in_classes %}
+                    <tr class="hover:bg-gray-100">
+                        <td class="border border-gray-300 p-3 text-center text-black">
+                            {% if user.archived == 0 %} <!-- Only allow archiving for unarchived users -->
+                            <input type="checkbox" name="user_ids" value="{{ user.id }}">
+                            {% endif %}
+                        </td>
+                        <td class="border border-gray-300 p-3">{{ user.name }}</td>
+                        <td class="border border-gray-300 p-3">{{ user.email }}</td>
+                        <td class="border border-gray-300 p-3">
+                            {% if user.archived == 0 %}
+                            <span class="bg-green-500 text-white px-2 py-1 rounded-lg">Active</span>
+                            {% else %}
+                            <span class="bg-gray-500 text-white px-2 py-1 rounded-lg">Archived</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="flex justify-end mt-4">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                Archive Selected
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Select All functionality
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('select-all');
+        const checkboxes = document.querySelectorAll('input[name="user_ids"]');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    }
+</script>
+{% endblock %}

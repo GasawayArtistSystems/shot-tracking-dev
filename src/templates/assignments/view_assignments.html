@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ✅ Sub-header with Class Dropdown and Navigation -->
+<div class="flex justify-between items-center mx-auto mb-4">
+    <!-- ✅ Left: Class Dropdown -->
+    <select class="border text-gray-900 bg-white rounded-lg p-2 focus:ring focus:ring-blue-300 w-100" id="class-dropdown" onchange="changeClass(this.value)">
+        <option value="">Select a Class</option>
+        {% for cls in all_classes %}
+        <option value="{{ cls.id }}" {% if cls.id == class_id %}selected{% endif %}>
+            {{ cls.full_class_name }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <div class="text-white font-semibold">
+        {{ student_count }} students enrolled
+    </div>
+
+    <!-- ✅ Right: Navigation Buttons -->
+    <div class="flex space-x-4">
+        <a href="{{ url_for('classes.view_classes') }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'classes' %}bg-blue-500{% endif %}">
+            Classes
+        </a>
+        
+        <a href="{{ url_for('classes.view_students_in_class', class_id=class_id) }}" 
+           class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'students' %}bg-blue-500{% endif %}">
+            Students
+        </a>
+        
+        <a href="{% if 'student' in session.get('roles', [])|map('lower') %}
+                {{ url_for('assignments.individual_assignments_view', assignment_id=assignment_id) }}
+            {% else %}
+                {{ url_for('assignments.view_assignments', class_id=class_id) }}
+            {% endif %}"
+        class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 {% if active_page == 'assignments' %}bg-yellow-800{% endif %}">
+        Assignments
+        </a>
+    </div>
+</div>
+
+<!-- ✅ Assignments Table -->
+<div class="table-container bg-red-900 p-4 rounded-lg w-full">
+    <h2 class="text-3xl font-bold text-white mb-4 text-center">Assignments</h2>
+    
+    <div class="overflow-y-auto max-h-[500px]">
+        <table class="table bg-red-950 table-fixed w-full">
+    
+            <!-- Force column widths here -->
+            <colgroup>
+                <col style="width: 300px;" />
+                <col style="width: 140px;" />
+                <col style="width: 140px;" />
+                <col style="width: 500px;" />
+                <col style="width: 180px;" />
+            </colgroup>
+    
+            <thead class="bg-gray-800 text-white sticky top-0 z-10">
+                <tr>
+                    <th class="p-3 text-left border-b">Assignment Name</th>
+                    <th class="p-3 text-left border-b">Start Date</th>
+                    <th class="p-3 text-left border-b">Due Date</th>
+                    <th class="p-3 text-center border-b">Progress</th>
+                    <th class="p-3 text-left border-b">Actions</th>
+                </tr>
+            </thead>
+    
+            <tbody id="assignments-table" class="bg-red-950 text-white">
+                {% for assignment in assignments %}
+                <tr class="border-b hover:bg-red-950">
+                    <td class="p-3 border-b">
+                        <a href="{{ url_for('assignments.view_individual_assignments', assignment_id=assignment.id, class_id=class_id) }}"
+                            class="text-white">
+                            {{ assignment.name }}
+                        </a>
+                    </td>
+                    <td class="p-3 border-b">{{ assignment.start_date }}</td>
+                    <td class="p-3 border-b">{{ assignment.completion_date }}</td>
+    
+                    {% if True %}
+
+                    <td class="p-3 border-b">
+                        {% for step in assignment_steps[assignment.id] %}
+                        <div class="mb-2 w-full flex flex-col items-center">
+                            <div class="text-xs text-gray-300 mb-1">{{ step.name }}</div>
+                            <canvas id="chart-{{ assignment.id }}-{{ loop.index0 }}" width="100" height="100"
+                                class="w-24 h-24 mx-auto"></canvas>
+                        </div>
+                        {% endfor %}
+                    </td>
+                    <td class="p-3 border-b">
+                        <button
+                            class="edit-assignment-btn bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg"
+                            data-id="{{ assignment.id }}" data-name="{{ assignment.name }}"
+                            data-start-date="{{ assignment.start_date }}"
+                            data-completion-date="{{ assignment.completion_date }}">
+                            Edit
+                        </button>
+                        <button class="bg-red-200 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
+                            onclick="console.log('Delete clicked!'); deleteAssignment(123)">
+                            Delete
+                        </button>
+
+
+                    </td>
+                    {% else %}
+                    <td class="p-3 border-b" colspan="2">
+                        <span class="bg-gray-200 text-gray-900 px-2 py-1 rounded-lg">{{ assignment.student_status }}</span>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+      
+    
+    <!-- ✅ Add New Assignment Button -->
+    <div class="mt-4 text-right">
+        <a href="{{ url_for('assignments.add_assignment', class_id=class_id) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+            Add New Assignment
+        </a>
+    </div>
+</div>
+
+<div id="editAssignmentModal" class="hidden fixed inset-0 flex items-center justify-center bg-black z-50">
+    <div class="bg-red-950 rounded-lg p-6 w-full max-w-md shadow-lg">
+        <h5 class="text-xl font-bold text-white mb-4">Edit Assignment</h5>
+        <form id="editAssignmentForm" method="POST">
+            <input type="hidden" id="edit-assignment-id" name="assignment_id">
+
+            <div class="mb-4">
+                <label for="edit-assignment-name" class="block text-white font-semibold">Assignment Name:</label>
+                <input type="text" class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" 
+                    id="edit-assignment-name" name="name" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="edit-start-date" class="block text-white font-semibold">Start Date:</label>
+                <input type="date" class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300"
+                    id="edit-start-date" name="start_date" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="edit-completion-date" class="block text-white font-semibold">Completion Date:</label>
+                <input type="date" class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300" 
+                    id="edit-completion-date" name="completion_date" required>
+            </div>
+
+            <div class="flex justify-between">
+                <button type="button" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg" 
+                    onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    window.classId = {{ class_id | default(0) | tojson }};  // Ensure class_id is never None
+    console.log("✅ classId set from template:", window.classId);
+    window.assignmentId = {{ assignment_id | default(0) | tojson }};
+    window.assignmentsData = {{ assignments | tojson | safe }};
+    window.assignmentStepsMap = {{ assignment_steps | tojson }};
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        window.renderAllAssignmentCharts();
+    });
+    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log("✅ DEBUG: URL Parameters:", urlParams.toString());  // 🚀 Debugging output
+    
+        if (urlParams.has("success")) {
+            console.log("✅ DEBUG: success=True detected! Showing SweetAlert."); // 🚀 Debugging output
+            showSuccess("Assignment created successfully! 🎉");
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("✅ DEBUG: Assignments Loaded", window.assignmentsData);
+
+        function checkTableExists() {
+            const tableBody = document.getElementById("assignments-table");
+
+            if (!tableBody) {
+                console.error("❌ Table body not found! Retrying in 500ms...");
+                setTimeout(checkTableExists, 500);  // Retry after 500ms
+                return;
+            }
+
+            console.log("✅ Table found, updating...");
+            if (typeof updateAssignmentsTable === "function") {
+                updateAssignmentsTable(window.assignmentsData);
+            } else {
+                console.error("❌ updateAssignmentsTable function not found!");
+            }
+        }
+
+        checkTableExists(); // Start checking when the page loads
+    });
+
+
+
+
+</script>
+
+<script>
+    function deleteAssignment(assignmentId) {
+        console.log("🗑️ Delete clicked for assignment:", assignmentId);
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "This will permanently delete the assignment.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        }).then((result) => {
+            console.log("✅ Swal closed with result:", result);
+        });
+    }
+</script>
+
+
+<script>
+    window.classId = {{ class_id }};
+  </script>
+  
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ url_for('static', filename='js/assignments.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+{% endblock %}

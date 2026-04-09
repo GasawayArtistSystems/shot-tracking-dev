@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  <aside class="w-64 sticky top-4 self-start bg-red-950 text-white p-4 rounded-lg shadow">
+    <h2 class="text-xl font-semibold mb-4">📚 Table of Contents</h2>
+    <ul class="space-y-2 text-sm">
+      <li><a href="{{ url_for('help.help_overview') }}" class="hover:underline">📘 Overview</a></li>
+      <li><a href="{{ url_for('help.help_classes') }}" class="hover:underline">🎓 Classes</a></li>
+      <li><a href="{{ url_for('help.help_films') }}" class="hover:underline">🎥 Films</a></li>
+      <li><a href="{{ url_for('help.help_admin') }}" class="hover:underline">🧠 Admin</a></li>
+      <li><a href="{{ url_for('help.help_grading') }}" class="hover:underline">🛠️ Grading</a></li>
+    </ul>
+  </aside>
+
+
+  <div class="flex-1 bg-red-950 text-white p-6 rounded-lg shadow">
+    <h2 class="text-3xl font-bold mb-4" id="grading">🛠️ Grading</h2>
+    <p class="mb-4">This section is dedicated to grading.</p>
+
+    <div class="bg-gray-600 text-yellow-400 p-4 rounded mb-6 border border-blue-300">
+      <strong>💡 Tip:</strong> You can link to other help pages from the sidebar.
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2">🗂️ Section Details</h3>
+    <p class="mb-4">Feel free to expand this section with your own instructions, screenshots, and workflows.</p>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const headings = document.querySelectorAll("h3[id]");
+    const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+    const observer = new IntersectionObserver(
+      entries => {
+        for (let entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            tocLinks.forEach(link => {
+              link.classList.remove("text-yellow-400", "font-semibold");
+              if (link.getAttribute("href") === `#${id}`) {
+                link.classList.add("text-yellow-400", "font-semibold");
+              }
+            });
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    headings.forEach(h => observer.observe(h));
+  });
+</script>
+
+{% endblock %}

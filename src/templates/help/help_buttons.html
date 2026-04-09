@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-red-950 text-white p-6 rounded-lg shadow">
+    <h1 class="text-3xl font-bold mb-6">🔘 Button Reference</h1>
+
+    <input type="text" placeholder="Search buttons..." class="w-full p-2 text-black rounded mb-6" onkeyup="filterButtons(this.value)">
+
+    <ul id="button-list" class="space-y-4">
+      {% for btn in buttons %}
+        <li class="bg-red-900 p-4 rounded border border-red-800">
+          <div class="text-xl font-semibold">
+            {{ btn.icon }} {{ btn.name }}
+          </div>
+          <div class="text-sm text-gray-300 mt-1">{{ btn.description }}</div>
+          {% if btn.location %}
+            <div class="text-xs text-gray-400 mt-1 italic">Used on: {{ btn.location }}</div>
+          {% endif %}
+          {% if btn.image %}
+            <img src="{{ url_for('static', filename=btn.image) }}" alt="{{ btn.name }} image" class="mt-3 rounded w-48 border border-gray-600">
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<script>
+function filterButtons(query) {
+  const items = document.querySelectorAll("#button-list li");
+  items.forEach(item => {
+    const text = item.innerText.toLowerCase();
+    item.style.display = text.includes(query.toLowerCase()) ? "" : "none";
+  });
+}
+</script>
+{% endblock %}

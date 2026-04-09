@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex justify-between items-center mx-auto mb-4">
+  <select id="film-dropdown" class="p-3 rounded text-black">
+    <option value="" disabled>Select a Film</option>
+    {% for f in all_films %}
+    <option value="{{ f.id }}" {% if f.id==film.id %}selected{% endif %}>
+      {{ f.name }}
+    </option>
+    {% endfor %}
+  </select>
+  <h2 class="text-2xl font-bold mb-6">Scenes for "{{ film.name }}"</h2>
+  <div class="flex space-x-4">
+    <a href="{{ url_for('films.view_films') }}"
+      class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'films' %}bg-yellow-800{% endif %}">
+      Films
+    </a>
+
+    <a href="{{ url_for('films.view_scenes', film_id=film.id) }}"
+      class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'scenes' %}bg-yellow-800{% endif %}">
+      Scenes
+    </a>
+    <a href="{{ url_for('films.view_assets', film_id=film.id) }}"
+      class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'assets' %}bg-yellow-800{% endif %}">
+      Assets
+    </a>
+  </div>
+</div>
+
+<!-- Unified Progress Tracking Steps (Merged) -->
+<div id="scene-filter-form" class="bg-gray-900 p-4 rounded mb-4">
+  <h3 class="text-white font-semibold mb-4">Filter Steps:</h3>
+
+  <!-- Filter Control Buttons -->
+  <div class="flex flex-wrap gap-4 mb-4">
+    <button type="button" id="show-all-steps"
+      class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-sm">
+      All Steps
+    </button>
+    <button type="button" id="show-artist-steps"
+      class="bg-purple-700 hover:bg-purple-800 text-white px-3 py-1 rounded text-sm">
+      Artist Steps Only
+    </button>
+  </div>
+
+  <!-- Unified Step Checkboxes -->
+  <div id="step-checkboxes" class="flex flex-wrap gap-4 mb-3">
+    {% for step in film_steps %}
+    {% if step.name not in ["Story and Script", "Thumbnails", "FB Thumbnails"] %}
+    <label class="inline-flex items-center text-sm text-white">
+      <input type="checkbox" name="visible_steps" value="{{ step.id }}" data-step-id="{{ step.id }}"
+        data-step-name="{{ step.name|lower }}" checked>
+      <span class="ml-2">{{ step.name }}</span>
+    </label>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+</div>
+<!-- Scene List -->
+<div class="flex justify-between items-center mb-4">
+  <button id="toggle-filter-panel" class="px-4 py-2 bg-gray-700 text-white rounded-lg">Show Filters</button>
+  <div class="flex gap-3">
+    <a href="{{ url_for('films.add_scene_route', film_id=film.id) }}"
+      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+      + Add Scene
+    </a>
+  </div>
+
+</div>
+<div class="bg-red-900 shadow-lg rounded-lg p-6">
+  <div class="mt-6 overflow-x-auto">
+    <table id="scene-table" class="min-w-full bg-gray-900 text-white rounded-lg shadow-md">
+      <thead class="bg-gray-00 text-white sticky top-0 z-10">
+        <tr>
+          <th class="px-4 py-3">Scene</th>
+          <th class="px-4 py-3">Shot Count</th>
+          <th class="px-4 py-3">Progress</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="scene-table-body">
+        {% if scenes|length > 0 %}
+        {% for scene in scenes %}
+        <tr class="scene-row" data-thumbnails-approved="{{ scene.thumbnails_approved | lower }}">
+          <td class="px-4">
+            <a href="{{ url_for('films.view_shots_route', scene_id=scene.id) }}" class="text-blue-400 hover:underline">
+              {{ scene.scene_number }}
+            </a>
+          </td>
+          <td class="px-4">{{ scene.shot_count or 0 }}</td>
+      
+          <td class="px-4">
+            {% if scene.steps|length == 0 %}
+            <div class="text-sm text-gray-400 italic">No steps</div>
+            {% endif %}
+      
+            {% if scene.steps|length > 0 %}
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mt-4">
+              {% if scene.thumbnails_approved %}
+              {% for step in film_steps %}
+              {% if step.name not in ["Story", "Script", "Story and Script", "Thumbnails", "FB Thumbnails"] %}
+              <div class="text-center step-block" data-step-name="{{ step.name | lower }}" data-step-id="{{ step.id }}">
+                <div class="text-white text-[10px] font-semibold">{{ step.name }}</div>
+                <canvas id="scene-chart-{{ scene.id }}-{{ step.id }}" class="w-full h-[100px]" data-scene-id="{{ scene.id }}"
+                  data-step-id="{{ step.id }}" data-labels="[]" data-values="[]" data-colors="[]">
+                </canvas>
+              </div>
+              {% endif %}
+              {% endfor %}
+              {% else %}
+              {% for step_id, chart in scene.step_charts.items() %}
+              {% set step_name = chart.step_name %}
+              <div class="text-center step-block" data-step-name="{{ step_name | lower }}" data-step-id="{{ step_id }}">
+                <div class="text-white text-[10px] font-semibold">{{ step_name }}</div>
+      
+                {% set selected_node = chart.nodes | selectattr("name", "equalto", chart.status) | list | first %}
+                <select class="w-full text-xs px-1 py-[2px] h-[28px] rounded p-1 text-black" data-scene-id="{{ scene.id }}"
+                  data-step-id="{{ step_id }}" data-shot-id="{{ chart.shot_id if chart.shot_id is defined else '' }}"
+                  style="background-color: {{ selected_node.color if selected_node else '#4b5563' }};"
+                  onchange="updateSceneStepStatus(this)">
+                  {% for node in chart.nodes %}
+                  <option value="{{ node.name }}" {% if node.name==chart.status %}selected{% endif %}
+                    style="background-color: {{ node.color or '#4b5563' }};">
+                    {{ node.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+      
+                <select class="w-full text-xs px-1 py-1 h-[28px] rounded bg-white text-black border border-gray-300"
+                  data-scene-id="{{ scene.id }}" data-step-id="{{ step_id }}"
+                  data-shot-id="{{ chart.shot_id if chart.shot_id is defined else '' }}" onchange="updateSceneAssignee(this)">
+                  <option value="">Unassigned</option>
+                  {% for artist in crew_artists %}
+                  <option value="{{ artist.id }}" {% if artist.id|string==chart.assigned_to|string %}selected{% endif %}>
+                    {{ artist.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <input type="date" class="w-full text-xs px-1 py-[2px] h-[28px] p-1 rounded text-black"
+                  value="{{ chart.due_date or '' }}" data-scene-id="{{ scene.id }}" data-step-id="{{ step_id }}"
+                  onchange="updateSceneDueDate(this)">
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+      
+          <td class="px-4 py-2 align-middle">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-2">
+              <a href="{{ url_for('films.edit_scene_route', film_id=film.id, scene_id=scene.id) }}"
+                class="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1 rounded text-sm">
+                Edit
+              </a>
+              <form id="delete-scene-form-{{ scene.id }}" method="POST"
+                action="{{ url_for('films.delete_scene_route', scene_id=scene.id) }}" style="display: none;"></form>
+              <button type="button" onclick="confirmDeleteScene({{ scene.id }})"
+                class="bg-red-800 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="4" class="px-4 py-4 text-center text-gray-400 italic">
+            📽️ This film is still in pre-production. Add scenes at your own risk!
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+
+
+    </table>
+
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/scenes.js') }}"></script>
+<script>
+  window.filmId = {{ film.id | tojson }};
+</script>
+
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('canvas[id^="scene-step-chart-"]').forEach(canvas => {
+      const data = JSON.parse(canvas.dataset.summary);
+      new Chart(canvas.getContext('2d'), {
+        type: 'pie',
+        data: {
+          labels: data.map(s => s.label),
+          datasets: [{
+            data: data.map(s => s.value),
+            backgroundColor: ["#4ade80", "#facc15", "#f87171", "#60a5fa"]
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    });
+
+  });
+</script>
+<script>
+  async function updateSceneStepStatus(select) {
+    const sceneId = select.dataset.sceneId;
+    const stepId = select.dataset.stepId;
+    const status = select.value;
+
+    await fetch(`/films/api/scene_progress/${sceneId}/${stepId}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    }).then(() => location.reload());
+  }
+
+  async function updateSceneAssignee(input) {
+    const sceneId = input.dataset.sceneId;
+    const stepId = input.dataset.stepId;
+    const assigned_to = input.value;
+
+    await fetch(`/films/api/scene_progress/${sceneId}/${stepId}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assigned_to })
+    });
+  }
+
+  async function updateSceneDueDate(input) {
+    const sceneId = input.dataset.sceneId;
+    const stepId = input.dataset.stepId;
+    const due_date = input.value;
+
+    await fetch(`/films/api/scene_progress/${sceneId}/${stepId}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ due_date })
+    });
+  }
+</script>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  Swal.fire({
+    icon: "success",
+    title: "Success",
+    text: {{ messages[0]| tojson }},
+    timer: 1800,
+    showConfirmButton: false
+      });
+</script>
+{% endif %}
+{% endwith %}
+
+
+
+{% endblock %}

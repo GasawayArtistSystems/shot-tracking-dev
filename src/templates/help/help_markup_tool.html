@@ -1,0 +1,321 @@
+
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+    <h2 class="text-3xl font-bold mb-4 text-green-400" id="markup-tool">Markup Tool</h2>
+    <p class="mb-4">
+      This tool allows the user to select any movie or drawing to draw on the frame or drawing itself. It's also used to grade assignments and work with approvals.
+    </p>
+    <p><img src="{{ url_for('static', filename='help/images/markup-overview.png') }}" alt="Markup Overview"
+      class="h-auto align-middle" /></p>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="sections">Sections</h3>
+    <p class="mb-4">The Markup Tool is broken up into 5 sections:
+    </p>
+    <ol class="list-decimal list-inside mb-4 space-y-2">
+      <li><span class="text-yellow-400 font-semibold">SideBar</span></li>
+      <li><span class="text-yellow-400 font-semibold">Grader/Approver</span></li>
+      <li><span class="text-yellow-400 font-semibold">Player</span></li>
+      <li><span class="text-yellow-400 font-semibold">Timeline</span></li>
+      <li><span class="text-yellow-400 font-semibold">Tools</span></li>
+    </ol>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="sidebar">SideBar</h3>
+    <p class="mb-4">The far left of the Markup Tool is the SideBar. This is where the user can click on which video or drawing file to add to the Player. These files are
+      organized by class and assignment.
+    </p>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+      <strong>📌 NOTE:</strong> This is collapsible to give more room to review. The hotkey is ALT+b.
+    </div>
+    <p><img src="{{ url_for('static', filename='help/images/sidebar.png') }}" alt="SideBar"
+      class="w-[50%] h-auto align-middle" /></p>
+    <p class="mb-4">As soon as a shot or assignment has been submitted on the app or submitted through Maya/Harmony/SB Pro, it will appear here.</p>
+      <ol class="list-decimal list-inside mb-4 space-y-2">
+        <li><span class="text-yellow-400 font-semibold">Search Files</span>
+          <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+            <li>The user can type in a student's name or the name of a shot here. It will list all the files with that name in it.</li>
+          </ol>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Assignments to Review</span>
+          <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+            <li>All assignments that need to be reviewed will be listed here. Simply click on the file and it will load into the player.
+            </li>
+          </ol>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Shots to Review</span>
+          <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+            <li>All shots that need to be reviewed will be listed here. Simply click on the file and it will load into the
+              player.
+            </li>
+          </ol>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Classes</span>
+          <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+            <li>Under Classes will be all the available classes for the semester and then all movie/drawing files that have been reviewed.
+            </li>
+            <li>To watch a movie/drawing, click to the class where the file is and just click on the file. It will load into the player.
+            </li>
+          </ol>
+        </li>
+      <li><span class="text-yellow-400 font-semibold">Films</span>
+        <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+          <li>Under Films will be all the available Scenes and Shots that have been reviewed. It's broken down by scenes and then shots.
+          </li>
+          <li>To watch a movie/drawing, click to the scene and then shot where the file is and just click on the file. It will load into the
+            player.
+          </li>
+        </ol>
+      </li>
+    </ol>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="grader">Grader/Approver</h3>
+    <p class="mb-4">This section has the name of the file and the status. For assignments, it's where the instructor can change the grade. For a shot, it's where the director can approve or retake.</p>
+    <p><img src="{{ url_for('static', filename='help/images/grader.png') }}" alt="Grader/Approver"
+      class="w-auto h-auto align-middle" /></p>
+      <p class="mb-4 leading-relaxed">After doing any markups, if needed, change the status and hit SAVE.</p>
+      <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
+        <strong>📌 NOTE:</strong> If no marks are used for the assignment or shot, a warning will pop up, asking if you still want to save.
+      </div>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="player">Player</h3>
+    <p class="mb-4">This is where the video will play or the image will be seen. A user can draw on top of this.</p>
+    <p><img src="{{ url_for('static', filename='help/images/player.png') }}" alt="Player"
+        class="w-auto h-auto align-middle" /></p>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="timeline">Timeline</h3>
+    <p class="mb-4">A user can play, scrub, advance a frame or a keyframe at a time. Audio can be muted and the video can loop.</p>
+    <p><img src="{{ url_for('static', filename='help/images/timeline.png') }}" alt="Timeline"
+            class="w-auto h-auto align-middle" /></p>
+            <ol class="list-disc list-inside mb-4 space-y-2">
+              <li><span class="text-yellow-400 font-semibold">Scrubber</span>
+                <p class="mb-4">A user can scrub the scrubber throughout the entire animation.</p></li>
+              <li><span class="text-yellow-400 font-semibold">Tick Marks</span>
+                <p class="mb-4">When a mark is drawn on the player, a yellow tick mark will appear.</p>
+                <p class="mb-4">ALT+, will move to the next fraame</p>
+                <p class="mb-4">ALT+. will move to the previous frame</p>
+                <p class="mb-4">, will move to the previous keyframe</p>
+                <p class="mb-4">. will move to the next keyframe</p></li>
+              <li><span class="text-yellow-400 font-semibold">Play</span>
+                <p class="mb-4">Will play and pause the animation (Use the spacebar)</p></li>
+              <li><span class="text-yellow-400 font-semibold">Loop</span>
+                <p class="mb-4">Will toggle the loop.</p></li>
+              <li><span class="text-yellow-400 font-semibold">Speaker</span>
+                <p class="mb-4">Will mute/unmute the audio</p></li>
+              <li><span class="text-yellow-400 font-semibold">Volume slider</span>
+                <p class="mb-4">Will adjust the volume of the audio</p></li>
+              <li><span class="text-yellow-400 font-semibold">Frame Counter</span>
+                <p class="mb-4">Will show the frame number</p></li>  
+            </ol>
+
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="Review-session">Review Session</h3>
+    <p class="mb-4">The tools for the review sessions, separate from reviewing individual assignments.</p>
+    <p><img src="{{ url_for('static', filename='help/images/markup-review-session.png') }}" alt="Review Session"
+        class="w-auto h-auto align-middle" /></p>
+    <ol class="list-disc list-inside mb-4 space-y-2">
+      <li><span class="text-yellow-400 font-semibold">Start Review Session</span>
+        <p class="mb-4">If looking at an entire scene, it's best to start here. This will open a new modal.</p>
+        <img src="{{ url_for('static', filename='help/images/markup-start-review-session.png') }}" alt="Start Review Session"
+          class="w-auto h-auto align-middle" />
+        <p class="mb-4">Select the Film, Scene number, and Step.</p>
+        <p class="mb-4">Click start. This will open the Review Session on the top middle of the markup tool.</p>
+          <img src="{{ url_for('static', filename='help/images/markup-session-top.png') }}" alt="Top Review Session"
+            class="w-auto h-auto align-middle" />
+      </li>
+      <li><span class="text-yellow-400 font-semibold">Title</span>
+        <p class="mb-4">Says what Film and Scene the session is for: IE - testme (film name) Scene 020.</p>
+      </li>
+      <li><span class="text-yellow-400 font-semibold">Prev Shot</span>
+        <p class="mb-4">Will go to the previous shot unless you are on the first shot of the session.</p>
+      </li>
+      <li><span class="text-yellow-400 font-semibold">Next Shot</span>
+        <p class="mb-4">Will go to the next shot in the session until the last shot.</p>
+      </li>
+      <li><span class="text-yellow-400 font-semibold">Make Combined Clip</span>
+        <p class="mb-4">This will create a movie file with all the shots back to back.</p>
+        <p class="mb-4">Once it's done, the user can click on the Open Review Clips button on the far left.</p>
+                  <img src="{{ url_for('static', filename='help/images/markup-review-session.png') }}" alt="Markup Review Session"
+                    class="w-auto h-auto align-middle" />
+        <p class="mb-4">That will open a new window:</p>
+                  <img src="{{ url_for('static', filename='help/images/markup-review-files.png') }}" alt="Markup Review Files"
+                    class="w-auto h-auto align-middle" />
+        <p class="mb-4">A user can play, scrub, or delete the file.</p>
+      </li>
+    </ol>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="tools">Tools</h3>
+    <p class="mb-4">All the tools for the markup tool.</p>
+    <p><img src="{{ url_for('static', filename='help/images/tools.png') }}" alt="Tools"
+                class="w-auto h-auto align-middle" /></p>
+      <ol class="list-disc list-inside mb-4 space-y-2">
+              <li><span class="text-yellow-400 font-semibold">Drawing tool (B)</span>
+                <p class="mb-4">This will toggle between Start Drawing and Stop Drawing. Hit the B key to toggle.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Brush Color</span>
+                <p class="mb-4">There are four set colors to use. Click on the color to change the pen brush color.</p>
+                <p class="mb-4">A user can also make a custom color by clicking on the rectangle.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Brush Size</span>
+                <p class="mb-4">Use the slider to change the brush size.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Clear</span>
+                <p class="mb-4">Will clear the markups for the frame you are on.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Clear All</span>
+                <p class="mb-4">Will clear all the markups for the entire timeline.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Ghosting(Onion Skin)</span>
+                <p class="mb-4">Can have ghosting for frames before and after.</p>
+                <p class="mb-4">Toggle ghosting on and off with the checkbox.</p>
+              </li>
+              <li><span class="text-yellow-400 font-semibold">Frame Note</span>
+                <p class="mb-4">Allows instructor/coordinator to add a note on selected frame.</p>
+              </li>
+      </ol>
+
+      <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="FrameNote">Frame Note</h3>
+      <p class="mb-4">Go to the frame to add a note. Type in the note and hit Save Note</p>
+      <p><img src="{{ url_for('static', filename='help/images/markup-notes.png') }}" alt="Frame Note"
+          class="w-auto h-auto align-middle" /></p>
+      <p class="mb-4">This will add a GREEN LINE on your timeline.</p>
+
+    <div><hr class="my-4 pl-4 border-gray-600"></div>
+
+      <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="obs">OBS</h3>
+      <p class="mb-4">If you use the OBS tool to screen record, these tools will help you turn on/off the record button in obs.</p>
+          <div class="bg-yellow-100 p-4 rounded-xl shadow-lg mb-8 text-black">
+            <strong class="text-black">Note:</strong> If using OBS, it's necessary to run the StartOBSBridge.bat. This file will read the information
+            from the file you are viewing so it names the file correctly. Once started, you can start/stop obs as below. After all reviews are done,
+            Click on the Review Manager button (both files must be <a href="{{ url_for('help.help_markup_tool') }}#install-obs" class="text-blue-400 hover:text-yellow-500 no-underline">installed separately</a>)
+          </div>
+      <p><img src="{{ url_for('static', filename='help/images/markup-obs.png') }}" alt="obs window"
+          class="w-auto h-auto align-middle" /></p>
+      <ol class="list-disc list-inside mb-4 space-y-2">
+        <li><span class="text-yellow-400 font-semibold">Start OBS Recording</span>
+          <p class="mb-4">Will start the recording on obs.</p>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Stop OBS Recording</span>
+          <p class="mb-4">Will stop the recording on obs.</p>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Export Grades</span>
+          <p class="mb-4">Will export a csv to be imported into Canvas.</p>
+        </li>
+      </ol>
+      
+      <div>
+        <hr class="my-4 pl-4 border-gray-600">
+      </div>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="approval-sessions">Approval Sessions</h3>
+    <p class="mb-4">For an approval session, the application will have everything ready to be viewed/approved. </p>
+    <p class="mb-4">There are two different ways to handle FILM approval sessions. You can do them one at a time, as described below. This
+      behavior is the same for assignments. OR you can use the <a href="{{ url_for('help.help_markup_tool') }}#Review-session"
+        class="text-blue-400 hover:text-yellow-500 no-underline">Start Review Session</a> button. </p>
+
+    <ul class="list-decimal list-inside mb-6">
+      <li>Click either Assignments to Review or Shots to Review</li>
+      <li>Click on the assignment/shot to review - it will load into the player.</li>
+      <li>Make any markups if needed.</li>
+      <li>Change grade/status.</li>
+      <li>Click Save.</li>
+    </ul>
+    <p class="mb-4">This will change the status in the overall application and move the file into the Classes folder or the Films folder.</p>
+    <ol class="list-decimal list-inside mb-4 space-y-2">
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+        <strong>💡NOTE:</strong> The software will change the name of the file to add a "_R" near the end of the file. This is so the application knows it's been reviewed
+    </div>
+
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="view-movies">Viewing Movies</h3>
+    <p class="mb-4">To watch already reviewed movies, click on the name of the assignment or film and find the correct file. When you click on the file, it will load it into the player.</p>
+    <p class="mb-4"> If there are notes, it will show those notes as well. </p>
+
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+      
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="deleting-movies">Deleting Movies</h3>
+    <p class="mb-4">It can be overwhelming with a LOT of movie files filling up the sidebar. A user can delete any file by right clicking on it.</p>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+      <strong>WARNING:</strong> ONLY let your UPM or coordinator delete a file as this is UNDOABLE!
+    </div>
+    <p class="mb-4">To delete a file from the sidebar AND from the folder, </p>
+    <ul class="list-decimal list-inside mb-6">
+      <li>Right Click on the file you want to delete.</li>
+      <p><img src="{{ url_for('static', filename='help/images/markup-delete-file.png') }}" alt="Delete File"
+          class="w-auto h-auto align-middle" /></p>
+      <li>Click on Yes, Delete it! - to delete it.</li>
+      <p><img src="{{ url_for('static', filename='help/images/markup-deleted.png') }}" alt="Deleted File"
+          class="w-auto h-auto align-middle" /></p>
+      <li>The file is deleted from the sidebar and the folder.</li>
+    </ul>
+
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+    
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="install-obs">Installing OBS Tools</h3>
+    <p class="mb-4">
+      In order to use the OBS tools in the Markup tool, the user must download and install the
+      <a href="https://obsproject.com/" target="_blank" class="text-blue-400 hover:text-yellow-500 no-underline">OBS app</a>
+      and the
+      <a href="{{ url_for('help.download_repo_file', filename='OBS_Bridge.zip') }}"
+        class="text-blue-400 hover:text-yellow-500 no-underline" target="_blank">
+        UC_OBS_TOOLS
+      </a>
+      from the server.
+    </p>
+    <p class="mb-4"> These files will allow the user to use the start/stop obs tools by naming the files correctly - Assignment_Student name_DATE.wmv</p>
+    <p class="mb-4"> The instructor can then copy all the reviewed files for the day by using the Review Manager.</p>
+    <img src="{{ url_for('static', filename='help/images/review-manager.png') }}" alt="Review Manager"
+      class="w-auto h-auto align-middle" />
+
+      <ol class="list-disc list-inside mb-4 space-y-2">
+        <li><span class="text-yellow-400 font-semibold">Copy Local to Server</span>
+          <p class="mb-4">Copies the entire Reviewed folder, as chosen by the user, to the server. This allows the dashboard to let the student know if a file is to be reviewed.</p>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Delete Local Folder</span>
+          <p class="mb-4">Will delete the folder on your local machine</p>
+        </li>
+        <li><span class="text-yellow-400 font-semibold">Delete Server Folder</span>
+          <p class="mb-4">Will delete the folder on the Server. Be careful not to delete any other instructors folder. If unsure, don't delete.</p>
+        </li>
+      </ol>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const headings = document.querySelectorAll("h3[id]");
+  const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+  const observer = new IntersectionObserver(
+    entries => {
+      for (let entry of entries) {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute("id");
+          tocLinks.forEach(link => {
+            link.classList.remove("text-yellow-400", "font-semibold");
+            if (link.getAttribute("href") === `#${id}`) {
+              link.classList.add("text-yellow-400", "font-semibold");
+            }
+          });
+        }
+      }
+    },
+    { threshold: 0.3 }
+  );
+
+  headings.forEach(h => observer.observe(h));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto mt-10 bg-red-900 text-white p-6 rounded-xl shadow-lg">
+  <h2 class="text-2xl font-bold mb-6">Add Shot to Scene {{ scene.scene_number }}</h2>
+  <!-- Add this button just above the form -->
+  <button onclick="document.getElementById('multiShotModal').showModal()"
+    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg mb-4">
+    ➕ Add Multiple Shots
+  </button>
+
+  <dialog id="multiShotModal" class="w-full max-w-md p-6 bg-white text-black rounded-xl shadow">
+    <form method="POST" action="{{ url_for('films.add_multiple_shots', scene_id=scene.id) }}">
+      <h3 class="text-xl font-bold mb-4">Add Multiple Shots</h3>
+
+      <label class="block mb-2">Prefix (e.g. 13 → starts at 130)</label>
+      <input type="number" name="prefix" min="1" max="999" required pattern="^[0-9]{1,3}$" maxlength="3" value="010"
+        class="w-full px-3 py-2 border rounded mb-4" />
+
+      <label class="block mb-2">How many shots?</label>
+      <input type="number" name="count" min="1" required class="w-full px-3 py-2 border rounded mb-4" />
+
+      <label class="block mb-2">Optional Description</label>
+      <input type="text" name="description" class="w-full px-3 py-2 border rounded mb-4" />
+      
+      <label class="block mb-2">Start Date</label>
+      <input type="date" name="start_date" value="{{ today }}" class="w-full px-3 py-2 border rounded mb-4" required />
+
+      <div class="flex justify-end gap-2">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Add</button>
+        <button type="button" onclick="this.closest('dialog').close()" class="text-red-600">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+  <form method="POST">
+    <div class="mb-4">
+      <label for="shot_number" class="block text-sm font-medium">Shot Number</label>
+      <input type="text" name="shot_number" id="shot_number" required pattern="^[0-9]{1,3}$" maxlength="3" value="010"
+        class="mt-1 w-12 px-2 py-1 text-black rounded" />
+    </div>
+    <div class="mb-4">
+      <label for="description" class="block text-sm font-medium">Description (optional)</label>
+      <textarea name="description" id="description" rows="3"
+        class="mt-1 w-full px-3 py-2 text-black rounded"></textarea>
+    </div>
+
+    <div class="flex gap-4 mb-4">
+      <div>
+        <label class="text-white block mb-1">Start Date</label>
+        <input type="date" name="start_date" value="{{ today }}" class="w-full p-2 rounded text-black">
+      </div>
+
+
+      <div class="w-1/2">
+        <label for="due_date" class="block text-sm font-medium">Due Date</label>
+        <input type="date" name="due_date" id="due_date" class="mt-1 w-full px-3 py-2 text-black rounded" />
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label for="assigned_to" class="block text-sm font-medium">Assign To</label>
+      <select name="assigned_to" id="assigned_to" class="mt-1 w-full px-3 py-2 text-black rounded">
+        <option value="">-- Optional --</option>
+        {% for user in users %}
+        <option value="{{ user.id }}">{{ user.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white font-semibold">
+        Add Shot
+      </button>
+      <a href="{{ url_for('films.view_shots_route', scene_id=scene.id) }}"
+        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+
+{% if success %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  Swal.fire({
+    title: '✅ Shot Added!',
+    text: 'The shot was created successfully.',
+    icon: 'success',
+    confirmButtonText: 'OK'
+  }).then(() => {
+    // Close the modal if open
+    const modal = document.getElementById('multiShotModal');
+    if (modal && modal.open) {
+      modal.close();
+    }
+
+    // Redirect to the shots view
+    window.location.href = "{{ url_for('films.view_shots_route', scene_id=scene.id) }}";
+  });
+</script>
+{% endif %}
+
+<!-- ✅ Always include this script -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // ✅ Limit single shot input to 3 digits
+    const shotNumberInput = document.getElementById("shot_number");
+    if (shotNumberInput) {
+      shotNumberInput.addEventListener("input", (e) => {
+        if (e.target.value.length > 3) {
+          e.target.value = e.target.value.slice(0, 3);
+        }
+      });
+    }
+
+    // ✅ Limit prefix input to 3 digits
+    const prefixInput = document.querySelector("input[name='prefix']");
+    if (prefixInput) {
+      prefixInput.addEventListener("input", (e) => {
+        if (e.target.value.length > 3) {
+          e.target.value = e.target.value.slice(0, 3);
+        }
+      });
+    }
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto text-center mt-10">
+    <h1 class="text-4xl font-bold text-white">Welcome to the UC Film and Class Tracker</h1>
+
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Classes Section -->
+        <div class="bg-red-950 shadow-lg rounded-lg p-6">
+            <h5 class="text-xl font-semibold text-white">Manage Classes</h5>
+            <p class="text-white mt-2">Create, view, and manage all your classes.</p>
+            <a href="{{ url_for('classes.view_classes') }}"
+                class="mt-4 inline-block bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600">Go to Classes</a>
+        </div>
+
+        <!-- Films Section -->
+        <div class="bg-red-950 shadow-lg rounded-lg p-6">
+            <h5 class="text-xl font-semibold text-white">Manage Films</h5>
+            <p class="text-white mt-2">Track film projects, sequences, and assets.</p>
+            <a href="{{ url_for('films.view_films') }}"
+                class="mt-4 inline-block bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600">Go to Films</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

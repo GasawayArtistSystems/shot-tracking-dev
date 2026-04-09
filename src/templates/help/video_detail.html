@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block head %}
+<meta name="description"
+    content="{{ video.title }} — {{ video.summary if video.summary else 'Shot Tracker tutorial video.' }}">
+<meta property="og:title" content="{{ video.title }}">
+<meta property="og:description" content="{{ video.summary if video.summary else 'Shot Tracker tutorial video.' }}">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="{{ request.url }}">
+<meta property="og:image" content="{{ video.thumbnail if video.thumbnail else '/static/help/thumbs/default.jpg' }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8 text-center">
+    <h1 class="text-2xl font-bold mb-6">{{ video.title }}</h1>
+
+    <div class="aspect-w-16 aspect-h-9 mb-6">
+        <video controls class="w-full rounded-xl shadow-lg">
+            <source src="{{ video.video_url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+
+    <div class="flex justify-between">
+        {% if prev_id %}
+        <a href="{{ url_for('help.help_video_detail', video_id=prev_id) }}" class="text-blue-400 hover:text-blue-200">←
+            Previous</a>
+        {% else %}
+        <span></span>
+        {% endif %}
+
+        {% if next_id %}
+        <a href="{{ url_for('help.help_video_detail', video_id=next_id) }}"
+            class="text-blue-400 hover:text-blue-200">Next →</a>
+        {% endif %}
+    </div>
+
+    <div class="mt-8">
+        <a href="{{ url_for('help.help_videos') }}" class="text-gray-400 hover:text-gray-200">Back to Videos</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-center items-center">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-full max-w-lg">
+        <h2 class="text-center text-2xl font-bold text-white mb-4">Edit User</h2>
+        <form action="{{ url_for('users.edit_user', user_id=user['id']) }}" method="POST" id="user-form" class="space-y-4">
+            
+            <!-- Full Name -->
+            <div>
+                <label for="name" class="block text-white font-medium">Full Name *</label>
+                <input type="text" id="name" name="name" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Enter full name" value="{{ user['name'] }}" required>
+            </div>
+
+            <!-- Username -->
+            <div>
+                <label for="login_name" class="block text-white font-medium">Username *</label>
+                <input type="text" id="login_name" name="login_name" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Enter username" value="{{ user['login_name'] }}" required>
+            </div>
+            
+            <!-- Email -->
+            <div class="w-full">
+                {% set email_parts = user['email'].split('@') if '@' in user['email'] else ['example', 'domain.com'] %}
+                <div>
+                    <label for="email" class="block text-white font-medium">Email *</label>
+                    <input type="email" id="email" name="email"
+                        class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black"
+                        placeholder="Enter email" value="{{ user['email'] }}" required>          </div>
+            </div>
+
+            <!-- Class Roles -->
+            <label class="block text-white font-medium">Class Roles</label>
+            <div class="grid grid-cols-2 gap-2">
+                {% for group in all_groups if group['section'] == 'classes' and group['id'] != artist_id %}
+                    <div class="flex items-center">
+                        <input type="checkbox" id="group_{{ group['id'] }}" name="user_group[]" value="{{ group['id'] }}" class="mr-2"
+                            {% if group['id'] in user_groups %} checked {% endif %}>
+                        <label for="group_{{ group['id'] }}" class="text-white">{{ group['name'] }}</label>
+                    </div>
+                {% endfor %}
+            
+            </div>
+            <!-- Film Roles -->
+            <label class="block text-white font-medium">Film Roles</label>
+            <div class="grid grid-cols-2 gap-2">
+                {% for group in all_groups if group['section'] == 'films' and group['id'] != artist_id %}
+                <div class="flex items-center">
+                    <input type="checkbox" id="group_{{ group['id'] }}" name="user_group[]" value="{{ group['id'] }}" class="mr-2"
+                        {% if group['id'] in user_groups %} checked {% endif %}>
+                    <label for="group_{{ group['id'] }}" class="text-white">{{ group['name'] }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- HIDDEN Artist Checkbox (Auto-selected if Student is checked) -->
+            <input type="checkbox" id="group_artist" name="user_group[]" value="{{ artist_id }}" 
+                class="hidden invisible absolute" 
+                {% if artist_id|string in user_groups|string %} checked {% endif %}>
+
+        
+
+
+            <!-- Buttons -->
+            <div class="flex justify-between mt-4">
+                <a href="{{ url_for('users.view_users') }}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</a>
+                <button type="button" class="bg-yellow-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-600" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Password Change Modal -->
+<div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden" id="changePasswordModal">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h5 class="text-center text-xl font-bold text-white mb-4">Change Password</h5>
+        <form id="change-password-form" method="POST" action="{{ url_for('users.change_password', user_id=user['id']) }}" class="space-y-4">
+            <div>
+                <label for="new_password" class="block text-white font-medium">New Password</label>
+                <input type="password" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" id="new_password" name="new_password" required>
+            </div>
+            <div>
+                <label for="confirm_password" class="block text-white font-medium">Confirm Password</label>
+                <input type="password" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" id="confirm_password" name="confirm_password" required>
+            </div>
+            <div class="flex justify-between mt-4">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600" onclick="document.getElementById('changePasswordModal').classList.add('hidden')">Cancel</button>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const changePasswordButton = document.querySelector("[data-bs-target='#changePasswordModal']");
+        const modal = document.getElementById("changePasswordModal");
+        const cancelButton = modal.querySelector("button[type='button']");
+
+        // Show modal when the button is clicked
+        changePasswordButton.addEventListener("click", function () {
+            modal.classList.remove("hidden");
+        });
+
+        // Hide modal when clicking the cancel button
+        cancelButton.addEventListener("click", function () {
+            modal.classList.add("hidden");
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get the "Student" checkbox
+        let studentCheckbox = document.querySelector("input[name='user_group[]'][value='{{ student_id }}']");
+        let artistCheckbox = document.getElementById("group_artist");
+
+        if (studentCheckbox && artistCheckbox) {
+            studentCheckbox.addEventListener("change", function () {
+                if (studentCheckbox.checked) {
+                    artistCheckbox.checked = true;  // ✅ Always check Artist
+                }
+            });
+        }
+    });
+</script>
+
+{% endblock %}

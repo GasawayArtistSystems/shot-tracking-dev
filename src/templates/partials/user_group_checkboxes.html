@@ -1,0 +1,21 @@
+<div class="mb-3">
+    <h5>Class Roles</h5>
+    {% for group in all_groups if group['section'] == 'classes' %}
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="user_group[]" value="{{ group['id'] }}" {% if group['id']
+            in user_groups %}checked{% endif %}>
+        <label class="form-check-label">{{ group['name'] }}</label>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mb-3">
+    <h5>Film Roles</h5>
+    {% for group in all_groups if group['section'] == 'films' %}
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="user_group[]" value="{{ group['id'] }}" {% if group['id']
+            in user_groups %}checked{% endif %}>
+        <label class="form-check-label">{{ group['name'] }}</label>
+    </div>
+    {% endfor %}
+</div>

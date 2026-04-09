@@ -1,0 +1,265 @@
+<aside
+  class="w-100 sticky top-4 self-start bg-red-950 text-white p-4 rounded-lg shadow overflow-hidden hover:overflow-y-auto max-h-screen scrollbar-hidden">
+  <h2 class="text-xl font-semibold mb-4">📚 Table of Contents</h2>
+  <ul class="space-y-2 text-sm">
+    <li>
+      <li class="mb-2">
+        <a href="{{ url_for('help.help_search_page') }}" class="block px-3 py-2 rounded bg-purple-700 hover:bg-purple-800 text-white font-semibold
+                  {% if request.path.startswith('/help/search_page') %} ring-2 ring-purple-300 {% endif %}">
+          🔎 Search Help
+        </a>
+      </li>
+      <details class="mb-2" open>
+        <summary class="cursor-pointer text-white text-sm">📘 Overview</summary>
+        <ul class="ml-4 border-l-2 border-red-800 pl-4 space-y-1 bg-amber-950 rounded p-2">
+          <li><a href="{{ url_for('help.help_overview') }}#overview" class="text-white">What This App Does</a></li>
+          <li><a href="{{ url_for('help.help_overview') }}#roles" class="text-white">Roles and What They Can Do</a></li>
+          <li><a href="{{ url_for('help.help_overview') }}#workflow" class="text-white">How Assignments and Shots
+              Flow</a>
+          </li>
+          <li><a href="{{ url_for('help.help_overview') }}#headers" class="text-white">Headers</a></li>
+          <li><a href="{{ url_for('help.help_overview') }}#dashboard" class="text-white">Dashboard</a></li>
+        </ul>
+      </details>
+      <p><a href="{{ url_for('help.help_getting_started') }}#classes" class="text-white">🎯 Getting Started Classes</a>
+      </p>
+      <p><a href="{{ url_for('help.help_getting_started') }}#films" class="text-white">🎯 Getting Started Films</a></p>
+    </li>
+
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">🎓 Classes</summary>
+      <ul class="ml-2 border-l-2 border-red-800 pl-4 space-y-1 bg-amber-950 rounded p-2">
+        <li><a href="{{ url_for('help.help_classes') }}" class="text-white">Overview</a></li>
+        <li class="text-white">Shot Walk-through</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_classes') }}#maya-walk-through" class="text-white">Maya</a></li>
+          <li><a href="{{ url_for('help.help_harmony') }}" class="text-white">Harmony</a></li>
+          <li><a href="{{ url_for('help.help_classes') }}#sbpro-walk-through" class="text-white">Storyboard
+              Pro</a></li>
+          <li><a href="{{ url_for('help.help_classes') }}#resubmit" class="text-white">Revise and Resubmit</a></li>
+          <li><a href="{{ url_for('help.help_grading') }}#students-status" class="text-white">Changing Status</a></li>
+        </ul>
+
+        <li class="text-white mt-2">Grading</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_grading') }}#changing-status" class="text-white">Changing Status</a></li>
+        </ul>
+        <li class="text-white mt-2">Classes</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_classes') }}#add-class" class="text-white">Adding a Class</a></li>
+          <li><a href="{{ url_for('help.help_classes') }}#edit-class" class="text-white">Editing a Class</a></li>
+          <li><a href="{{ url_for('help.help_classes') }}#delete-class" class="text-white">Deleting a Class</a></li>
+        </ul>
+        <li class="text-white mt-2">Adding Students to Class</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_classes') }}#adding-students-to-class" class="text-white">Adding Students
+              to Class</a></li>
+          <li><a href="{{ url_for('help.help_classes') }}#removing-students-from-class" class="text-white">Removing
+              Students from Class</a></li>
+        </ul>
+        <li class="text-white mt-2">Assignments</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_classes') }}#add-assignment" class="text-white">Adding an Assignment</a>
+          </li>
+          <li><a href="{{ url_for('help.help_classes') }}#edit-assignment" class="text-white">Editing an Assignment</a>
+          </li>
+          <li><a href="{{ url_for('help.help_classes') }}#delete-assignment" class="text-white">Deleting an
+              Assignment</a></li>
+        </ul>
+        </li>
+        <li><a href="{{ url_for('help.help_classes') }}#config-editor" class="text-white">Config Editor</a></li>
+        <li><a href="{{ url_for('help.help_classes') }}#creating-folders" class="text-white">Creating Folders</a></li>
+      </ul>
+    </details>
+
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">🎥 Films</summary>
+      <ul class="ml-2 border-l-2 border-red-800 pl-4 space-y-1 bg-amber-950 rounded p-2">
+        <li><a href="{{ url_for('help.help_films') }}#films-overview" class="text-white">Overview</a></li>
+        <li><a href="{{ url_for('help.help_timeline') }}#timeline-overview" class="text-white">Timeline</a></li>
+        <li class="text-white">Shot Walk-through</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_films') }}#film-walk-through" class="text-white">Shot Assigned and Start</a></li>
+          <ul><a href="{{ url_for('help.help_films') }}#maya-walk-through-shots" class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1"> Creating a shot</a></ul>
+          <ul><a href="{{ url_for('help.help_films') }}#maya-walk-through-playblast"
+              class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1"> Creating a Playblast</a></ul>
+          <li><a href="{{ url_for('help.help_films') }}#maya-walk-through-assets" class="text-white">Maya - Assets</a></li>
+          <li><a href="{{ url_for('help.help_harmony') }}" class="text-white">Harmony</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#sbpro-walk-through" class="text-white">Storyboard
+              Pro</a></li>
+          <li><a href="{{ url_for('help.help_grading') }}#changing-status" class="text-white">Changing Status</a></li>
+        </ul>
+        <li class="text-white mt-2">Approvals</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_grading') }}#coordinator-status" class="text-white">Changing Status</a></li>
+        </ul>
+        <li class="text-white mt-2">Films</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_films') }}#view-films" class="text-white">View Films</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-film" class="text-white">Adding a Film</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#edit-film" class="text-white">Editing a Film</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#delete-film" class="text-white">Deleting a Film</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-crew" class="text-white">Adding Crew</a></li>
+        </ul>
+        <li class="text-white mt-2">Scenes</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_films') }}#view-scenes" class="text-white">View Scenes</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-scenes" class="text-white">Adding a Scene</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-multiple-scenes" class="text-white">Adding Multiple Scenes</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#edit-scenes" class="text-white">Editing a Scene</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#delete-scenes" class="text-white">Deleting a Scene</a></li>
+        </ul>
+        <li class="text-white mt-2">Shots</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_films') }}#view-shots" class="text-white">View Shots</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-shots" class="text-white">Adding a Shot</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-shots-multiple" class="text-white">Adding Multiple Shots</a>
+          </li>
+          <li><a href="{{ url_for('help.help_films') }}#edit-shots" class="text-white">Editing a Shot</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#bulk-edit-shots" class="text-white">Editing/Deleting Multiple
+              Shots</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#assign-shot" class="text-white">Assigning Single Shot</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#delete-shots" class="text-white">Deleting a Shot</a></li>
+        </ul>
+        <li class="text-white mt-2">Assets</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_films') }}#view-assets" class="text-white">View Assets</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#add-assets" class="text-white">Adding an Asset</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#edit-assets" class="text-white">Editing an Asset</a></li>
+          <li><a href="{{ url_for('help.help_films') }}#delete-assets" class="text-white">Deleting an Asset</a></li>
+        </ul>
+        <li><a href="{{ url_for('help.help_films') }}#config-editor" class="text-white">Config Editor</a></li>
+        <li><a href="{{ url_for('help.help_films') }}#assign" class="text-white">Assign Shots/Assets</a></li>
+    </details>
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">🧠 Admin</summary>
+      <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1 bg-amber-950">
+        <li><a href="{{ url_for('help.help_admin') }}#users" class="text-white">Users</li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_admin') }}#add-users" class="text-white">Adding Users</a></li>
+          <li><a href="{{ url_for('help.help_admin') }}#edit-users" class="text-white">Editing Users</a></li>
+          <li><a href="{{ url_for('help.help_admin') }}#delete-users" class="text-white">Deleting Users</a></li>
+        </ul>
+        <li><a href="{{ url_for('help.help_admin') }}#configure-workflows" class="text-white">Workflows</a></li>
+        <li><a href="{{ url_for('help.help_admin') }}#archives" class="text-white">Archiving</a></li>
+        <li><a href="{{ url_for('help.help_admin') }}#settings" class="text-white">Settings</a></li>
+      </ul>
+    </details>
+
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">Markup Tool</summary>
+      <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1 bg-amber-950">
+        <li><a href="{{ url_for('help.help_markup_tool') }}#markup-tool" class="text-white">Overview
+        </li>
+        <li><a href="{{ url_for('help.help_markup_tool') }}#sections" class="text-white">Sections
+        </li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_markup_tool') }}#sidebar" class="text-white">SideBar</a>
+          </li>
+          <li><a href="{{ url_for('help.help_markup_tool') }}#grader" class="text-white">Grader/Approver</a></li>
+          <li><a href="{{ url_for('help.help_markup_tool') }}#player" class="text-white">Player</a></li>
+          <li><a href="{{ url_for('help.help_markup_tool') }}#timeline" class="text-white">Timeline</a></li>
+          <li><a href="{{ url_for('help.help_markup_tool') }}#tools" class="text-white">Tools</a></li>
+        </ul>
+        <li><a href="{{ url_for('help.help_markup_tool') }}#approval-sessions" class="text-white">Approval Sessions</a></li>
+        <li><a href="{{ url_for('help.help_markup_tool') }}#view-movies" class="text-white">Viewing Movies</a></li>
+        <li><a href="{{ url_for('help.help_markup_tool') }}#deleting-movies" class="text-white">Deleting Movies</a></li>
+        <li><a href="{{ url_for('help.help_markup_tool') }}#install-obs" class="text-white">Installing OBS Tools</a></li>
+      </ul>
+    </details>
+
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">Maya</summary>
+      <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1 bg-amber-950">
+        <li><a href="{{ url_for('help.help_maya') }}#assignments" class="text-white">Assignments</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#rigs" class="text-white">Rigs</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#facecam" class="text-white">Face Cam</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#referenceeditor" class="text-white">Reference Editor</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#incrementalsave" class="text-white">Incremental Save</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#studiolibrary" class="text-white">Studio Library</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#picker" class="text-white">Picker</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#designer" class="text-white">Designer</a></li>
+        <li><a href="{{ url_for('help.help_maya') }}#playblast" class="text-white">Playblast</a></li>
+      </ul>
+    </details>
+
+    <details class="mb-2">
+      <summary class="cursor-pointer text-white text-sm">Storyboard Pro</summary>
+      <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1 bg-amber-950">
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-pipeline" class="text-white">Overview</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-thumbnails" class="text-white">Thumbnails</a></li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-new-thumbnails" class="text-white">New Thumbnails</a></li>
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-thumbnails" class="text-white">Thumbnail Revisions</a></li>
+        </ul>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-storyboards" class="text-white">Storyboards</a></li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-new-storyboards" class="text-white">New Storyboards</a></li>
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-revision-storyboards" class="text-white">Storyboard Revisions</a>
+          </li>
+        </ul>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-audio" class="text-white">Adding Audio</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-project" class="text-white">Naming the Project</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-name-shot" class="text-white">Naming the Shot</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-create-panel" class="text-white">Create a new Panel</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-create-shot" class="text-white">Create a new Shot</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-name-layer" class="text-white">Change name of Layer</a></li>
+        <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting" class="text-white">Exporting</a></li>
+        <ul class="ml-6 border-l-2 border-red-800 pl-4 mt-1 space-y-1">
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-thumbnails" class="text-white">Thumbnails</a></li>
+          <li><a href="{{ url_for('help.help_sbpro') }}#sbpro-exporting-storyboards" class="text-white">Storyboards</a>
+          </li>
+        </ul>
+      </ul>
+    </details>
+
+    <li><a href="{{ url_for('help.help_harmony') }}" class="text-white">Harmony</a></li>
+    <li><a href="{{ url_for('help.help_tables') }}" class="text-white">Database Tables</a></li>
+
+    <hr class="my-3 border-red-800">
+
+    <li>
+      <a href="{{ url_for('help.help_videos') }}"
+        class="text-white block text-center bg-red-900 hover:bg-red-800 rounded-lg py-2 mt-2">
+        🎬 Help Videos
+      </a>
+    </li>
+
+
+  </ul>
+</aside>
+
+<script>
+  function toggleSubmenu(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hidden');
+  }
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("details").forEach((detail, index) => {
+      const key = `help-section-${index}`;
+
+      // Restore open state
+      if (localStorage.getItem(key) === "true") {
+        detail.setAttribute("open", true);
+      }
+
+      // Save open state on toggle
+      detail.addEventListener("toggle", () => {
+        localStorage.setItem(key, detail.open);
+      });
+    });
+  });
+</script>
+<style>
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>

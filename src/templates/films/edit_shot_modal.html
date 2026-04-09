@@ -1,0 +1,75 @@
+<!-- templates/edit_shot_modal.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Shot</title>
+    <link rel="stylesheet" href="https://cdn.tailwindcss.com">
+</head>
+
+<body class="bg-gray-900 text-white">
+    <div id="editShotModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div class="bg-white text-black rounded-xl shadow w-full max-w-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Edit Shot</h2>
+
+            <form id="edit-shot-form" method="POST" action="/films/edit_shot_route">
+                <input type="hidden" name="shot_id" id="edit-shot-id" />
+
+                <label class="block mb-2">Description</label>
+                <input type="text" name="description" id="edit-description"
+                    class="w-full px-3 py-2 border rounded mb-4" />
+
+                <label class="block mb-2">Start Date</label>
+                <input type="date" name="start_date" id="edit-start" class="w-full px-3 py-2 border rounded mb-4" />
+
+                <label class="block mb-2">Due Date</label>
+                <input type="date" name="due_date" id="edit-due" class="w-full px-3 py-2 border rounded mb-4" />
+
+                <div class="flex justify-end gap-2">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Save</button>
+                    <button type="button" onclick="window.close()" class="text-red-600">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Preload form data from the query string
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById("edit-shot-id").value = params.get("shot_id") || "";
+        document.getElementById("edit-description").value = params.get("description") || "";
+        document.getElementById("edit-start").value = params.get("start_date") || "";
+        document.getElementById("edit-due").value = params.get("due_date") || "";
+
+        // Handle form submission
+        const form = document.getElementById("edit-shot-form");
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.close();  // Close the modal window
+                    opener.location.reload();  // Refresh the parent window
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (error) {
+                alert("An error occurred. Please try again.");
+                console.error("Error:", error);
+            }
+        });
+    </script>
+</body>
+
+</html>

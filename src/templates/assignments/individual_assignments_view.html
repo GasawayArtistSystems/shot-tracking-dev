@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<script>
+    window.assignmentMode = "{{ mode }}"; // Set mode dynamically
+</script>
+<div class="container mx-auto">
+    <!-- Header & Navigation -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-white"><span class="text-yellow-400">{{ class_name }}</span> </h2>
+        <div class="flex space-x-4">
+            <a href="{{ url_for('classes.view_classes') }}" 
+               class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'classes' %}bg-yellow-800{% endif %}">
+                Classes
+            </a>
+            
+            <a href="{{ url_for('classes.view_students_in_class', class_id=class_id) }}" 
+               class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'students' %}bg-yellow-800{% endif %}">
+                Students
+            </a>
+            
+            <a href="{{ url_for('assignments.view_assignments', class_id=class_id) }}"
+               class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600 {% if active_page == 'assignments' %}bg-yellow-800{% endif %}">
+                Assignments
+            </a>
+        </div>
+    </div>
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <label for="assignmentDropdown" class="font-medium text-white">Select Assignment:</label>
+            <select id="assignment-select" class="text-black form-select w-auto px-3 py-2 border rounded-md">
+                {% for assignment in assignments %}
+                  <option value="{{ assignment.id }}" data-url="{{ url_for('assignments.view_individual_assignments', assignment_id=assignment.id, class_id=class_id) }}"
+                      {% if assignment.id == assignment_id %}selected{% endif %}>
+                      {{ assignment.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              
+        </div>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" id="edit-selected-btn" disabled>
+            ✏️ Edit Selected
+          </button>
+        <button onclick="openAddStudentModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            + Add Student
+        </button>
+    </div>
+</div>
+
+<!-- ✅ Add Student Modal -->
+<div id="addStudentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-1/3">
+        <h3 class="text-lg font-semibold mb-4 text-black">Add a Student to this Assignment</h3>
+
+        <!-- Student Selection -->
+        <label for="studentSelect" class="block text-sm font-medium text-black">Select Student:</label>
+        <select id="studentSelect" class="w-full p-2 border rounded mt-2 text-black">
+            {% for student in available_students %}
+                <option value="{{ student.id }}" class="text-black">{{ student.name }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-2 mt-4">
+            <button onclick="closeAddStudentModal()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                Cancel
+            </button>
+            <button onclick="addStudentToAssignment()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                Add Student
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 🔽 Filter Panel Toggle -->
+<button id="toggle-filter-panel" class="mb-2 px-4 py-2 bg-gray-700 text-white rounded">
+    Show Filters
+  </button>
+  
+  <!-- 🧰 Step Filter Panel -->
+  <form id="step-filter-form" class="mb-4 bg-gray-800 p-4 rounded text-white">
+    <div class="mb-2 font-semibold">Show Steps:</div>
+  
+    <div class="flex gap-2 mb-3">
+      <button type="button"
+              class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-sm"
+              onclick="selectAllSteps(false)">All Steps</button>
+      <button type="button"
+              class="bg-purple-700 hover:bg-purple-800 text-white px-3 py-1 rounded text-sm"
+              onclick="excludeFBAndGradeSteps()">Exclude FB & Grade</button>
+    </div>
+  
+    <div id="step-checkboxes" class="flex flex-wrap gap-4 mb-3">
+      <!-- checkboxes rendered by JS -->
+    </div>
+  </form>
+
+  <!-- 🔠 Sorting Controls -->
+  <div class="flex gap-2 mb-4">
+    <button type="button" id="sort-firstname" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
+      Sort by First Name
+    </button>
+    <button type="button" id="sort-lastname"
+      class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+      Sort by Last Name
+    </button>
+  </div>
+
+  
+    <!-- Individual Assignments Table -->
+    <div class="bg-red-950 shadow rounded-lg p-4">
+        <div class="overflow-y-auto max-h-[500px]">
+            <table class="table w-full" id="individual-assignments-table">
+                <thead class="bg-gray-200 text-white sticky top-0 z-10">
+                    <tr class="bg-gray-800 text-white">
+                      <th class="p-3 text-center">
+                        <input type="checkbox" id="select-all" />
+                      </th>
+                      <th class="p-3 text-left w-80">Student Name</th>
+                      <th class="p-3 text-center w-32">Start Date</th>
+                      <th class="p-3 text-center w-32">Due Date</th>
+                      <th class="p-3 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  
+                <tbody>
+                    {% for ia in individual_assignments %}
+                    <tr class="border-t text-white" data-assignment-id="{{ ia.id }}">
+                        <td class="p-3 text-center">
+                            <input type="checkbox" class="row-checkbox" data-id="{{ ia.id }}" />
+                        </td>
+                        <td class="p-3">{{ ia.student_name }}</td>
+                        <td class="p-3 text-center">{{ ia.start_date }}</td>
+                        <td class="p-3 text-center">{{ ia.completion_date }}</td>
+                        <td class="status-cell p-3 text-black"></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<!-- Tailwind Modal Wrapper -->
+<div id="editSelectedModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-red-950 rounded-lg p-6 shadow-md w-full max-w-3xl">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Edit Selected Assignments</h2>
+        <button onclick="document.getElementById('editSelectedModal').classList.add('hidden')" class="text-gray-500 hover:text-black text-xl">&times;</button>
+      </div>
+  
+      <div class="modal-body">
+        <p class="text-white mb-4">Update one or more statuses for selected assignments:</p>
+  
+        <div id="step-dropdowns" class="grid grid-cols-2 gap-6 text-white">
+          <!-- Dynamically generated dropdowns go here -->
+        </div>
+      </div>
+  
+      <div class="mt-6 flex justify-end space-x-2">
+        <button class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg" onclick="document.getElementById('editSelectedModal').classList.add('hidden')">Cancel</button>
+        <button class="px-4 py-2 bg-green-600 text-white rounded-lg" id="apply-bulk-status">Apply</button>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+
+
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<!-- Global Variables -->
+<script>
+    window.assignmentId = {{ assignment_id | default(0) | tojson }};
+    window.classId = {{ class_id | default(0) | tojson }};
+    window.userId = {{ user_id | tojson }};
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const table = document.getElementById("individual-assignments-table");
+    const tbody = table.querySelector("tbody");
+
+    function sortRows(getKey) {
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      rows.sort((a, b) => {
+        const nameA = getKey(a.querySelector("td:nth-child(2)").innerText.trim().toLowerCase());
+        const nameB = getKey(b.querySelector("td:nth-child(2)").innerText.trim().toLowerCase());
+        return nameA.localeCompare(nameB);
+      });
+      rows.forEach(row => tbody.appendChild(row)); // re-append in sorted order
+    }
+
+    // Sort by first word (first name)
+    document.getElementById("sort-firstname").addEventListener("click", () => {
+      sortRows(name => name.split(" ")[0] || "");
+    });
+
+    // Sort by last word (last name)
+    document.getElementById("sort-lastname").addEventListener("click", () => {
+      sortRows(name => {
+        const parts = name.split(" ");
+        return parts[parts.length - 1] || "";
+      });
+    });
+  });
+</script>
+
+
+<!-- External Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+
+<!-- Page-Specific Scripts -->
+<script type="module" src="{{ url_for('static', filename='js/IndividualAssignments.js') }}" defer></script>
+
+{% endblock %}

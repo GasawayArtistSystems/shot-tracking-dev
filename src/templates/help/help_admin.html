@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div
+    class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+    <h2 class="text-3xl font-bold mb-4" id="admin-overview">🧠 Admin</h2>
+    <p class="mb-4">
+      This page will show the inner workings of the application. This is where the <strong
+        class="text-blue-500">Users</strong> are added and edited, <strong class="text-blue-500">Workflows</strong> are
+      added, deleted, locked,
+      and edited, and <strong class="text-blue-500">Archives</strong> are backed up.
+    </p>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="add-users">Users</h3>
+    <p class="mb-4">
+      All users of the application must be added and edited here.
+    </p>
+    <p><img src="{{ url_for('static', filename='help/images/users.png') }}" alt="Users"
+        class="w-[90%] h-auto align-middle" /></p>
+    <p class="mt-4 mb-4">
+      Each user has a unique name, username (not shown), email, and groups designation.
+    </p>
+    <h5 class="text-xl text-green-500 mt-4 mb-2" id="add-users">Adding Users</h5>
+    <p class="mb-4">
+      To add a new user, click on the + Add New User button.
+      This will bring up an Add New User window.
+    </p>
+    <div class="flex items-start justify-between gap-6 my-6">
+      <!-- Text Left -->
+      <div class="flex-1">
+        <p class="text-white mb-2">
+          This window let's the user put in the following values:
+        </p>
+        <ul class="list-disc list-inside mb-6">
+          <li><strong class="text-blue-500"> Name </strong>- Users full name</li>
+          <li><strong class="text-blue-500">Username </strong> - usually the 6+2 used in all UC logins</li>
+          <li><strong class="text-blue-500">Email </strong>- use the same username for simplcity</li>
+          <li><strong class="text-blue-500">Constructed Email</strong> - This is created by the app based on the fields
+            entered by the user.</li>
+          <li><strong class="text-blue-500">Password </strong>- use strong password</li>
+          <li><strong class="text-blue-500">Confirm Password </strong>- use same strong password as above</li>
+        </ul>
+        <h5 class="text-xl text-green-500 mt-4 mb-2" id="assign-roles">Assign Roles</h5>
+        <p class="text-white">
+          Groups. The user can choose different groups to be a part of.</p>
+        <p class="text-white"> The groups are divided in two groups: Classes and Films. The user can choose whichever
+          group they want to be in.
+        </p>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+          <strong>💡BONUS TIP:</strong> Students MUST choose Artist in order to be chosen for films.
+        </div>
+        <h5 class="text-xl text-green-500 mt-4 mb-2" id="edit-users">Editing Users</h5>
+        <p class="mt-4 mb-4">
+          The Edit User window is exactly like the Add User window.</p>
+        <p class="text-white"> Users can change any aspect including the Password.
+        </p>
+        <h5 class="text-xl text-green-500 mt-4 mb-2" id="delete-users">Deleting Users</h5>
+        <p class="mt-4 mb-4">
+          To delete a user, click on the Delete button next to the users name.</p>
+        <div class="bg-red-400 border-l-4 border-yellow-500 text-blue-900 p-3 mt-1 rounded text-sm">
+          <strong>💡WARNING:</strong> This is undoable!
+        </div>
+      </div>
+
+
+      <!-- Image Right -->
+      <img src="{{ url_for('static', filename='help/images/add-user.png') }}" alt="Settings Panel"
+        class="w-1/3 h-auto rounded shadow-lg" />
+    </div>
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="configure-workflows">Workflows</h3>
+    <p class="mb-4">
+      The heart of the app is the workflows. A user can setup the step order of an entire workflow and what the statuses
+      may be at each step.
+    </p>
+    <h3 class="text-xl text-green-500 mt-8 mb-2">Definitions</h3>
+    <p class="text-white"> <strong class="text-blue-500">Overall Flow </strong>- The top level of workflows. It has
+      multiple Individual Flows to make the Overall Flow.</p>
+    <p class="text-white"> <strong class="text-blue-500">Individual Flow</strong> - A collection of nodes (steps) that
+      create an entire flow.</p>
+    <p class="text-white"> <strong class="text-blue-500">Nodes</strong> - a step in the process of an individual flow.
+    </p>
+    <p class="mt-4 mb-4">
+      Overall Flow -- Individual Flow -- Nodes</p>
+    <p class="text-green-500"> An Example</p>
+    <ul class="list-disc list-inside mb-6">
+      <li><strong class="text-blue-500">Overall flow </strong>- Basic Assignment</li>
+      <li><strong class="text-blue-500">Individual flows </strong> - Assignment -- FB Assignment -- Grade-Assignment
+      </li>
+      <li><strong class="text-blue-500">Nodes (for Assignment) </strong>- Standby -- Ready to Start -- In Progress --
+        Submitted -- Graded</li>
+      <img src="{{ url_for('static', filename='help/images/assignment-workflow.png') }}" alt="Assignment Workflow"
+        class="w-1/3 h-auto rounded shadow-lg" /></li>
+    </ul>
+    <h3 class="text-xl text-green-500 mt-8 mb-2">Rules</h3>
+    <p class="mt-4 mb-4">
+      In order to make the rest of the application work correctly, there are a few rules that must be followed, when
+      creating workflows. All the workflows that are already created
+      follow these rules.</p>
+    <ol class="list-decimal list-inside text-lg mb-8 space-y-4 leading-relaxed">
+      <li><strong class="text-blue-500">Use of FB</strong> - when creating a feedback individual flow, start with FB.
+      </li>
+      <li><strong class="text-blue-500">Y position of nodes</strong> - the nodes are ordered by both being linked and by
+        y position. This is how the nodes are listed in the dropdowns.</li>
+      <li><strong class="text-blue-500">Use Crossflows</strong> - when one node affects the node of another individual
+        flow, the user must use crossflows.</li>
+      <li><strong class="text-blue-500">Save Flowchart</strong> - when adding, editing, or moving nodes, be sure to Save
+        Flowchart</li>
+    </ol>
+
+    <h3 class="text-xl text-green-500 mt-8 mb-2">Individual Flows</h3>
+    <p class="mt-4 mb-4">
+      This is the top level of the workflows. This is what is used for assignments, shots, and assets.</p>
+    <img src="{{ url_for('static', filename='help/images/workflows-overall.png') }}" alt="Overall Workflows"
+      class="w-[40%] h-auto align-middle" />
+    <p class="text-white"> <strong class="text-blue-500">Flow Names</strong>- The names of each Flow</p>
+    <p class="text-white"> <strong class="text-blue-500">Lock</strong> - The flow is locked and must be unlocked to edit
+      or delete</p>
+    <p class="text-white"> <strong class="text-blue-500">Edit/Delete</strong> - The edit button brings up an edit modal.
+      The delete will delete the overall flow.</p>
+    <p class="mt-4 mb-4">
+
+
+
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="archives">Archives</h3>
+    <p class="mb-4">
+      Archiving is used for classes, films, and users.
+    </p>
+
+    <div>
+      <hr class="my-4 pl-4 border-gray-600">
+    </div>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="settings">Settings</h3>
+    <p class="mb-4">
+      Admin can add/change the user groups, update semesters, and other things.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/settings.png') }}" alt="Settings"
+      class="w-[40%] h-auto align-middle" />
+    <h3 class="text-xl text-green-500 mt-8 mb-2">User Groups</h3>
+    <p class="mt-4 mb-4">
+      Add any new group to be used in classes or production. This section may be rarely used.</p>
+    <ol class="list-decimal list-inside text-lg mb-8 space-y-4 leading-relaxed">
+      <li><strong class="text-blue-500">Enter Group Name</strong> - add the new group name</li>
+      <li><strong class="text-blue-500">Permission Type</strong> - this dropdown shows the different permission types.
+      </li>
+      <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
+        <p>1 - Basic - for students</p>
+        <p>2 - Elevated - for production team and instructors</p>
+        <p>3 - Admin</p>
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+          <strong>WARNING:</strong> Be careful changing any user groups as this will affect every class or film. Please
+          check with Mike Gasaway before
+          editing any group. It's ok to add groups.
+        </div>
+      </ol>
+      <li><strong class="text-blue-500">Class/Films</strong> - Pick either classes or films</li>
+      <li><strong class="text-blue-500">Add</strong> - adds the new group</li>
+    </ol>
+
+    <h3 class="text-xl text-green-500 mt-8 mb-2">Manage Semesters</h3>
+    <p class="mt-4 mb-4">
+      Used to add/edit/delete semesters</p>
+    <img src="{{ url_for('static', filename='help/images/semesters.png') }}" alt="Semesters"
+      class="w-[70%] h-auto align-middle" />
+    <p class="text-white"> <strong class="text-blue-500">+ Add Semester</strong>- Opens the Add Semester Modal</p>
+    <img src="{{ url_for('static', filename='help/images/add-semester.png') }}" alt="Add Semester"
+      class="w-[40%] h-auto align-middle" />
+    <p class="text-white"> <strong class="text-blue-500">Term</strong> - Select the term from the dropdown.</p>
+    <p class="text-white"> <strong class="text-blue-500">Year</strong> - Select the year from the dropdown.</p>
+    <p class="text-white"> <strong class="text-blue-500">Start Date</strong> - Enter the Start Date for the semester</p>
+    <p class="text-white"> <strong class="text-blue-500">End Date</strong> - Enter the End Date for the semester</p>
+    <p class="mt-4 mb-4">
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const headings = document.querySelectorAll("h3[id]");
+      const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+      const observer = new IntersectionObserver(
+        entries => {
+          for (let entry of entries) {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute("id");
+              tocLinks.forEach(link => {
+                link.classList.remove("text-yellow-400", "font-semibold");
+                if (link.getAttribute("href") === `#${id}`) {
+                  link.classList.add("text-yellow-400", "font-semibold");
+                }
+              });
+            }
+          }
+        },
+        { threshold: 0.3 }
+      );
+
+      headings.forEach(h => observer.observe(h));
+    });
+  </script>
+  {% endblock %}

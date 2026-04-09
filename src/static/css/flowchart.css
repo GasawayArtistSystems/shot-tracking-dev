@@ -1,0 +1,64 @@
+/* Fix alignment of title and Add button */
+.overall-flows-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 100px; /* Ensures spacing between elements */
+}
+
+
+/* Ensure button size is compact */
+#openCreateFlowButton {
+    white-space: nowrap; /* Prevents button text from wrapping */
+    flex-shrink: 0; /* Prevents button from resizing */
+}
+
+button#createIndividualFlowButton {
+    flex-grow: 1;
+    min-width: 120px;
+}
+
+#addIndividualFlowModal {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 🖼️ Only assignment thumbnails get forced size */
+.canvas-thumbnail canvas {
+    width: 100px !important;
+    height: 100px !important;
+    object-fit: contain;
+  }
+  
+  /* 📦 GoJS canvas gets full layout freedom */
+  .gojs-canvas canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  /* Keep color picker same size as other inputs */
+  input[type="color"] {
+      -webkit-appearance: none;
+      /* reset browser default */
+      border: none;
+      width: 2.5rem;
+      /* smaller square */
+      height: 2.5rem;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 0.375rem;
+      /* matches Tailwind rounded-md */
+  }
+
+  input[type="color"]::-webkit-color-swatch {
+      border-radius: 0.375rem;
+      border: 1px solid #ccc;
+  }
+
+  input[type="color"]::-moz-color-swatch {
+      border-radius: 0.375rem;
+      border: 1px solid #ccc;
+  }

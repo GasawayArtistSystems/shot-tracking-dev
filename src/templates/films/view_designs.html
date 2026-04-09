@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-white">
+        {{ asset_name }} Designs ({{ asset_category }})
+    </h2>
+
+    <button onclick="history.back()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+        ⬅️ Back
+    </button>
+</div>
+
+<div class="grid grid-cols-4 gap-4">
+    {% for img in images %}
+    <div class="bg-gray-800 p-2 rounded">
+        <img src="{{ url_for('films.send_design_image', film=film, asset_category=asset_category, asset_name=asset_name, filename=img) }}"
+            alt="{{ img }}" class="w-full rounded">
+        <p class="text-white text-sm mt-1 truncate">{{ img }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

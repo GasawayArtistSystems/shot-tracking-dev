@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Edit Assignment</h2>
+    <form action="{{ url_for('assignments.edit_assignment', assignment_id=assignment.id) }}" method="POST">
+        <input type="hidden" name="class_id" value="{{ assignment.class_id }}">
+
+        <!-- Assignment Name, Start Date, and Completion Date on the same row -->
+        <div class="row mb-3">
+            <!-- Assignment Name -->
+            <div class="col-md-6">
+                <label for="name" class="form-label">Assignment Name</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ assignment.name }}" required>
+            </div>
+            <!-- Start Date -->
+            <div class="col-md-2">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" 
+                       value="{{ assignment.start_date }}" required>
+            </div>
+            <!-- Completion Date -->
+            <div class="col-md-2">
+                <label for="completion_date" class="form-label">Completion Date</label>
+                <input type="date" id="completion_date" name="completion_date" class="form-control" 
+                       value="{{ assignment.completion_date }}" required>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('assignments.view_assignments', class_id=assignment.class_id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

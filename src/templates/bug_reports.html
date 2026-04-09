@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 mt-8">
+    <h1 class="text-2xl font-bold mb-6 text-white">🐞 Bug Reports</h1>
+    <form id="statusFilter" class="mb-4 flex items-center gap-2" method="get" action="/bugreport/bugs">
+        <label for="status" class="text-sm text-white">Show:</label>
+        <select id="status" name="status" class="border rounded px-2 py-1 text-sm text-black"
+            onchange="document.getElementById('statusFilter').submit()">
+            <option value="All" {% if current_status=='All' %}selected{% endif %}>All</option>
+            <option value="Open" {% if current_status=='Open' %}selected{% endif %}>Open</option>
+            <option value="Resolved" {% if current_status=='Resolved' %}selected{% endif %}>Resolved</option>
+            <option value="Archived" {% if current_status=='Archived' %}selected{% endif %}>Archived</option>
+        </select>
+    </form>
+
+
+    <div class="overflow-x-auto bg-white shadow-md rounded-xl p-6">
+        <table class="table-auto w-full text-sm text-left text-black">
+            <thead class="bg-gray-200 uppercase">
+                <tr>
+                    <th class="px-4 py-2">ID</th>
+                    <th class="px-4 py-2">Type</th>
+                    <th class="px-4 py-2">Title</th>
+                    <th class="px-4 py-2">Department</th>
+                    <th class="px-4 py-2">DESCRIPTION</th>
+                    <th class="px-4 py-2">Area</th>
+                    <th class="px-4 py-2">Priority</th>
+                    <th class="px-4 py-2">Timestamp</th>
+                    <th class="px-4 py-2">STATUS</th>
+                    <th class="px-4 py-2">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-800">
+                {% for bug in bugs %}
+                <tr class="border-b hover:bg-gray-100">
+                    <td class="px-4 py-2">{{ bug['id'] }}</td>
+                    <td class="px-4 py-2">{{ bug['type'] }}</td>
+                    <td class="px-4 py-2">{{ bug['title'] }}</td>
+                    <td class="px-4 py-2">{{ bug['department'] }}</td>
+                    <td class="px-4 py-2 break-words max-w-xs">{{ bug['description'] }}</td>
+                    <td class="px-4 py-2">{{ bug['area'] }}</td>
+                    <td class="px-4 py-2">{{ bug['priority'] }}</td>
+                    <td class="px-4 py-2">{{ bug['timestamp'] }}</td>
+<!-- STATUS column -->
+<td class="px-4 py-2">
+    {{ bug['status'] }}
+</td>
+
+                    <!-- ACTIONS column -->
+                    <td class="px-4 py-2 space-x-2">
+                        {% if bug['status'] == 'Open' %}
+                        <form onsubmit="resolveBug(event, {{ bug['id'] }})" class="inline">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 rounded">
+                                Mark Resolved
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <form onsubmit="archiveBug(event, {{ bug['id'] }})" class="inline">
+                            <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-3 py-1 rounded">
+                                Archive
+                            </button>
+                        </form>
+
+                        <form onsubmit="deleteBug(event, {{ bug['id'] }})" class="inline">
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 rounded">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="px-4 py-6 text-center text-gray-400">
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function resolveBug(event, bugId) {
+        event.preventDefault();  // 🛑 Stop normal form submit
+
+        fetch(`/bugreport/bugs/resolve/${bugId}`, {
+            method: 'POST',
+        })
+            .then(response => {
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Resolved!',
+                        text: 'The bug has been marked as resolved.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();  // 🔄 Refresh page after sweet alert closes
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to resolve the bug.'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Something went wrong.'
+                });
+            });
+    }
+</script>
+
+<script>
+    function archiveBug(event, bugId) {
+        event.preventDefault();
+        Swal.fire({
+            icon: 'warning',
+            title: 'Archive this bug?',
+            text: 'It will be hidden from the active list but kept in the database.',
+            showCancelButton: true,
+            confirmButtonText: 'Archive',
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            fetch(`/bugreport/bugs/archive/${bugId}`, { method: 'POST' })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(() => {
+                    Swal.fire({ icon: 'success', title: 'Archived', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                })
+                .catch(() => {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to archive bug.' });
+                });
+        });
+    }
+
+    function deleteBug(event, bugId) {
+        event.preventDefault();
+        Swal.fire({
+            icon: 'error',
+            title: 'Delete this bug?',
+            text: 'This permanently removes it.',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            confirmButtonColor: '#dc2626',
+        }).then(result => {
+            if (!result.isConfirmed) return;
+            fetch(`/bugreport/bugs/delete/${bugId}`, { method: 'POST' })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(() => {
+                    Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                })
+                .catch(() => {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to delete bug.' });
+                });
+        });
+    }
+</script>
+
+
+
+{% endblock %}

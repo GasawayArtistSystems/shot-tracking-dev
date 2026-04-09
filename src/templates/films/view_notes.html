@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto mt-6">
+    <div class="bg-red-900 shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-3xl font-bold text-white">{{ film.name }}</h1>
+            <a href="{{ url_for('films.view_films') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                ⬅ Back to Films
+            </a>
+        </div>
+
+        <p class="text-gray-200 italic mb-6">
+            (Click on <span class="font-semibold">Choose File</span> to select the file, then click either
+            <span class="text-blue-300">Upload Note</span> or <span class="text-green-300">Upload Script</span> to save it.)
+        </p>
+
+
+        <!-- Upload Form -->
+        <!-- Unified Upload Form -->
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('films.upload_note_or_script', film_id=film.id) }}"
+            class="mb-6">
+            <input type="file" name="shared_file" required
+                class="block w-full text-sm text-gray-200 border border-gray-500 rounded mb-2 cursor-pointer" />
+
+            <div class="flex gap-4">
+                <button type="submit" name="action" value="note"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    Upload Note
+                </button>
+                <button type="submit" name="action" value="script"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Upload Script
+                </button>
+            </div>
+        </form>
+
+
+        {% if notes_files %}
+        <ul class="list-disc list-inside text-white">
+            {% for file in notes_files %}
+            <li>
+                <a href="{{ url_for('films.download_note_file', film_id=film.id, filename=file) }}" target="_blank"
+                    class="text-blue-400 hover:underline">
+                    {{ file }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-300 italic">No notes found for this film.</p>
+        {% endif %}
+
+    {% if script_files %}
+    <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Scripts</h2>
+    <ul class="list-disc list-inside text-white">
+        {% for file in script_files %}
+        <li>
+            <a href="{{ url_for('films.download_script_file', film_id=film.id, filename=file) }}" target="_blank"
+                class="text-green-400 hover:underline">
+                {{ file }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-300 italic">No scripts found for this film.</p>
+    {% endif %}
+
+    </div>
+
+    
+
+
+</div>
+
+{% endblock %}

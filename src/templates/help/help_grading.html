@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+
+  {% include 'partials/help_sidebar.html' %}
+
+  <div class="flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8 rounded-2xl shadow-lg relative z-30">
+    <h2 class="text-3xl font-bold mb-4" id="overview">Grading</h2>
+    <p class="mb-4">
+      This page will show how grading works in the app. It will show how to change the status of an assignment and of
+      shots or assets in a film. Grading for films is exactly like approving shots.
+    </p>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+      <strong>📌REMEMBER:</strong> The <a href="{{ url_for('help.help_overview') }}#dashboard"
+        class="underline font-semibold text-yellow-800 hover:text-yellow-700">
+        DASHBOARD
+      </a> is where all statuses are changed. Only UPMs and Coodinators may have access to other parts of the software.
+    </div>
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="students-status">STUDENTS - Changing Status on
+      Assignments</h3>
+
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+          <strong>NOTE!:</strong> Maya has a built in Sumitting process. Go to the <a href="{{ url_for('help.help_classes') }}#maya-walk-through"
+            class="underline font-semibold text-yellow-800 hover:text-yellow-700">
+            Maya
+          </a> page to see how that works.
+        </div>
+
+    <p class="mb-4">Once an assignment has been submitted to be graded or a shot has been submitted to be approved, the
+      next step is to change the status ONLY if you want to change the grade. </p>
+    <ol class="list-decimal list-inside mb-4 space-y-2">
+      <li><span class="text-yellow-400 font-semibold">The STATUS of your assignment is now switched to Submitted<img
+            src="{{ url_for('static', filename='help/images/dropdown-submitted.png') }}" alt="dropdown-submitted"
+            class="w-[128px] h-[64px] rounded shadow" /> </span></li>
+      <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+        <li>Your instructor is informed that your assignment is ready to be graded.</li>
+      </ol>
+      <li><span class="text-yellow-400 font-semibold">Instructor grades assignment and may include a markup.</span></li>
+      <ol type="a" class="list-[lower-alpha] ml-12 mt-1 space-y-1">
+        <li>When it's graded, the status of your assignment may change:</li>
+        <ol type="a" class="list-[lower-roman] ml-12 mt-1 space-y-1">
+          <li>If graded under a 5, the status will change to <strong>Retake</strong></li>
+          <li>If graded a 5, the status will change to <strong>Graded.</strong> The assignment is considered completed!
+          </li>
+          <img src="{{ url_for('static', filename='help/images/dashboard-retake.png') }}" alt="Dashboard-Retake"
+            class="rounded shadow mb-2">
+        </ol>
+        <li>There may be a <a href="{{ url_for('help.help_overview') }}#dashboard-reviewing"
+            class="font-semibold text-blue-400 hover:text-yellow-500">review</a> to watch what you can change/delete/add to get a better grade.</li>
+        <li>If it's less than a 5, you have the option of <a href="{{ url_for('help.help_classes') }}#class-submit"
+            class="font-semibold text-blue-400 hover:text-yellow-500">making changes</a> to get a better grade.</li>
+      </ol>
+    </ol>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="script-panel">Grades</h3>
+    <p class="mb-4">The grades are simplified to show you where you are in the assignment. MOST assignments, unless
+      otherwise noted, may be turned in again for a possible higher score.</p>
+    <p class="mb-4">The following is the scale used for most assignments:</p>
+    <ul class="list-disc list-inside space-y-1 mb-6">
+      <li>F - 0 - Nothing submitted</li>
+      <li>D - 1 - Not much effort put forth</li>
+      <li>C - 2 - Average student work</li>
+      <li>B - 3 - Good student work</li>
+      <li>A - 4 - Very good student work</li>
+      <li>A+ - 5 - Excellent good student work</li>
+    </ul>
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-3 mt-1 rounded text-sm">
+      <strong>📌REMEMBER:</strong> The <a href="{{ url_for('help.help_overview') }}#dashboard"
+        class="underline font-semibold text-yellow-800 hover:text-yellow-700">
+        DASHBOARD
+      </a> is where all statuses live. This will always show you what is due and what your current grades for assignments are. there
+      may also be Reviews to watch a video, explaining what is needed to improve.
+    </div>
+
+    <div class="my-8">
+      <hr class="border-gray-700">
+    </div>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="instructors-status">INSTRUCTORS - Changing Status on
+      Assignments</h3>
+    <p class="mb-4">The best way to grade assignments is through the <a href="{{ url_for('help.help_markup_tool') }}#class-submit"
+      class="font-semibold text-blue-400 hover:text-yellow-500">Markup Tool</a>. This allows the instructor to go through each animation frame by frame and add drawings ontop of each frame. They can then assign a letter grade that
+      automatically gets updated in the application.
+    </p>
+    <p class="mb-4">Assignments can be graded through the main app as well. Simply go to the class and then assignment. This individual assignment page will show all the individual assignments for every student in the class.
+      It will also show each status of each step.
+    </p>
+    <img src="{{ url_for('static', filename='help/images/complex-assignment-grade.png') }}" alt="Complex Grade"
+      class="rounded shadow mb-2">
+    <p class="mb-4">If the assignment is submitted, the FB (feedback) status will change to Grading.</p>
+    <p class="mb-4">This means it's ready for you to grade. </p>
+    <p class="mb-4">You can change the grade here without using a markup. If the grade is less than a 5, it will
+      automatically change the status to Retake. It is then up to the student if they want to do the retake or can change the grade to Graded.
+      </p>
+
+      <div class="my-8">
+        <hr class="border-gray-700">
+      </div>
+
+    <h3 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="coordinator-status">COORDINATORS - Changing Status on
+      Shots/Assets</h3>
+    <p class="mb-4">Approvals are handled through the <a
+        href="{{ url_for('help.help_markup_tool') }}#class-submit"
+        class="font-semibold text-blue-400 hover:text-yellow-500">Markup Tool</a>.</p>
+    <p>This allows the director, upm, coordinator, and artists to go through
+      each animation frame by frame and add drawings ontop of each frame. They can then approve or call a retake on the shot or asset.
+    </p>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const headings = document.querySelectorAll("h3[id]");
+    const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+    const observer = new IntersectionObserver(
+      entries => {
+        for (let entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            tocLinks.forEach(link => {
+              link.classList.remove("text-yellow-400", "font-semibold");
+              if (link.getAttribute("href") === `#${id}`) {
+                link.classList.add("text-yellow-400", "font-semibold");
+              }
+            });
+          }
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    headings.forEach(h => observer.observe(h));
+  });
+</script>
+{% endblock %}

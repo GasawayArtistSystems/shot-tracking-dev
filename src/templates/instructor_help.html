@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+{% block content %}
+<div class="flex flex-row gap-8 max-w-7xl mx-auto my-12 px-4">
+  <!-- Sidebar TOC -->
+  <aside class="w-64 sticky top-4 self-start bg-red-950 text-white p-4 rounded-lg shadow">
+    <h2 class="text-xl font-semibold mb-4">📚 Table of Contents</h2>
+    <ul class="space-y-2 text-sm">
+      <li>
+        <div>
+          <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left text-white">
+              📘 Overview
+              <svg :class="{ 'rotate-180': open }" class="h-4 w-4 transform transition-transform ml-1"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 12l-6-6h12l-6 6z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <ul x-show="open" x-transition class="ml-3 mt-2 space-y-1 text-sm">
+              <li><a href="#overview" class="text-purple-500">• Main Page</a></li>
+              <li><a href="#explorer-panel" class="text-purple-500">• Classes</a></li>
+              <li><a href="#explorer-panel" class="text-purple-500">• Films</a></li>
+              <li><a href="#explorer-panel" class="text-purple-500">• Admin</a></li>
+            </ul>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left text-white">
+              🎓 Classes
+              <svg :class="{ 'rotate-180': open }" class="h-4 w-4 transform transition-transform ml-1"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 12l-6-6h12l-6 6z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <ul x-show="open" x-transition class="ml-3 mt-2 space-y-1 text-sm">
+              <span class="block text-purple-500">• Creating a Class</span>
+              <ul class="ml-4 space-y-1 text-sm">
+                <li><a href="#explorer-panel" class="text-rose-600">• Adding a New Class</a></li>
+                <li><a href="#explorer-panel" class="text-rose-600">• Editing a Class</a></li>
+                <li><a href="#explorer-panel" class="text-rose-600">• Adding Student to a Class</a></li>
+              </ul>
+            </ul>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left text-white">
+              🎥 Films
+              <svg :class="{ 'rotate-180': open }" class="h-4 w-4 transform transition-transform ml-1"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 12l-6-6h12l-6 6z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <ul x-show="open" x-transition class="ml-3 mt-2 space-y-1 text-sm">
+              <li><a href="#overview" class="hover:underline">• Main Page</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Classes</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Films</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Admin</a></li>
+            </ul>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left text-white">
+              🧠 Admin
+              <svg :class="{ 'rotate-180': open }" class="h-4 w-4 transform transition-transform ml-1"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 12l-6-6h12l-6 6z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <ul x-show="open" x-transition class="ml-3 mt-2 space-y-1 text-sm">
+              <li><a href="#overview" class="hover:underline">• Main Page</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Classes</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Films</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Admin</a></li>
+            </ul>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="flex items-center justify-between w-full text-left text-white">
+              🛠️ Grading
+              <svg :class="{ 'rotate-180': open }" class="h-4 w-4 transform transition-transform ml-1"
+                viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 12l-6-6h12l-6 6z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <ul x-show="open" x-transition class="ml-3 mt-2 space-y-1 text-sm">
+              <li><a href="#overview" class="hover:underline">• Maya</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Harmony</a></li>
+              <li><a href="#explorer-panel" class="hover:underline">• Storyboard Pro</a></li>
+            </ul>
+          </div>
+        </div>
+      </li>
+      <li><a href="#example-image">🖼️ Image Example</a></li>
+      <li><a href="#resources">🔗 Resources</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Help Content -->
+  <div class="flex-1 bg-red-950 text-white p-6 rounded-lg shadow">
+
+    <h2 class="text-3xl font-bold mb-4" id="overview">📘 Overview</h2>
+    <p class="mb-4">
+      Welcome to the Film and Class Tracker Guide. This page outlines how to create and run classes and assignments,
+      track submissions, and explore and create workflows.
+    </p>
+
+    <div class="bg-gray-600 text-yellow-400 p-4 rounded mb-6 border border-blue-300">
+      <strong>💡 Tip:</strong> You can link to any section using the anchor links in the TOC.
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="how-it-works">🛠️ How It Works</h3>
+    <p class="mb-4">Students render playblasts and the system logs submissions if metadata is detected:</p>
+    <ul class="list-disc list-inside mb-6">
+      <li><code>GAA_user</code>: student login</li>
+      <li><code>GAA_class</code>: class name</li>
+      <li><code>GAA_assignment</code>: assignment ID</li>
+    </ul>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="example-image">🖼️ Image Example</h3>
+    <div class="mb-6">
+      <img src="{{ url_for('static', filename='images/sample-diagram.png') }}" alt="Diagram"
+        class="rounded shadow mb-2">
+      <p class="text-sm text-gray-600 italic">Diagram showing the assignment lifecycle from Maya to Database.</p>
+    </div>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="resources">🔗 Resources</h3>
+    <ul class="list-disc list-inside space-y-1 mb-6">
+      <li><a href="https://ffmpeg.org" target="_blank" class="text-blue-600 hover:underline">FFmpeg Official Site</a>
+      </li>
+      <li><a href="https://yourdomain.com/help" class="text-blue-600 hover:underline">User Guide (Markdown)</a></li>
+    </ul>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="script-panel">📄 Script Panel</h3>
+    <p class="mb-4">This panel is used for script references, notes, and shot instructions.</p>
+
+    <h3 class="text-2xl font-semibold mt-8 mb-2" id="explorer-panel">🗂️ Explorer Panel</h3>
+    <p class="mb-4">This area displays shots, assets, and the project structure in hierarchy.</p>
+  </div>
+</div>
+
+<!-- <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const headings = document.querySelectorAll("h3[id]");
+  const tocLinks = document.querySelectorAll("aside a[href^='#']");
+
+  const observer = new IntersectionObserver(
+    entries => {
+      for (let entry of entries) {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute("id");
+          tocLinks.forEach(link => {
+            link.classList.remove("text-yellow-400", "font-semibold");
+            if (link.getAttribute("href") === `#${id}`) {
+              link.classList.add("text-yellow-400", "font-semibold");
+            }
+          });
+        }
+      }
+    },
+    { threshold: 0.3 }
+  );
+
+  headings.forEach(h => observer.observe(h));
+});
+</script> -->
+{% endblock %}

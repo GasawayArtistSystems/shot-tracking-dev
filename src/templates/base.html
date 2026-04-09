@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>UC Film and Class Tracker</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="icon" href="data:,">
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("📢 Base.html Loaded | assignment_id from Flask:", {{ assignment_id | default("null") | tojson }});
+        window.assignmentId = {{ assignment_id | default (0) | tojson }};
+        });
+    </script>
+</head>
+
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen flex flex-col">
+        {% if session.user_id %}
+        <!-- ✅ Navigation Bar -->
+        <nav class="bg-red-950 text-white py-4">
+            <div class="container mx-auto flex items-center justify-between px-4">
+                {% set class_perm = session.get('permissions', {}).get('classes', 0) %}
+                {% set film_perm = session.get('permissions', {}).get('films', 0) %}
+
+                <a class="text-xl font-semibold whitespace-nowrap"
+                href="{{ url_for('dashboard.dashboard_home') if class_perm >= 3 or film_perm >= 2 else url_for('main.index') }}">
+                Film and Class Tracker
+                </a>
+
+                {% if class_perm >= 3 or film_perm >= 2 %}
+                <div class="hidden md:flex space-x-6 flex-grow justify-center items-center">
+                    <a href="{{ url_for('classes.view_classes') }}" class="hover:text-gray-300">Classes</a>
+                    <a href="{{ url_for('films.view_films') }}" class="hover:text-gray-300">Films</a>
+
+                    <!-- ✅ Add x-cloak to prevent flashing -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="hover:text-gray-300 flex items-center">
+                            Admin
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <!-- ✅ Apply x-cloak -->
+                        <div x-show="open" @click.away="open = false" x-cloak
+                            class="absolute mt-2 bg-gray-800 shadow-md rounded-lg w-48 z-50">
+                            <a href="{{ url_for('users.view_users') }}" class="block px-4 py-2 hover:bg-gray-700">View
+                                Users</a>
+                            <a href="{{ url_for('users.add_user') }}" class="block px-4 py-2 hover:bg-gray-700">Add
+                                User</a>
+                            <a href="{{ url_for('admin.admin_settings') }}"
+                                class="block px-4 py-2 hover:bg-gray-700">Settings</a>
+                            <hr class="border-gray-600">
+                            <a href="{{ url_for('workflow_routes.workflow_editor') }}"
+                                class="block px-4 py-2 hover:bg-gray-700">Workflows</a>
+                            <hr class="border-gray-600">
+                            <span class="block px-4 py-2 text-gray-400">Archive</span>
+                            <a href="{{ url_for('admin.archive_classes') }}"
+                                class="block px-4 py-2 hover:bg-gray-700">Archive Classes</a>
+                            <a href="{{ url_for('admin.archive_users') }}"
+                                class="block px-4 py-2 hover:bg-gray-700">Archive Users</a>
+                            <a href="{{ url_for('admin.archive_films') }}"
+                                class="block px-4 py-2 hover:bg-gray-700">Archive Films</a>
+                            <a href="/bugs" class="block px-4 py-2 hover:bg-gray-700">Bug Reports</a>
+                            <a href="#" onclick="document.getElementById('about-modal').classList.remove('hidden')"
+                                class="block px-4 py-2 hover:bg-gray-700">About</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <!-- ✅ Right Section: User Info, Semester, Logout (Fully Right-Aligned) -->
+                <div class="flex items-center space-x-6 ml-auto">
+                    <a href="/markup" target="_blank" class="hover:text-gray-300">
+                        Markup
+                    </a>
+                    {% if session['user_id'] %}
+                    <button class="px-4 py-2 bg-blue-600 text-sm text-white rounded-lg hover:bg-blue-700 transition">
+                        {{ session.get('username', 'Unknown') }} - {{ session.get('user_role', 'User') }}
+                    </button>
+                    {% endif %}
+
+                    <div class="text-white text-sm relative">
+                        Current:
+                        <span class="invisible font-semibold text-green-400 absolute" style="min-width: 150px;"
+                            aria-hidden="true">
+                            SeeMeHere00
+                        </span>
+                        <span id="current-semester" class="font-semibold text-green-400 inline-block"
+                            style="min-width: 150px;">
+                            Loading...
+                        </span>
+                    </div>
+
+                    <a href="{{ url_for('help.help_overview') }}"
+                        class="px-4 py-2 bg-blue-600 text-sm text-white rounded-lg hover:bg-blue-700 transition">
+                        Help
+                    </a>
+                    <a href="{{ url_for('main.user_logout') }}"
+                        class="bg-red-800 hover:bg-red-600 px-4 py-2 rounded text-white">
+                        LOGOUT
+                    </a>
+                </div>
+        </nav>
+        {% endif %}
+
+        <!-- ✅ Flash Messages + Content -->
+        <main class="container mx-auto mt-6 px-4 flex-1">
+            <!-- <div id="bug-form" class="mt-10"></div> -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    {% with messages = get_flashed_messages(with_categories = true) %}
+                    {% for category, message in messages %}
+                    if ("{{ category }}" === 'success') {
+                        showSuccess("{{ message }}");
+                    } else if ("{{ category }}" === 'error') {
+                        showError("{{ message }}");
+                    }
+                    {% endfor %}
+                    {% endwith %}
+                });
+            </script>
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- ✅ Footer -->
+        <footer class="text-center py-6 mt-8 bg-gray-800 text-gray-300">
+            <p>&copy; 2025 UC Film and Class Tracker | All Rights Reserved</p>
+        </footer>
+    </div> <!-- closes flex wrapper -->
+
+
+    <script>
+        window.permissionLevel = {{ session.get('permission_level', 1) | tojson }};
+    </script>
+
+    <!-- ✅ SweetAlert2 Notification Functions -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+                timer: 1000,
+                showConfirmButton: false
+            });
+        }
+
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                timer: 1000,
+                showConfirmButton: false
+            });
+        }
+    </script>
+    {% if swal_data %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            Swal.fire({
+                icon: "{{ swal_data.icon }}",
+                title: "{{ swal_data.title }}",
+                text: "{{ swal_data.text }}",
+                timer: 2000,
+                showConfirmButton: false
+            });
+        });
+    </script>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/semesters.js') }}"></script>
+
+
+    <!-- ✅ Semester Modal (Used for Both Add & Edit) -->
+    <div id="semester-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center">
+        <div class="bg-red-950 p-6 rounded-lg w-[500px] shadow-lg">
+            <!-- Title changes dynamically -->
+            <h2 id="modal-title" class="text-2xl font-semibold text-white mb-4">Add Semester</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-white">Term *</label>
+                    <select id="semester-name" class="border rounded-md p-2 w-full bg-white text-black">
+                        <option value="Spring">Spring</option>
+                        <option value="Summer">Summer</option>
+                        <option value="Fall">Fall</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-white">Year *</label>
+                    <input id="semester-year" type="number" class="border rounded-md p-2 w-full bg-white text-black"
+                        min="2020" max="2050">
+                </div>
+
+                <div>
+                    <label class="block text-white">Start Date *</label>
+                    <input id="semester-start" type="date" class="border rounded-md p-2 w-full bg-white text-black">
+                </div>
+
+                <div>
+                    <label class="block text-white">End Date *</label>
+                    <input id="semester-end" type="date" class="border rounded-md p-2 w-full bg-white text-black">
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                    Cancel
+                </button>
+                <button onclick="submitSemester()" id="modal-save-btn"
+                    class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="about-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-red-950 p-6 rounded-xl w-[350px] shadow-lg text-center">
+            <h2 class="text-2xl font-bold mb-2">{{ APP_NAME }}</h2>
+            <p class="text-gray-300 mb-1">{{ APP_COPYRIGHT }}</p>
+            <p class="text-gray-400">V.{{ APP_VERSION }}</p>
+            <p class="text-gray-400 mb-4">{{ APP_YEAR }}</p>
+            <button onclick="document.getElementById('about-modal').classList.add('hidden')"
+                class="mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600">Close</button>
+        </div>
+    </div>
+
+    <!-- 🛠️ Floating Bug Report Button -->
+    <button onclick="openBugFormModal()"
+        class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition">
+        📋 Report Bug
+    </button>
+
+    <!-- 🛠️ Bug Report Modal -->
+    <div id="bugFormModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg w-full max-w-2xl relative">
+            <button onclick="closeBugFormModal()"
+                class="absolute top-4 right-4 text-gray-600 hover:text-gray-800">✖️</button>
+            <div id="bug-form"></div> <!-- 🧠 Mounts React here -->
+        </div>
+    </div>
+
+
+    <script>
+        let bugFormMounted = false;
+
+        function openBugFormModal() {
+            document.getElementById('bugFormModal').classList.remove('hidden');
+
+            if (!bugFormMounted) {
+                window.mountBugForm(); // Call the exported React mount function
+                bugFormMounted = true;
+            }
+        }
+
+        function closeBugFormModal() {
+            document.getElementById('bugFormModal').classList.add('hidden');
+        }
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch("/semesters/current");
+                if (response.ok) {
+                    const data = await response.json();
+                    const semesterElement = document.getElementById("current-semester");
+                    semesterElement.textContent = `${data.term} ${data.year}` || "Not Available";
+                } else {
+                    document.getElementById("current-semester").textContent = "Not Available";
+                }
+            } catch (error) {
+                console.error("Error fetching current semester:", error);
+                document.getElementById("current-semester").textContent = "Not Available";
+            }
+        });
+    </script>
+
+
+    <script src="/static/js/bugreport-frontend/dist/bugFeatureFormBundle.umd.js"></script>
+
+</body>
+
+</html>

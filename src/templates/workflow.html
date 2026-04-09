@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-3 px-6 h-[90vh]">
+    <div class="bg-red-950 shadow-lg rounded-lg p-6 flex h-full">
+        <!-- Left Column for Overall & Individual Flows -->
+        <div class="w-1/4 pr-6">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xl text-gray-300">Overall Flows</h4>
+                <button id="openAddIndividualFlowButton"
+                    class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-sm"
+                    onclick="openAddOverallFlowModal()">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+
+            <div id="parent-flows" class="bg-red-800 p-2 rounded-lg space-y-2 overflow-y-auto max-h-[240px] pr-1">
+                <!-- Flows dynamically loaded here -->
+            </div>
+
+            <!-- Individual Flows Directly Below -->
+            <div class="flex items-center justify-between mb-3 mt-8">
+                <h4 class="text-lg text-gray-300">Individual Flows</h4>
+                <button id="openAddIndividualFlowButton"
+                    class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded-lg text-sm"
+                    onclick="openAddIndividualFlowModal()">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+
+            <div id="child-flows" class="bg-red-800 p-2 rounded-lg space-y-2 overflow-y-auto max-h-[400px] pr-1">
+                <!-- Individual flows dynamically loaded here -->
+            </div>
+
+        </div>
+        <!-- Right Column for Workflow Section -->
+        <div class="w-3/4">
+            <div class="flex justify-between mb-3">
+                <button id="workflowButton" class="bg-red-800 hover:bg-red-600 text-white px-3 py-2 rounded-lg"
+                    onclick="showWorkflow()">Workflow</button>
+                <button id="overviewButton"
+                    class="bg-red-800 hover:bg-red-600 text-white px-3 py-2 rounded-lg opacity-50 cursor-not-allowed"
+                    disabled>Overview</button>
+            </div>
+            <div id="workflowContainer" class="bg-gray-700 p-4 rounded-lg shadow-lg h-[77vh] flex flex-col">
+                <div id="workflow-diagram"
+                    class="gojs-canvas border border-gray-300 w-full flex-grow min-h-[600px] min-w-[800px]"></div>
+                <div class="mt-3 flex space-x-2">
+                    <button class="workflow-action-button bg-red-700 hover:bg-red-600 text-white px-3 py-2 rounded-lg"
+                        onclick="openAddNodeModal()">Add Node</button>
+                    <button
+                        class="workflow-action-button bg-amber-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg"
+                        onclick="addSubmittedNode()">Add Submitted Node</button>
+                    <button class="workflow-action-button bg-red-800 hover:bg-red-600 text-white px-3 py-2 rounded-lg"
+                        onclick="deleteSelectedNode()">Delete Node</button>
+                    <button
+                        class="workflow-action-button bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg"
+                        onclick="saveFlowchart()">Save Flowchart</button>
+                </div>
+            </div>
+            <div id="overviewContainer" class="bg-gray-700 p-4 rounded-lg shadow-lg h-[77vh] flex flex-col hidden">
+                <div id="overview-diagram" class="border border-gray-300 w-full h-[77vh]"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Hidden input to track the current step ID -->
+<input type="hidden" id="currentStepId" />
+
+
+
+<!-- Modal for Adding an Overall Flow -->
+<div id="addOverallFlowModal"
+    class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-1/3">
+        <h2 id="addOverallFlowModalLabel" class="text-lg font-bold mb-4 text-white">Add Overall Flow</h2>
+
+        <label class="block mb-2 text-white">Flow Name</label>
+        <input type="text" id="overallFlowName" class="w-full border rounded-lg p-2 mb-3 text-gray-800"
+            placeholder="Enter flow name">
+
+        <label class="block mb-2 text-white">Description (Optional)</label>
+        <textarea id="overallFlowDescription" class="w-full border rounded-lg p-2 mb-3 text-gray-800"></textarea>
+
+        <label class="block mb-2 text-white">Permission Level</label>
+        <select id="overallFlowPermission" class="w-full border rounded-lg p-2 mb-4 text-gray-900">
+            <option value="1">Level 1 - Students/Artists</option>
+            <option value="2">Level 2 - Teachers/UPMs & Coordinators</option>
+            <option value="3">Level 3 - Admins/Producers & Directors</option>
+        </select>
+        <div class="mt-3">
+            <label class="inline-flex items-center">
+                <input type="checkbox" id="lockFlowCheckbox" class="form-checkbox h-4 w-4 text-red-600">
+                <span class="ml-2 text-white">🔒 Lock this flow after saving</span>
+            </label>
+        </div>
+
+
+        <div class="flex justify-end space-x-3">
+            <button class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                onclick="closeOverallFlowModal()">Cancel</button>
+            <button id="submitOverallFlow"
+                class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Adding an Individual Flow -->
+<div id="addIndividualFlowModal"
+    class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200 z-50">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-1/2 max-w-lg text-white mx-auto self-center">
+        <h2 id="addIndividualFlowModalLabel" class="text-lg font-bold mb-4">Add Individual Flow</h2>
+
+        <!-- Tab Navigation -->
+        <div class="flex border-b mb-4">
+            <button id="newFlowTab" class="px-4 py-2 text-white font-semibold border-b-2 border-white"
+                onclick="switchToNewFlowTab()">New Flow</button>
+            <button id="templateFlowTab" class="px-4 py-2 text-gray-500" onclick="switchToTemplateFlowTab()">From
+                Template</button>
+        </div>
+
+        <div id="newFlowContent">
+            <label class="block mb-2 text-white">Flow Name</label>
+            <input type="text" id="newFlowName" class="w-full border rounded-lg p-2 mb-3 text-gray-800"
+                placeholder="Enter flow name">
+
+            <label class="block mb-2 text-white">Permission Level</label>
+            <select id="individualFlowPermissionNew" class="w-full border rounded-lg p-2 mb-4 text-black">
+                <option value="1">Level 1 - Students/Artists</option>
+                <option value="2">Level 2 - Teachers/UPMs & Coordinators</option>
+                <option value="3">Level 3 - Admins/Producers & Directors</option>
+            </select>
+            <div class="mt-2">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="lockIndividualFlowCheckbox" class="form-checkbox h-4 w-4 text-red-600">
+                    <span class="ml-2 text-white">🔒 Lock this flow after saving</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="templateFlowContent" class="hidden">
+            <label class="block mb-2">Select Template</label>
+            <select id="templateSelection" class="w-full border rounded-lg p-2 mb-3 text-black">
+                <option value="">Choose a template...</option>
+                <option value="5">Assignment Flow</option>
+                <option value="6">FB Flow</option>
+                <option value="7">Grade Flow</option>
+                <option value="238">Movie Flow</option>
+                <option value="194">Movie Approval Flow</option>
+            </select>
+
+            <label class="block mb-2">Flow Name</label>
+            <input type="text" id="templateFlowName" class="w-full border rounded-lg p-2 mb-3 text-black">
+
+            <label class="block mb-2">Permission Level</label>
+            <select id="individualFlowPermissionTemplate" class="w-full border rounded-lg p-2 mb-4 text-black">
+                <option value="1">Level 1 - Students/Artists</option>
+                <option value="2">Level 2 - Teachers/UPMs & Coordinators</option>
+                <option value="3">Level 3 - Admins/Producers & Directors</option>
+            </select>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+            <button class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                onclick="closeAddIndividualFlowModal()">Cancel</button>
+
+            <!-- Button for Creating a New Flow (Default) -->
+            <button id="createIndividualFlowButton"
+                class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                onclick="createIndividualFlow()">Create</button>
+
+            <!-- Button for Editing an Existing Flow (Hidden by Default) -->
+            <button id="submitIndividualFlow"
+                class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 hidden">
+                Save Changes
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal for Adding a Node -->
+<div id="addNodeModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-1/3 text-white">
+        <h2 class="text-lg font-bold mb-4">Add Node</h2>
+
+        <form id="addNodeForm" class="space-y-4">
+            <label class="block">Node Name</label>
+            <input type="text" id="nodeName" class="w-full border rounded-lg p-2 text-black">
+            <div class="flex space-x-4">
+                <div class="w-1/2">
+                    <label class="block">Node Color</label>
+                    <input type="color" id="nodeColor" class="w-full border rounded-lg p-2">
+                </div>
+                <div class="w-1/2">
+                    <label class="block">Completion %</label>
+                    <input type="number" id="nodeCompletion" class="w-full border rounded-lg p-2 text-black">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    onclick="closeAddNodeModal()">Cancel</button>
+                <button type="button" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                    onclick="submitAddNodeForm()">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Node Modal -->
+<div id="editNodeModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-1/6 text-white">
+        <h2 class="text-lg font-bold mb-4">Edit Node</h2>
+
+        <form id="editNodeForm" class="space-y-4">
+            <input type="hidden" id="editNodeId">
+
+            <label class="block">Node Name</label>
+            <input type="text" id="editNodeName" class="w-full border rounded-lg p-2 text-black">
+
+            <div class="flex space-x-4">
+                <div class="w-1/2">
+                    <label class="block">Node Color</label>
+                    <input type="color" id="editNodeColor" class="w-full border rounded-lg p-2">
+                </div>
+                <div class="w-1/2">
+                    <label class="block">Completion %</label>
+                    <input type="number" id="editNodeCompletion" class="w-full border rounded-lg p-2 text-black">
+                </div>
+            </div>
+
+            <!-- Hidden Inputs for Node ID and Step ID -->
+            <input type="hidden" id="editNodeStepId">
+
+            <!-- Crossflow Section -->
+            <!-- ✅ Dynamic Crossflows Section -->
+            <div id="editCrossFlowsSection" class="hidden border-t pt-4 mt-4 space-y-6">
+                <div class="text-sm text-white font-medium mb-2">Crossflows:</div>
+
+                <!-- All dynamic crossflow rows inserted here -->
+                <div id="editCrossFlowsContainer" class="space-y-4">
+                    <!-- JS will insert crossflow rows here -->
+                </div>
+
+                <!-- ➕ Button to add a new crossflow -->
+                <button id="addCrossflowBtn" type="button"
+                    class="mt-2 bg-blue-700 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">
+                    ➕ Add Crossflow
+                </button>
+            </div>
+
+            <!-- Save + Cancel buttons -->
+            <div class="flex justify-end space-x-3 mt-4">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    onclick="closeEditNodeModal()">Cancel</button>
+                <button type="submit" id="editNodeSaveButton"
+                    class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Save
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+
+<!-- ✅ Create Crossflow Modal -->
+<div id="createCrossFlowModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-red-950 p-6 rounded w-[500px]">
+        <h2 class="text-xl font-bold mb-4">Create Crossflow Link</h2>
+
+        <label class="block mb-2">Name (can only change in Edit Node)</label>
+        <input type="text" id="createSourceNodeName" class="w-full mb-4 p-2 text-black rounded" disabled>
+        <input type="hidden" id="createSourceNodeId">
+
+        <label class="block mb-2">Target Flow</label>
+        <select id="createTargetFlowDropdown" class="w-full mb-4 p-2 text-black rounded"></select>
+
+        <label class="block mb-2">Target Node</label>
+        <select id="createTargetNodeDropdown" class="w-full mb-4 p-2 text-black rounded"></select>
+
+        <div class="flex justify-end space-x-2">
+            <button type="button" class="bg-gray-500 text-white px-3 py-1 rounded"
+                onclick="closeCreateCrossFlowModal()">Cancel</button>
+            <button type="button" class="bg-green-600 text-white px-3 py-1 rounded"
+                onclick="createCrossFlowLink()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Edit Crossflow Modal -->
+<div id="editCrossFlowModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+    <div class="bg-red-950 p-6 rounded w-[500px]">
+        <h2 class="text-xl font-bold mb-4">Edit Crossflow Link</h2>
+
+        <label class="block mb-2">Name (can only change in Edit Node)</label>
+        <input type="text" id="editSourceNodeName" class="w-full mb-4 p-2 text-black rounded" disabled>
+        <input type="hidden" id="editSourceNodeId">
+
+        <label class="block mb-2">Target Flow</label>
+        <select id="editTargetFlowDropdown" class="w-full mb-4 p-2 text-black rounded"></select>
+
+        <label class="block mb-2">Target Node</label>
+        <select id="editTargetNodeDropdown" class="w-full mb-4 p-2 text-black rounded"></select>
+
+        <div class="flex justify-end space-x-2">
+            <button type="button" class="bg-gray-500 text-white px-3 py-1 rounded"
+                onclick="closeEditCrossFlowModal()">Cancel</button>
+            <button type="button" id="editActionBtn" class="bg-green-600 text-white px-3 py-1 rounded">Update</button>
+        </div>
+    </div>
+</div>
+
+
+<!--Unlock Modal -->
+<div id="unlockModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm text-black">
+        <h2 class="text-xl font-bold mb-4">Admin Unlock</h2>
+        <p class="mb-2">This flow is locked. Enter the admin password to proceed:</p>
+
+        <input id="adminPasswordInput" type="password" class="w-full border px-3 py-2 rounded-md mb-4"
+            placeholder="Admin password" />
+
+        <div class="flex justify-end space-x-2">
+            <button id="cancelUnlock"
+                class="bg-gray-300 hover:bg-gray-400 text-black px-3 py-1 rounded-md">Cancel</button>
+            <button id="confirmUnlock"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md">Unlock</button>
+        </div>
+
+        <div id="unlockError" class="text-red-600 mt-2 hidden">Incorrect password. Please try again.</div>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/2.3.12/go.js"></script>
+<script src="{{ url_for('static', filename='js/workflow_utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/workflow.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/flowchart.css') }}">
+
+
+
+{% endblock %}

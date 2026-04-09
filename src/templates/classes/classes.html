@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto mt-6 max-w-5xl">
+    <div class="bg-red-900 shadow-lg rounded-lg p-6">
+        <h4 class="text-4xl font-semibold text-white mb-4">Classes</h4> 
+    
+
+        <!-- ✅ Right-Aligned Buttons -->
+        {% if class_perm >= 2 or film_perm >= 2 %}
+        <div class="flex justify-end space-x-3 mt-4">
+          <button id="open-config-modal"
+                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Config Editor
+          </button>
+          <a href="{{ url_for('classes.add_class_route') }}"
+             class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            Add Class
+          </a>
+        </div>
+        {% endif %}
+
+        <!-- ✅ Search Input -->
+        <div class="mt-4">
+            <input type="text" id="classSearchInput" class="w-full p-2 border border-black rounded-lg" placeholder="Search for a class...">
+        </div>
+
+<!-- ✅ Scrollable Table -->
+<div class="overflow-x-auto mt-4">
+    <form id="delete-form" method="POST" action="{{ url_for('classes.bulk_delete_classes') }}">
+        <table id="class-table" class="w-full border-collapse bg-red-950 shadow-md rounded-lg overflow-hidden">
+            <thead class="table-header">
+                <tr>
+                    <th class="p-3"><input type="checkbox" id="select-all" onclick="toggleSelectAll(this)"></th>
+                    <th class="p-3 text-left">Class Name</th>
+                    <th class="p-3 text-left">Instructor</th>
+                    <th class="p-3 text-left">Actions</th>
+                </tr>
+            </thead>
+              <tbody id="classTableBody" class="text-white">
+                {% if classes %}
+                {% for semester_label, class_group in classes.items() %}
+                <!-- Semester Header Row -->
+                <tr class="bg-gray-800">
+                  <td colspan="4" class="p-3 text-white font-semibold text-lg">
+                    <div class="flex justify-between items-center w-full">
+                      <span>{{ semester_label }}</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Classes for Semester -->
+                {% for class_item in class_group %}
+                <tr class="border-b hover:bg-gray-700">
+                <td class="p-3">
+                  <input type="checkbox" name="class_ids" value="{{ class_item['id'] }}">
+                </td>
+                <td class="p-3 w-1/2 whitespace-normal break-words max-w-xs">
+                  <a href="{{ url_for('assignments.view_assignments', class_id=class_item['id']) }}"
+                    class="text-white hover:text-blue-400 no-underline">
+                    {{ class_item['year'] }} - {{ class_item['semester'] }} - {{ class_item['code'] }} {{ class_item['class_number']
+                    }} - {{ class_item['class_name'] }}
+                  </a>
+                </td>
+                <td class="p-3">{{ class_item['instructor_name'] or '—' }}</td>
+                
+                <td class="p-3 flex space-x-2">
+                  <a href="{{ url_for('classes.edit_class', class_id=class_item['id']) }}"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg">Edit</a>
+                  <button type="button" class="bg-red-800 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
+                    onclick="confirmDeleteClass({{ class_item['id'] }})">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+              {% endfor %}
+              {% else %}
+              <tr>
+                <td colspan="4" class="text-center p-4 text-gray-500">No classes available</td>
+              </tr>
+              {% endif %}
+            </tbody>
+            
+            
+        </table>
+    </form>
+</div>
+
+
+
+<!-- Config Modal -->
+<div id="semester-config-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex justify-center items-center">
+  <div class="bg-red-950 text-white rounded-lg shadow-lg w-11/12 max-w-4xl p-6 overflow-auto max-h-[90vh]">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold">Assignment Config Editor</h2>
+    </div>
+
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">Semester</label>
+      <select id="semester-select" class="border rounded px-3 py-2 w-full bg-white text-black"></select>
+    </div>
+    <div id="semester-config-body" class="mt-4"></div>
+    <div id="class-container"></div>
+
+    <div class="mt-6 flex justify-between items-center">
+      <!-- Left-aligned -->
+      <button id="add-class-btn" class="bg-blue-700 text-white px-4 py-2 rounded">
+        + Add Class
+      </button>
+    
+      <!-- Right-aligned grouped buttons -->
+      <div class="flex flex-wrap justify-end gap-3">
+        <button id="load-old-btn" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Load Old
+          Config</button>
+        <button onclick="closeSemesterConfigModal()" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
+        <button onclick="saveDraftConfig()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Save
+          Draft</button>
+        <button onclick="saveSemesterConfig()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Save
+          JSON</button>
+      </div>
+    </div>    
+  </div>
+</div>
+
+
+<div id="new-class-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex justify-center items-center">
+  <div class="bg-red-950 text-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h2 class="text-lg font-bold mb-4">Add New Class</h2>
+
+    <label class="block mb-2">Choose Existing or Enter New</label>
+    <select id="existing-class-dropdown" class="w-full mb-3 p-2 border rounded bg-white text-black">
+      <option value="">-- Select a Class --</option>
+    </select>
+
+    <input id="new-class-input" type="text" placeholder="Or enter a new class name"
+      class="w-full mb-3 p-2 border rounded bg-white text-black" />
+    
+    <!-- ✅ Add checkbox right here -->
+    <div class="mb-4">
+      <label class="text-white text-sm">
+        <input type="checkbox" id="include-assignments-checkbox" class="mr-1">
+        Automatically include assignments in this class
+      </label>
+    </div>
+
+    <div class="flex justify-end space-x-2">
+      <button onclick="closeNewClassModal()" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
+      <button onclick="confirmNewClass()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="new-assignment-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50 flex justify-center items-center">
+  <div class="bg-red-950 text-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <h2 class="text-lg font-bold mb-4">Add Assignment</h2>
+
+    <label class="block mb-1">Assignment Name</label>
+    <select id="assignment-name-dropdown" class="w-full mb-3 p-2 border rounded bg-white text-black">
+      <option value="">-- Select from existing --</option>
+    </select>
+
+    <input id="new-assignment-input" type="text" placeholder="Or enter a new assignment name"
+           class="w-full mb-4 p-2 border rounded bg-white text-black"/>
+
+    <div class="flex justify-end space-x-2">
+      <button onclick="closeNewAssignmentModal()" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
+      <button onclick="confirmNewAssignment()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Add</button>
+    </div>
+  </div>
+</div>
+
+<div id="rig-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center">
+  <div class="bg-white text-black rounded-lg shadow-lg w-full max-w-lg p-6">
+    <h2 class="text-lg font-bold mb-4">Select Rigs</h2>
+
+    <!-- ✅ Add this input -->
+    <input id="rig-search-input" type="text" placeholder="Search rigs..."
+      class="w-full mb-4 p-2 border rounded bg-white text-black" />
+
+    <div id="rig-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-72 overflow-y-auto w-full"></div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button onclick="closeRigModal()" class="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
+      <button onclick="confirmRigSelection()"
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Confirm</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  let assignmentsData = {};
+  let rigList = [];
+</script>
+
+
+<script>
+    // Toggle all checkboxes
+    function toggleSelectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('input[name="class_ids"]');
+        checkboxes.forEach(checkbox => checkbox.checked = selectAllCheckbox.checked);
+    }
+
+  function confirmDeleteClass(classId) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Delete Class?',
+      html: `
+      <p class="mb-2 text-red-400">This will permanently remove the class and all related data.</p>
+      <p class="mb-2">Type <strong>delete</strong> below to confirm:</p>
+      <input id="delete-confirm-input" type="text"
+             placeholder="Type delete to confirm"
+             class="swal2-input text-center"
+             style="text-transform: lowercase;">
+    `,
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      preConfirm: () => {
+        const val = document.getElementById("delete-confirm-input").value.trim().toLowerCase();
+        if (val !== "delete") {
+          Swal.showValidationMessage("You must type 'delete' to confirm.");
+          return false;
+        }
+        return true;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch(`/classes/delete/${classId}`, { method: 'POST' })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: 'Class has been successfully deleted.',
+                timer: 2000,
+                showConfirmButton: false
+              }).then(() => {
+                location.reload(); // ✅ Refresh after deletion
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Could not delete class.'
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Something went wrong.'
+            });
+          });
+      }
+    });
+  }
+
+
+    // Filter table rows based on search input
+    document.getElementById('classSearchInput').addEventListener('input', function () {
+        const filter = this.value.toLowerCase();
+        document.querySelectorAll('#classTableBody tr').forEach(row => {
+            const className = row.cells[1]?.textContent.toLowerCase() || '';
+            row.style.display = className.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
+
+<script src="{{ url_for('static', filename='js/classEditor.js') }}"></script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      {% for category, msg in messages %}
+      Swal.fire({
+        title: "{{ 'Success!' if category == 'success' else 'Error' }}",
+        html: "{{ msg|safe }}",
+        icon: "{{ category }}",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "OK"
+      });
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+{% endwith %}
+
+
+
+{% endblock %}

@@ -1,0 +1,23 @@
+<div class="subheader-container">
+    <div class="d-flex justify-content-between align-items-center">
+        <!-- Dropdown -->
+        <select class="form-select" id="class-dropdown" onchange="changeClass(this.value)">
+            <option value="">Select a Class</option>
+            {% for cls in all_classes %}
+            <option value="{{ cls['id'] }}" {% if cls['id'] == class_id %}selected{% endif %}>
+                {{ cls['full_class_name'] }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <!-- Navigation -->
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('classes.view_classes') }}" 
+               class="btn btn-outline-primary {% if active_page == 'classes' %}active{% endif %}">Classes</a>
+            <a href="{{ url_for('classes.view_students_in_class', class_id=class_id) }}" 
+               class="btn btn-outline-primary {% if active_page == 'students' %}active{% endif %}">Students</a>
+            <a href="{{ url_for('assignments.view_assignments', class_id=class_id) }}" 
+               class="btn btn-outline-primary {% if active_page == 'assignments' %}active{% endif %}">Assignments</a>
+        </div>
+    </div>
+</div>

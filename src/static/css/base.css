@@ -1,0 +1,62 @@
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --font-family: 'Roboto', Arial, sans-serif;
+    --font-size-base: 16px;
+    --font-weight-regular: 400;
+    --font-weight-bold: 700;
+    --text-color-primary: #726d6d; /* Light gray */
+    --table-bg: #f8f9fa;
+    --table-header-bg: #000000;
+    --table-header-text: white;
+    /* --table-hover-bg: #81cef1; */
+}
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    background-color: #000000 !important;
+    color: var(--text-color-primary);
+}
+
+
+
+h1, h1 a, h4, h4 a {
+    color: white;
+    text-decoration: none;
+}
+
+h2 {
+    margin-bottom: 10px;
+}
+
+/* h4 {
+    color: #6b6b6b !important;
+} */
+
+
+.list-group-item.active {
+    background-color: #8ba5c2 !important;  /* Replace with your preferred color */
+    color: white !important;
+    border-color: #357ABD !important;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+
+/* coordinator highlight */
+.highlight-no-work {
+    background-color: rgba(30, 58, 138, 0.5);
+    /* tailwind blue-900/50 */
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.4);
+    /* ring-blue-400 */
+    font-weight: 700;
+    color: #bfdbfe;
+    /* blue-200 */
+}

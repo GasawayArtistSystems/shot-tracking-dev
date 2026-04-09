@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-center items-start mt-10">
+    <div class="bg-red-900 shadow-lg rounded-lg p-6 w-full max-w-2xl">
+        <h2 class="text-3xl font-bold text-center text-white mb-6">Edit Film</h2>
+
+        <form method="POST">
+            <!-- Semester, Film Title -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-white font-medium">Semester:</label>
+                    <select name="semester_id" class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                        {% for option in semesters %}
+                        <option value="{{ option.id }}" {% if option.id==film.semester_id %}selected{% endif %}>
+                            {{ option.term }} {{ option.year }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-white font-medium">Film Name:</label>
+                    <input type="text" name="film_name" value="{{ film.name }}"
+                        class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mt-4">
+                <label class="block text-white font-medium">Film Description:</label>
+                <textarea name="description" class="w-full border text-gray-900 bg-white rounded-lg p-2"
+                    rows="3">{{ film.description }}</textarea>
+            </div>
+
+            <div class="mt-4">
+                <label for="step_id" class="block text-white font-medium">Overall Film Workflow:</label>
+                <select id="step_id" name="step_id" class="w-full border text-gray-900 bg-white rounded-lg p-2"
+                    required>
+                    <option value="">-- Select Workflow --</option>
+                    {% for step in steps %}
+                    <option value="{{ step.id }}" {% if step.id==film.step_id %}selected{% endif %}>{{ step.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+            <!-- Director + UPM -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block text-white font-medium">Director:</label>
+                    <select name="director_id" class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                        {% for user in directors %}
+                        <option value="{{ user.id }}" {% if user.id==film.director_id %}selected{% endif %}>
+                            {{ user.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-white font-medium">UPM:</label>
+                    <select name="upm_id" class="w-full border text-gray-900 bg-white rounded-lg p-2" required>
+                        {% for user in upms %}
+                        <option value="{{ user.id }}" {% if user.id==film.upm_id %}selected{% endif %}>
+                            {{ user.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex justify-between mt-6">
+                <a href="{{ url_for('films.view_films') }}"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</a>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Save
+                    Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

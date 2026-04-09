@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mt-6 flex items-start justify-center">
+    <div class="bg-red-950 p-6 rounded-lg shadow-lg w-full max-w-lg">
+        <h2 class="text-center text-2xl font-bold text-white mb-4">Add User</h2>
+        <form action="{{ url_for('users.add_user') }}" method="POST" id="user-form" class="space-y-4">
+            
+            <!-- Full Name -->
+            <div>
+                <label for="name" class="block text-white font-medium">Full Name *</label>
+                <input type="text" id="name" name="name" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Enter full name" required>
+            </div>
+
+            <!-- Username -->
+            <div>
+                <label for="login_name" class="block text-white font-medium">Username *</label>
+                <input type="text" id="login_name" name="login_name" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Enter a unique username" required>
+            </div>
+            
+            <!-- Email -->
+            <div class="grid grid-cols-3 gap-2 items-center">
+                <div>
+                    <label for="email_local" class="block text-white font-medium">Email *</label>
+                    <input type="text" id="email_local" name="email_local" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="example" required>
+                </div>
+                <div class="text-center text-white">@</div>
+                <div>
+                    <label for="email_domain" class="block text-white font-medium">Domain *</label>
+                    <select name="email_domain" id="email_domain" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" onchange="updateEmailPreview()" required>
+                        <option value="mail.uc.edu">mail.uc.edu</option>
+                        <option value="ucmail.uc.edu">ucmail.uc.edu</option>
+                        <option value="gmail.com">gmail.com</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div id="custom-domain-wrapper" class="mt-2 hidden">
+                    <label for="custom_domain" class="block text-white font-medium">Custom Domain</label>
+                    <input type="text" id="custom_domain" name="custom_domain"
+                        class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black"
+                        placeholder="yourdomain.com">
+                </div>
+                
+            </div>
+
+            <!-- Constructed Email -->
+            <div>
+                <label for="constructed_email" class="block text-white font-medium">Constructed Email:</label>
+                <input type="text" id="constructed_email" class="w-full border-gray-300 rounded-lg p-2 text-gray-500" readonly>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block text-white font-medium">Password *</label>
+                <input type="password" id="password" name="password" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Enter password" required>
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+                <label for="confirm_password" class="block text-white font-medium">Confirm Password *</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-300 text-black" placeholder="Confirm password" required>
+                <small id="password-match-message" class="text-red-500"></small>
+            </div>
+
+            <!-- Groups -->
+            <!-- Class Roles -->
+            <label class="block text-white font-medium mt-4">Class Roles</label>
+            <div class="grid grid-cols-2 gap-2">
+            {% for group in all_groups if group['section'] == 'classes' and group['id'] != artist_id %}
+                <div class="flex items-center">
+                    <input type="checkbox" id="group_{{ group['id'] }}" name="user_group[]" value="{{ group['id'] }}" class="mr-2">
+                    <label for="group_{{ group['id'] }}" class="text-white">{{ group['name'] }}</label>
+                </div>
+            {% endfor %}
+            </div>
+
+            <!-- Film Roles -->
+            <label class="block text-white font-medium mt-4">Film Roles</label>
+            <div class="grid grid-cols-2 gap-2">
+            {% for group in all_groups if group['section'] == 'films' and group['id'] != artist_id %}
+                <div class="flex items-center">
+                    <input type="checkbox" id="group_{{ group['id'] }}" name="user_group[]" value="{{ group['id'] }}" class="mr-2">
+                    <label for="group_{{ group['id'] }}" class="text-white">{{ group['name'] }}</label>
+                </div>
+            {% endfor %}
+            </div>
+
+            <!-- Hidden Artist Role (autochecked if Student selected) -->
+            <div class="flex items-center mt-2">
+                <input type="checkbox" id="group_artist" name="user_group[]" value="{{ artist_id }}" class="mr-2">
+                <label for="group_artist" class="text-white">Artist</label>
+            </div>
+
+            
+            <!-- Buttons -->
+            <div class="flex justify-between mt-4">
+                <a href="{{ url_for('users.view_users') }}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cancel</a>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Add User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateEmailPreview() {
+        const emailLocal = document.getElementById('email_local').value;
+        const emailDomain = document.getElementById('email_domain').value;
+        const customDomainInput = document.getElementById('custom_domain');
+        const wrapper = document.getElementById('custom-domain-wrapper');
+        const constructedEmailField = document.getElementById('constructed_email');
+
+        if (emailDomain === 'other') {
+            wrapper.classList.remove('hidden');
+            const domain = customDomainInput.value || 'custom-domain.com';
+            constructedEmailField.value = `${emailLocal}@${domain}`;
+        } else {
+            wrapper.classList.add('hidden');
+            constructedEmailField.value = `${emailLocal}@${emailDomain}`;
+        }
+    }
+
+    document.getElementById('email_local').addEventListener('input', updateEmailPreview);
+    document.getElementById('email_domain').addEventListener('change', updateEmailPreview);
+    document.getElementById('custom_domain').addEventListener('input', updateEmailPreview);
+
+
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    const passwordMatchMessage = document.getElementById('password-match-message');
+
+    confirmPasswordField.addEventListener('input', function() {
+        passwordMatchMessage.textContent = passwordField.value !== confirmPasswordField.value ? 'Passwords do not match' : '';
+    });
+</script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const studentCheckbox = document.querySelector("input[name='user_group[]'][value='{{ student_id }}']");
+      const artistCheckbox = document.getElementById("group_artist");
+  
+      if (studentCheckbox && artistCheckbox) {
+        studentCheckbox.addEventListener("change", function () {
+          if (studentCheckbox.checked) {
+            artistCheckbox.checked = true;
+          }
+        });
+      }
+    });
+</script>
+  
+{% endblock %}

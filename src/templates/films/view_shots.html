@@ -1,0 +1,458 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  /* Freeze the first column horizontally */
+  table th:first-child,
+  table td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #1f2937;
+    z-index: 20;
+    border-right: 1px solid #374151; /* gray-700 */
+  }
+</style>
+<div class="flex justify-between items-center mx-auto mb-4">
+  <select id="scene-dropdown" class="p-3 rounded text-black">
+    <option value="">-- View Scene --</option>
+    {% for s in scenes %}
+    <option value="{{ s.id }}" {% if s.id==scene.id %}selected{% endif %}>
+      Scene {{ s.scene_number }}
+    </option>
+    {% endfor %}
+  </select>
+  <h2 class="text-2xl font-bold mb-6">Shots for {{ film.name }} - Scene {{ scene.scene_number }}</h2>
+  <div class="flex space-x-4">
+    <a href="{{ url_for('films.view_films') }}"
+      class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600">Films</a>
+    <a href="{{ url_for('films.view_scenes', film_id=film.id) }}"
+      class="bg-yellow-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">Scenes</a>
+    <a href="{{ url_for('films.view_assets', film_id=film.id) }}"
+      class="bg-yellow-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 {% if active_page == 'scenes' %}bg-yellow-900{% endif %}">
+      Assets
+    </a>
+  </div>
+</div>
+
+<!-- ✅ Saved Filters UI -->
+{% if saved_views %}
+<div class="mb-4 flex gap-2 items-center">
+  <label class="text-white font-semibold">Saved Filters:</label>
+  <select id="saved-filter-select" class="px-2 py-1 rounded text-black" onchange="applySavedFilter(this.value)">
+    <option value="">-- Choose a View --</option>
+    {% for view in saved_views %}
+    <option value="{{ view.id }}" {% if view.id|string==selected_view %}selected{% endif %}>
+      {{ view.name }}
+    </option>
+    {% endfor %}
+  </select>
+  <a href="{{ url_for('films.view_shots_route', scene_id=scene.id) }}"
+    class="text-sm text-gray-300 underline ml-4">Clear Filter</a>
+</div>
+{% endif %}
+
+
+<div class="w-full max-w-none px-4 mt-8 text-white">
+  <div class="flex justify-between items-center mb-4">
+
+    <!-- Left Buttons -->
+    <div class="flex gap-3">
+      <a href="{{ url_for('films.add_shot_route', scene_id=scene.id) }}"
+        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white">+ Add Shot</a>
+    </div>
+
+    <!-- Right Buttons (Columns and Filters) -->
+    <div class="flex gap-3 items-center">
+      <button id="toggle-filter-panel" class="bg-gray-700 text-white px-4 py-2 rounded">Show Filters</button>
+
+      <div class="relative">
+        <button id="toggle-columns" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded">
+          Columns
+        </button>
+        <div id="column-options"
+          class="absolute right-0 mt-2 w-48 bg-white text-black border rounded shadow p-4 space-y-2 text-base hidden z-20">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" data-col="1" checked />
+            <span>Description</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" data-col="2" checked />
+            <span>Start</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" data-col="3" checked />
+            <span>Due</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" data-col="4" />
+            <span>Assigned</span>
+          </label>
+        </div>
+      </div>
+
+      <button type="button" id="confirm-delete-selected"
+        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+        🗑️ Delete Selected
+      </button>
+
+      <button type="button" id="edit-selected-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        ✏️ Edit Selected
+      </button>
+
+
+    </div>
+  </div>
+
+  <!-- ✅ Filter Panel -->
+  <form id="scene-filter-form" method="GET" action="{{ url_for('films.view_shots_route', scene_id=scene.id) }}"
+    class="mb-4 flex flex-wrap items-center gap-4 bg-gray-800 p-4 rounded">
+
+    <!-- ✅ Step Checkboxes -->
+    <div class="bg-red-900 shadow-lg rounded-lg p-6">
+      <span class="text-white font-semibold">Filter Steps:</span>
+
+      <button type="button" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-sm"
+        onclick="selectAllSteps(true)">All Steps</button>
+
+      <button type="button" class="bg-purple-700 hover:bg-purple-800 text-white px-3 py-1 rounded text-sm"
+        onclick="selectArtistStepsOnly(true)">Artist Steps Only</button>
+
+      <!-- ✅ Step Checkboxes (Matching Scenes) -->
+      <div id="step-checkboxes" class="flex flex-wrap gap-4 mb-3">
+        {% for step in steps %}
+        <label class="inline-flex items-center text-sm text-white">
+          <input type="checkbox" name="visible_steps" value="{{ step.step_id }}" data-step-id="{{ step.step_id }}"
+            data-step-name="{{ step.step_name }}" checked>
+          <span class="ml-2">{{ step.step_name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ✅ Assigned Filter -->
+    <div>
+      <label class="block text-sm font-medium text-white">Assigned</label>
+      <select name="assigned_to" class="px-2 py-1 rounded text-black">
+        <option value="">-- All --</option>
+        {% for user in crew %}
+        <option value="{{ user.id }}" {% if request.args.assigned_to==user.id|string %}selected{% endif %}>
+          {{ user.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ✅ Step Filter -->
+    <div>
+      <label class="block text-sm font-medium text-white">Step</label>
+      <select id="step-filter" name="step_id" class="px-2 py-1 rounded text-black">
+        <option value="">-- All Steps --</option>
+        {% for step in steps %}
+        <option value="{{ step.id }}" {% if request.args.step_id==step.id|string %}selected{% endif %}>
+          {{ step.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ✅ Status Filter -->
+    <div>
+      <label class="block text-sm font-medium text-white">Status</label>
+      <select id="status-filter" name="status" class="px-2 py-1 rounded text-black">
+        <option value="">-- All Statuses --</option>
+        {% for step in steps %}
+        {% for opt in step.status_options %}
+        <option value="{{ opt.name }}" data-step="{{ step.id }}" {% if request.args.status==opt.name %}selected{% endif
+          %}>
+          {{ opt.name }}
+        </option>
+        {% endfor %}
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- ✅ Apply and Clear Buttons -->
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">Apply</button>
+
+    <a id="clear-filter-link" href="{{ url_for('films.view_shots_route', scene_id=scene.id) }}"
+      class="text-sm text-gray-300 underline">Clear</a>
+  </form>
+
+
+
+  <div class="bg-red-900 shadow-lg rounded-lg p-6">
+    <div class="w-full max-w-none overflow-x-auto overflow-y-auto max-h-[80vh] px-2">
+      <form id="delete-multiple-form" method="POST"
+        action="{{ url_for('films.delete_multiple_shots', scene_id=scene.id) }}">
+        <table class="w-full table-auto text-sm bg-gray-900 border border-gray-700 min-w-[2000px]">
+          <thead class="bg-gray-800 sticky top-0 z-10">
+            <tr>
+              <th class="px-3 py-2 text-left">
+                <label class="flex items-center">
+                  <input type="checkbox" onclick="toggleAll(this)" class="form-checkbox h-4 w-4 mr-2">
+                  ALL
+                </label>
+              </th>
+              <th class="px-3 py-2 text-left">Description</th>
+              <th class="px-3 py-2 text-left">Start</th>
+              <th class="px-3 py-2 text-left">Due</th>
+              <th class="px-3 py-2 text-left">Assigned</th>
+              <th class="px-3 py-2 text-left">Status</th>
+              <th class="px-3 py-2 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            {% for shot in shots %}
+            <tr>
+              <td class="px-3 py-2 whitespace-nowrap">
+                <input type="checkbox" name="shot_ids" value="{{ shot.id }}" class="form-checkbox h-4 w-4 mr-2">
+                {{ shot.shot_number }}
+              </td>
+              <td class="px-3 py-2">{{ shot.description or '-' }}</td>
+              <td class="px-3 py-2">{{ shot.start_date or '-' }}</td>
+              <td class="px-3 py-2">{{ shot.due_date or '-' }}</td>
+              <td class="px-3 py-2">{{ shot.assignee or "—" }}</td>
+              <td class="px-4 py-2">
+                <div class="flex flex-row gap-4 overflow-x-auto py-1">
+                  {% for step in shot.steps if step.step_name != "Thumbnails" and step.step_name != "FB Thumbnails" %}
+                  <div class="flex flex-col bg-gray-800 px-2 py-1 rounded text-xs min-w-[220px]"
+                    data-step-column-id="{{ step.step_id }}">
+                    <label class="text-[10px] text-gray-300">{{ step.step_name }}</label>
+
+                    <select name="status" class="status-dropdown text-xs rounded px-1 py-0.5 text-black w-full"
+                      data-shot-id="{{ shot.id }}" data-step-id="{{ step.step_id }}"
+                      onchange="updateStepStatus({{ shot.id }}, {{ step.step_id }}, this.value)"
+                      style="background-color: {{ step.status_color or '#ffffff' }};">
+                      {% for option in step.status_options %}
+                      <option value="{{ option.name }}" data-node-id="{{ option.id }}" {% if option.name|trim==step.status|trim %}selected{%
+                        endif %} style="background-color: {{ option.color or '#ffffff' }};">
+                        {{ option.name }}
+                      </option>
+                      {% endfor %}
+                    
+                    
+                    
+                    </select>
+
+                    <select name="assigned_to" class="text-xs rounded px-1 py-0.5 text-black bg-white w-full"
+                      onchange="updateAssignedUser({{ shot.id }}, {{ step.step_id }}, this.value)">
+                      <option value="">-- Unassigned --</option>
+                      {% for user in crew %}
+                      <option value="{{ user.id }}" {% if user.id==step.assigned_to %}selected{% endif %}>
+                        {{ user.name }}
+                      </option>
+                      {% endfor %}
+                    </select>
+
+                    <input type="date" name="due_date" value="{{ step.due_date or '' }}"
+                      onchange="updateDueDate({{ shot.id }}, {{ step.step_id }}, this.value)"
+                      class="rounded px-1 py-0.5 text-black bg-white text-xs w-full" />
+                  </div>
+                  {% endfor %}
+
+                </div>
+              </td>
+
+              <td class="px-3 py-2">
+                <button type="button" class="bg-red-800 hover:bg-red-600 text-white px-3 py-1 rounded text-xs"
+                  onclick="confirmDeleteShot({{ shot.id }})">
+                  Delete Shot
+                </button>
+                <form id="delete-shot-form-{{ shot.id }}" method="POST"
+                  action="{{ url_for('films.delete_shot_route', shot_id=shot.id) }}" style="display: none;"></form>
+                <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs"
+                  onclick="openEditModal({{ shot.id }}, '{{ shot.description }}', '{{ shot.start_date }}', '{{ shot.due_date }}')">
+                  ✏️ Edit
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-gray-400 italic">No shots found</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-root">
+    <div id="editShotModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+      <div class="bg-white text-black rounded-xl shadow w-full max-w-lg p-6">
+        <form id="edit-shot-form" method="POST" action="{{ url_for('films.edit_shot_route') }}">
+          <input type="hidden" name="shot_id" id="edit-shot-id" />
+
+          <h2 class="text-xl font-bold mb-4">Edit Shot</h2>
+
+          <label class="block mb-2">Description</label>
+          <input type="text" name="description" id="edit-description" class="w-full px-3 py-2 border rounded mb-4" />
+
+          <label class="block mb-2">Start Date</label>
+          <input type="date" name="start_date" id="edit-start" class="w-full px-3 py-2 border rounded mb-4" />
+
+          <label class="block mb-2">Due Date</label>
+          <input type="date" name="due_date" id="edit-due" class="w-full px-3 py-2 border rounded mb-4" />
+
+          <div class="flex justify-end gap-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Save</button>
+            <button type="button" onclick="closeEditModal()" class="text-red-600">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <div id="bulkEditModal"
+    class="fixed z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-6 bg-red-950 text-white rounded-xl w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto hidden">
+
+    <form method="POST" action="{{ url_for('films.bulk_edit_shots') }}" id="bulk-edit-form">
+      <input type="hidden" name="shot_ids" id="bulk-shot-ids" />
+
+      <h2 class="text-xl font-bold mb-4">Bulk Edit Shots (only make changes to what you want changed!)</h2>
+
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block">Description</label>
+          <input type="text" name="description" class="w-full border px-2 py-1 rounded text-black" />
+        </div>
+        <div>
+          <label class="block">Start Date</label>
+          <input type="date" name="start_date" class="w-full border px-2 py-1 rounded text-black" />
+        </div>
+        <div>
+          <label class="block">Due Date</label>
+          <input type="date" name="due_date" class="w-full border px-2 py-1 rounded text-black" />
+        </div>
+      </div>
+
+      <hr class="my-4">
+
+      <!-- Full control per step -->
+      <div class="grid grid-cols-3 gap-4">
+        {% for step in steps %}
+        <div class="bg-gray-800 p-3 rounded text-white">
+          <label class="block text-sm font-bold mb-2">{{ step.step_name }}</label>
+
+          <!-- Status -->
+          <select name="step_status_{{ step.step_id }}" class="w-full border rounded px-2 py-1 mb-2 text-black">
+            <option value="">-- no change --</option>
+            {% for opt in step.status_options %}
+            <option value="{{ opt.name }}">{{ opt.name }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Assignee -->
+          <select name="step_assigned_{{ step.step_id }}" class="w-full border rounded px-2 py-1 mb-2 text-black">
+            <option value="">-- no change --</option>
+            {% for user in crew %}
+            <option value="{{ user.id }}">{{ user.name }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Due date -->
+          <input type="date" name="step_due_{{ step.step_id }}" class="w-full border rounded px-2 py-1 text-black" />
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="flex justify-end gap-2 mt-6">
+        <button type="submit" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded">Save Changes</button>
+        <button type="button" onclick="closeBulkEditModal()"
+          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+
+
+  <script>
+    // Simple Open/Close for Testing
+    function openBulkEditModal() {
+      const modal = document.getElementById("bulkEditModal");
+      modal.classList.remove("hidden");
+    }
+
+    function closeBulkEditModal() {
+      const modal = document.getElementById("bulkEditModal");
+      modal.classList.add("hidden");
+    }
+
+    document.getElementById("edit-selected-btn")?.addEventListener("click", openBulkEditModal);
+
+  </script>
+
+  <script>
+    document.getElementById("scene-dropdown")?.addEventListener("change", function () {
+      const sceneId = this.value;
+      if (sceneId) {
+        window.location.href = `/films/scenes/${sceneId}/shots`;
+      }
+    });
+
+    function openEditModal(shotId, description, startDate, dueDate) {
+        const modal = document.getElementById("editShotModal");
+        document.getElementById("edit-shot-id").value = shotId;
+        document.getElementById("edit-description").value = description || "";
+        document.getElementById("edit-start").value = startDate || "";
+        document.getElementById("edit-due").value = dueDate || "";
+        modal.classList.remove("hidden");
+      }
+
+      function closeEditModal() {
+        document.getElementById("editShotModal").classList.add("hidden");
+      }
+
+  </script>
+
+  <script>
+    const columnKey = "view_shots_hidden_columns";
+
+    document.getElementById("toggle-columns").addEventListener("click", () => {
+      document.getElementById("column-options").classList.toggle("hidden");
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const saved = JSON.parse(localStorage.getItem(columnKey) || "[]");
+
+      // Apply saved hidden columns on load
+      saved.forEach(col => {
+        document.querySelectorAll("table tr").forEach(row => {
+          const cell = row.children[col];
+          if (cell) cell.style.display = "none";
+        });
+
+        // Sync checkbox state
+        const cb = document.querySelector(`#column-options input[data-col="${col}"]`);
+        if (cb) cb.checked = false;
+      });
+
+      // Attach change listeners
+      document.querySelectorAll("#column-options input[type='checkbox']").forEach(cb => {
+        cb.addEventListener("change", () => {
+          const colIndex = parseInt(cb.dataset.col);
+          const show = cb.checked;
+
+          document.querySelectorAll("table tr").forEach(row => {
+            const cell = row.children[colIndex];
+            if (cell) cell.style.display = show ? "" : "none";
+          });
+
+          // Save state
+          const hidden = new Set(JSON.parse(localStorage.getItem(columnKey) || "[]"));
+          if (!show) hidden.add(colIndex);
+          else hidden.delete(colIndex);
+          localStorage.setItem(columnKey, JSON.stringify([...hidden]));
+        });
+      });
+    });
+  </script>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{{ url_for('static', filename='js/shots.js') }}"></script>
+
+  {% endblock %}

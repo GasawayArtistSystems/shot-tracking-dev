@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex justify-between items-center mx-auto mb-4">
+    <select id="film-dropdown" class="p-3 rounded text-black">
+        <option value="">Select a Film</option>
+        {% for f in all_films %}
+        <option value="{{ f.id }}" {% if f.id==film.id %}selected{% endif %}>{{ f.name }}</option>
+        {% endfor %}
+    </select>
+    <h2 class="text-2xl font-bold text-white truncate max-w-[75%]">
+        Assets for "{{ film.name }}"
+    </h2>
+    <div class="flex space-x-4">
+        <a href="{{ url_for('films.view_films') }}"
+            class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600">Films</a>
+        <a href="{{ url_for('films.view_scenes', film_id=film.id) }}"
+            class="bg-red-800 text-white px-4 py-2 rounded-lg hover:bg-red-600">Scenes</a>
+        <a href="{{ url_for('films.view_assets', film_id=film.id) }}"
+            class="bg-yellow-800 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">Assets</a>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="flex justify-end items-center mb-6 gap-3">
+
+    <a href="{{ url_for('films.add_asset', film_id=film.id) }}"
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg whitespace-nowrap">
+        Add New Asset
+    </a>
+
+    <button id="syncDiskBtn"
+        class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg whitespace-nowrap transition duration-200">
+        Sync Disk
+    </button>
+
+</div>
+
+<!-- Table Wrapper -->
+<div class="bg-red-900 rounded-lg overflow-x-auto p-6">
+
+    <table class="table bg-red-950 w-full">
+        <thead class="bg-gray-800 text-white">
+            <tr>
+                <th class="p-3 text-left">Category</th>
+                <th class="p-3 text-left">Progress</th>
+            </tr>
+        </thead>
+        <tbody id="assets-table" class="bg-red-950 text-white">
+            {% if categories %}
+            {% for cat, assets in categories.items() %}
+            {% for asset in assets %}
+            <tr>
+                <td class="p-3">{{ asset.category or "Uncategorized" }}</td>
+                <td class="p-3">{{ asset_progress[asset.id] }}%</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="2" class="text-center text-gray-400 py-4">
+                    This film has no assets yet. Please add one or choose another film.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+          
+    </table>
+</div>
+
+
+<div id="editAssetModal" class="hidden fixed inset-0 flex items-center justify-center bg-black z-50">
+    <div class="bg-red-950 rounded-lg p-6 w-full max-w-md shadow-lg">
+        <h5 class="text-xl font-bold text-white mb-4">Edit Asset</h5>
+        <form id="editAssetForm" method="POST">
+            <input type="hidden" id="edit-asset-id" name="asset_id">
+            <div class="mb-4">
+                <label for="edit-asset-name" class="block text-white font-semibold">Asset Name:</label>
+                <input type="text" class="w-full border rounded-lg p-2 text-gray-900" id="edit-asset-name" name="name"
+                    required>
+            </div>
+            <div class="mb-4">
+                <label for="edit-due-date" class="block text-white font-semibold">Due Date:</label>
+                <input type="date" class="w-full border rounded-lg p-2 text-gray-900" id="edit-due-date" name="due_date"
+                    required>
+            </div>
+            <div class="flex justify-between">
+                <button type="button" class="bg-gray-500 text-white px-4 py-2 rounded-lg"
+                    onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/assets.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+
+<script>
+    window.filmId = {{ film.id | tojson }};
+</script>
+<script>
+    document.getElementById("film-dropdown")?.addEventListener("change", function () {
+        const filmId = this.value;
+        if (filmId) {
+            window.location.href = `/films/films/${filmId}/assets`;
+        }
+    });
+</script>
+
+<script>
+    document.getElementById("syncDiskBtn").addEventListener("click", function () {
+
+        Swal.fire({
+            title: 'Sync Asset Disk?',
+            text: "This will scan the filesystem and update file paths.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, Sync It'
+        }).then((result) => {
+
+            if (result.isConfirmed) {
+
+                Swal.fire({
+                    title: 'Syncing...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                fetch(`/films/films/assets/sync-disk/{{ film.id }}`, {
+                    method: "POST"
+                })
+                    .then(res => res.json())
+                    .then(data => {
+
+                        Swal.fire({
+                            title: 'Sync Complete',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#28a745'
+                        }).then(() => {
+                            location.reload();
+                        });
+
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Something went wrong during sync.',
+                            icon: 'error'
+                        });
+                    });
+
+            }
+
+        });
+
+    });
+</script>
+
+{% endblock %}
