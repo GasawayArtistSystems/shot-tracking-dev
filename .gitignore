@@ -1,33 +1,61 @@
-# === Node / JS ===
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+venv/
+.envrc
+
+# =========================
+# Node / JS
+# =========================
 node_modules/
 .next/
+dist/
+build/
 *.log
 *.lock
 
-# === Python ===
-venv/
-__pycache__/
-*.py[cod]
-*.pyc
-*.pyo
-*.db
+# =========================
+# Uploads / Media (VERY IMPORTANT)
+# =========================
+uploads/
+*.webm
+*.mp4
+*.mov
+*.avi
+*.mkv
 
-# === Development / IDE ===
+# =========================
+# IDE / OS
+# =========================
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
 *.swp
 
-# === Build / Temp ===
-dist/
-build/
-*.spec
-*.exe
+# =========================
+# Temp / Backup
+# =========================
 *.bak
+*.tmp
+*.spec
 
-# === Project-specific Folders ===
+# =========================
+# Project-specific
+# =========================
 archive/
 bak/
 Sketches/
 Working/
-*.log
