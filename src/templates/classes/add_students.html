@@ -40,7 +40,15 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- ✅ Available Students -->
         <div class="bg-red-950 p-4 rounded-lg shadow">
-            <h5 class="text-lg font-semibold text-white mb-2">Available Students</h5>
+            <div class="flex items-center justify-between mb-2">
+                <h5 class="text-lg font-semibold text-white">Available Students</h5>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="alsoAddToAssignments" class="w-4 h-4 rounded cursor-pointer accent-yellow-400">
+                    <label for="alsoAddToAssignments" class="text-white text-sm cursor-pointer select-none">
+                        Also add to all assignments
+                    </label>
+                </div>
+            </div>
             <input type="text" id="searchAvailable" class="border p-2 w-full rounded-lg text-black" placeholder="Search available students...">
             <ul id="availableStudentsList" class="mt-2 space-y-2">
                 {% for student in available_students %}
@@ -52,12 +60,6 @@
                     <li class="text-white">No available students found.</li>
                 {% endfor %}
             </ul>
-            <div class="mt-4 flex items-center gap-3 px-1">
-                <input type="checkbox" id="alsoAddToAssignments" class="w-5 h-5 rounded cursor-pointer accent-yellow-400">
-                <label for="alsoAddToAssignments" class="text-white text-sm cursor-pointer select-none">
-                    Also add to all assignments
-                </label>
-            </div>
             <div class="mt-2 text-center">
                 <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg" onclick="addSelectedStudents()">Add
                     to Class</button>
