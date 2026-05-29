@@ -14,7 +14,7 @@ from app.models.classes import (
     validate_class_exists, validate_class_number, get_class_folder_path,
     delete_classes, delete_class_by_id, create_class_folder_if_missing,
     parse_class_form, bulk_delete_from_form, get_instructors_dropdown, get_semesters_dropdown,
-    filter_students_by_name, get_students_by_class_with_enrollment_marked, validate_student_action_payload, add_students_to_class, remove_students_from_class_db
+    filter_students_by_name, get_students_by_class_with_enrollment_marked, validate_student_action_payload, add_students_to_class, remove_students_from_class_db, add_students_to_class_and_assignments
 )
 from app.utils.utils import role_required
 from app.database.db import get_db
@@ -373,14 +373,20 @@ def get_class_students(class_id):
 @role_required('classes', ['Instructor', 'Admin'])
 def manage_students_in_class(class_id):
     try:
-        action, student_ids, errors = validate_student_action_payload(request.json)
+        data = request.json
+        action, student_ids, errors = validate_student_action_payload(data)
 
         if errors:
             return jsonify({"success": False, "message": "; ".join(errors)}), 400
 
         if action == 'add':
-            add_students_to_class(class_id, student_ids)
-            return jsonify({"success": True, "message": f"Added {len(student_ids)} student(s) successfully."})
+            also_add_to_assignments = data.get("also_add_to_assignments", False)
+            if also_add_to_assignments:
+                add_students_to_class_and_assignments(class_id, student_ids)
+                return jsonify({"success": True, "message": f"Added {len(student_ids)} student(s) to class and all assignments."})
+            else:
+                add_students_to_class(class_id, student_ids)
+                return jsonify({"success": True, "message": f"Added {len(student_ids)} student(s) successfully."})
         elif action == 'remove':
             remove_students_from_class_db(class_id, student_ids)
             return jsonify({"success": True, "message": f"Removed {len(student_ids)} student(s) successfully."})

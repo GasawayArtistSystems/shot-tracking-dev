@@ -337,6 +337,87 @@ def add_students_to_class(class_id, student_ids):
     except Exception as e:
         conn.rollback()
         raise RuntimeError(f"âŒ Error adding students to class {class_id}: {e}")
+    
+def add_students_to_class_and_assignments(class_id, student_ids):
+    """Enroll students in a class AND create individual assignments for all
+    existing assignments in that class."""
+    class_details = get_class_by_id(class_id)
+    if not class_details:
+        raise ValueError(f"Class {class_id} does not exist.")
+
+    semester_id = class_details.get("semester_id")
+    if semester_id is None:
+        raise ValueError(f"Class {class_id} does not have a valid semester_id.")
+
+    conn = get_db()
+    try:
+        with conn:
+            # Get all assignments for this class
+            assignments = conn.execute("""
+                SELECT id, name, start_date, completion_date, parent_step_id
+                FROM assignments WHERE class_id = ?
+            """, (class_id,)).fetchall()
+
+            for student_id in student_ids:
+                # Enroll in class (same as add_students_to_class)
+                conn.execute("""
+                    INSERT OR IGNORE INTO class_enrollments (class_id, user_id, semester_id)
+                    VALUES (?, ?, ?)
+                """, (class_id, student_id, semester_id))
+
+                # Create individual assignment for each assignment
+                for assignment in assignments:
+                    assignment_id  = assignment["id"]
+                    parent_step_id = assignment["parent_step_id"]
+
+                    # Skip if already assigned
+                    existing = conn.execute("""
+                        SELECT 1 FROM individual_assignments
+                        WHERE assignment_id = ? AND users_id = ?
+                    """, (assignment_id, student_id)).fetchone()
+                    if existing:
+                        continue
+
+                    # Insert individual assignment
+                    conn.execute("""
+                        INSERT INTO individual_assignments
+                        (assignment_id, users_id, name, start_date, completion_date)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (assignment_id, student_id, assignment["name"],
+                          assignment["start_date"], assignment["completion_date"]))
+
+                    individual_assignment_id = conn.execute(
+                        "SELECT last_insert_rowid()"
+                    ).fetchone()[0]
+
+                    # Get workflow steps
+                    steps = conn.execute("""
+                        SELECT id FROM steps WHERE parent_id = ?
+                    """, (parent_step_id,)).fetchall()
+
+                    # Create status record for each step
+                    for step in steps:
+                        top_node = conn.execute("""
+                            SELECT name FROM nodes
+                            WHERE step_id = ?
+                            ORDER BY CAST(SUBSTR(position, INSTR(position, ' ') + 1) AS INTEGER)
+                            LIMIT 1
+                        """, (step["id"],)).fetchone()
+
+                        if top_node:
+                            conn.execute("""
+                                INSERT OR IGNORE INTO individual_assignment_statuses
+                                (individual_assignment_id, step_id, current_status)
+                                VALUES (?, ?, ?)
+                            """, (individual_assignment_id, step["id"], top_node["name"]))
+
+        print(f"[OK] Enrolled {len(student_ids)} students with assignments in class {class_id}.")
+
+    except sqlite3.IntegrityError:
+        print(f"⚠️ Some students were already enrolled in class {class_id}")
+    except Exception as e:
+        conn.rollback()
+        raise RuntimeError(f"❌ Error in add_students_to_class_and_assignments: {e}")
 
 def remove_students_from_class_db(class_id, student_ids):
     """Remove students from a class and clean up related individual assignments and statuses."""

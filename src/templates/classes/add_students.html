@@ -52,8 +52,15 @@
                     <li class="text-white">No available students found.</li>
                 {% endfor %}
             </ul>
-            <div class="mt-4 text-center">
-                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg" onclick="addSelectedStudents()">Add to Class</button>
+            <div class="mt-4 flex items-center gap-3 px-1">
+                <input type="checkbox" id="alsoAddToAssignments" class="w-5 h-5 rounded cursor-pointer accent-yellow-400">
+                <label for="alsoAddToAssignments" class="text-white text-sm cursor-pointer select-none">
+                    Also add to all assignments
+                </label>
+            </div>
+            <div class="mt-2 text-center">
+                <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg" onclick="addSelectedStudents()">Add
+                    to Class</button>
             </div>
         </div>
 
@@ -121,7 +128,7 @@
     // Add Selected Students
     function addSelectedStudents() {
         const selectedStudents = Array.from(document.querySelectorAll('input[name="available_students"]:checked'))
-            .map(input => input.value);
+            .map(input => parseInt(input.value));
 
         if (selectedStudents.length === 0) {
             Swal.fire({
@@ -134,14 +141,15 @@
             return;
         }
 
+        const alsoAddToAssignments = document.getElementById("alsoAddToAssignments")?.checked ?? false;
+
         fetch(manageStudentsUrl, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 action: "add",
-                student_ids: selectedStudents
+                student_ids: selectedStudents,
+                also_add_to_assignments: alsoAddToAssignments
             }),
         })
             .then(response => response.json())
@@ -154,7 +162,7 @@
                         timer: 3000,
                         showConfirmButton: false
                     }).then(() => {
-                        location.reload(); // Reload the page to update the lists
+                        location.reload();
                     });
                 } else {
                     Swal.fire({
