@@ -1191,6 +1191,90 @@ def upload_assignment():
         print(f"ðŸ”¥ Upload Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@review_routes.route("/maya-submit", methods=["POST"])
+def maya_submit():
+    try:
+        # --- Validate secret key ---
+        secret = request.form.get("secret")
+        if secret != os.environ.get("MAYA_SUBMIT_SECRET", "DAAP_CAMP_2026"):
+            return jsonify({"error": "Unauthorized"}), 403
+
+        file          = request.files.get("file")
+        assignment_name = request.form.get("assignment_name")
+        class_name    = request.form.get("class_name")
+        user_name     = request.form.get("user_name")  # from Maya dropdown, not session
+
+        if not all([file, assignment_name, class_name, user_name]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # --- Get semester folder ---
+        semester_row = cursor.execute("""
+            SELECT s.year, s.term
+            FROM classes c
+            JOIN semesters s ON c.semester_id = s.id
+            WHERE c.class_name = ?
+        """, (class_name,)).fetchone()
+
+        if not semester_row:
+            return jsonify({"error": f"Semester not found for class: {class_name}"}), 400
+
+        semester_folder = f"{semester_row['year']}-{semester_row['term']}"
+        base_dir = os.path.join(BASE_VIDEO_DIR, semester_folder, class_name, "Assignments")
+        os.makedirs(base_dir, exist_ok=True)
+
+        # --- Validate file type ---
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in [".webm", ".png"]:
+            return jsonify({"error": "Unsupported file type"}), 400
+
+        # --- Version the file ---
+        existing_files = [f for f in os.listdir(base_dir)
+                          if f.startswith(f"{assignment_name}_{user_name}_v") and f.endswith(ext)]
+        versions = [int(re.search(r"_v(\d+)", f).group(1))
+                    for f in existing_files if re.search(r"_v(\d+)", f)]
+        next_version = max(versions, default=0) + 1
+
+        new_filename = f"{assignment_name}_{user_name}_v{next_version}{ext}"
+        filepath = os.path.join(base_dir, new_filename)
+        file.save(filepath)
+
+        # --- Look up individual_assignment_id ---
+        ia_row = cursor.execute("""
+            SELECT ia.id
+            FROM individual_assignments ia
+            JOIN assignments a ON ia.assignment_id = a.id
+            JOIN classes c ON a.class_id = c.id
+            JOIN users u ON ia.users_id = u.id
+            WHERE a.name = ? AND c.class_name = ? AND u.name = ?
+            LIMIT 1
+        """, (assignment_name, class_name, user_name)).fetchone()
+
+        if not ia_row:
+            return jsonify({"error": f"No assignment found for {user_name} / {assignment_name} in {class_name}"}), 404
+
+        # --- Update status to Submitted ---
+        conn.execute("""
+            UPDATE individual_assignment_statuses
+            SET current_status = 'Submitted'
+            WHERE individual_assignment_id = ?
+            AND step_id IN (SELECT id FROM steps WHERE name LIKE 'Assignment%')
+        """, (ia_row["id"],))
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            "success": True,
+            "message": f"Submitted successfully",
+            "file_name": new_filename
+        })
+
+    except Exception as e:
+        print(f"🔥 Maya Submit Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @review_routes.route('/upload_film_shot', methods=['POST'])
 def upload_film_shot():
     conn = get_db()
