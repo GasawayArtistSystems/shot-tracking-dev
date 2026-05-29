@@ -28,7 +28,7 @@ export default function DrawingTools({
     }, [setIsDrawing, setBrushSize]);
 
     return (
-        <div className="w-[250px] flex-shrink-0 bg-gray-900 p-2 text-xs space-y-3 overflow-hidden">
+        <div className="w-[250px] flex-shrink-0 bg-gray-900 p-2 text-xs space-y-3 overflow-y-auto max-h-screen">
 
             {/* Toggle Drawing Mode */}
             <button

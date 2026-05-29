@@ -11,11 +11,17 @@ CLASSES_BASE = os.getenv("CLASSES_PATH", r"C:/Classes")
 FILMS_BASE = os.getenv("FILMS_PATH", r"\\GAAAP1PRD01W\Films")
 
 
+
 # DATABASE CONFIG - UPDATE WITH YOUR DB PATH
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DATABASE_PATH = os.getenv(
-    "DATABASE",  # take from .env if set
-    "C:/myapp/shot-tracking-dev/src/app/database/app.db"  # fallback for server
+    "DATABASE",
+    os.path.join(BASE_DIR, "database", "app.db")
 )
+
+print("🔍 REVIEW DB PATH:", DATABASE_PATH)
+print("🔍 EXISTS:", os.path.exists(DATABASE_PATH))
 
 # [OK] Function to connect to the database
 def get_db_connection():

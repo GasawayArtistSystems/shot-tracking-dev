@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager
 from dotenv import load_dotenv
@@ -41,7 +41,11 @@ def create_app(config_override=None):
         static_folder="../static"
     )
 
-    CORS(app, supports_credentials=True)
+    CORS(
+    app,
+    supports_credentials=True,
+    origins=["http://localhost:3000"]
+)
 
     app.config.from_object(config_override or config)
 
@@ -87,19 +91,37 @@ def create_app(config_override=None):
         }
 
     # -------------------------------
-    # Markup React App Route
+    # Markup React App Route (Next export)
     # -------------------------------
-    from flask import send_from_directory
 
-    @app.route("/markup", defaults={"path": ""})
-    @app.route("/markup/<path:path>")
-    def serve_markup(path):
+    @app.route("/markup")
+    def serve_markup():
         static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react")
+        return send_from_directory(static_dir, "markup.html")
 
-        if path and os.path.exists(os.path.join(static_dir, path)):
-            return send_from_directory(static_dir, path)
 
-        return send_from_directory(static_dir, "index.html")
+    @app.route("/markup/_next/static/<path:path>")
+    def serve_next_static(path):
+        static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react", "_next", "static")
+        return send_from_directory(static_dir, path)
+
+
+    @app.route("/markup/_next/<path:path>")
+    def serve_next_assets(path):
+        static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react", "_next")
+        return send_from_directory(static_dir, path)
+
+
+    @app.route("/markup/<path:path>")
+    def serve_markup_assets(path):
+        static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react")
+        return send_from_directory(static_dir, path)
+
+
+    @app.route("/static/<path:path>")
+    def serve_static_assets(path):
+        static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react", "static")
+        return send_from_directory(static_dir, path)
 
     return app
 

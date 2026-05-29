@@ -1,9 +1,13 @@
 ﻿# classes_routes.py
 import os, json
+import csv
+import zipfile
+import tempfile
 import shutil
 import html
 import traceback
-from flask import Blueprint, render_template, request, redirect, flash, url_for, jsonify, session, current_app
+from io import BytesIO
+from flask import Blueprint, render_template, request, redirect, flash, url_for, jsonify, session, current_app, send_file
 from app.models import get_assignments_by_class
 from app.models.classes import (
     query_classes, get_all_classes, get_all_classes_minimal, get_class_by_id, get_all_classes_dict, fetch_unique_class_names, serialize_classes_for_dropdown,
@@ -509,5 +513,71 @@ def get_all_rigs():
         current_app.logger.exception("Failed to list rigs")
         return jsonify([]), 200
 
+# ----------------------------------------------------------------------------------
+# EXPORT CSV
+# ----------------------------------------------------------------------------------
 
+@classes_bp.route("/export_class/<int:class_id>", methods=["GET"])
+@role_required('classes', ['Instructor', 'Admin'])
+def export_class_zip(class_id):
+    try:
+        db = get_db()
+
+        # -------------------------
+        # Get class info
+        # -------------------------
+        class_row = db.execute("""
+            SELECT c.class_name, s.year, s.term
+            FROM classes c
+            JOIN semesters s ON c.semester_id = s.id
+            WHERE c.id = ?
+        """, (class_id,)).fetchone()
+
+        if not class_row:
+            return jsonify({"error": "Class not found"}), 404
+
+        class_name = class_row["class_name"]
+        semester_label = f"{class_row['year']}-{class_row['term']}".replace(" ", "_")
+
+        class_folder = get_class_folder_path(semester_label, class_name)
+        print("CLASS FOLDER PATH:", class_folder)
+
+        if not os.path.exists(class_folder):
+            return jsonify({"error": "Class folder not found on disk"}), 404
+
+        # -------------------------
+        # Create ZIP in memory
+        # -------------------------
+        memory_file = BytesIO()
+
+        with zipfile.ZipFile(memory_file, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(class_folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+
+                    # Preserve folder structure relative to class folder
+                    arcname = os.path.relpath(file_path, class_folder)
+
+                    zf.write(file_path, arcname)
+
+        memory_file.seek(0)
+
+        safe_class_name = "".join(
+            c if c.isalnum() or c in (" ", "_", "-") else "_"
+            for c in class_name
+        ).strip()
+
+        zip_filename = f"{safe_class_name}.zip"
+
+        return send_file(
+            memory_file,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=zip_filename
+        )
+
+    except Exception as e:
+        print("Export ZIP error:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 

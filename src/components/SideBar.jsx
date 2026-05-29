@@ -166,7 +166,7 @@ export default function SideBar({
         <div className="flex">
                     {/* Sidebar wrapper */}
                     <div
-                        className={`bg-gray-900 h-full overflow-y-auto max-h-screen transition-all duration-300 ${collapsed ? "w-0 p-0 overflow-hidden" : "w-54 p-4"
+                className={`bg-gray-900 h-full overflow-y-auto max-h-screen transition-all duration-300 ${collapsed ? "w-0 p-0 overflow-hidden" : "w-[480px] p-4"
                             }`}
                     >
                         {!collapsed && (
@@ -177,7 +177,7 @@ export default function SideBar({
                                     placeholder="Search files..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="mb-4 p-2 w-full rounded-md bg-gray-800 text-white placeholder-gray-400"
+                                    className="bg-grey-500 text-white p-2 w-full"
                                 />
                             </>
                         )}
@@ -246,7 +246,7 @@ export default function SideBar({
                                                         {group.files.map((file, idx) => (
                                                             <li
                                                                 key={idx}
-                                                                className="cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+                                                                className="cursor-pointer hover:bg-gray-700 p-2 rounded-md text-sm"
                                                                 onClick={() => {
                                                                     setSelectedAssignment?.(file);
                                                                     handleFileClick(file, "assignments");
@@ -282,7 +282,7 @@ export default function SideBar({
                 {isFilmsOpen && (
                     <ul className="ml-4">
                         {filterFiles(Object.values(fileList?.films || {}).flat()).map((file, index) => (
-                            <li key={index} className="cursor-pointer hover:bg-gray-700 p-2 rounded-md" onClick={() => {
+                            <li key={index} className="cursor-pointer hover:bg-gray-700 px-2 py-1 rounded-md text-sm" onClick={() => {
                                 handleFileClick(file, "films");
                                 setSelectedCategory("films");
                             }}
@@ -395,7 +395,7 @@ export default function SideBar({
                                                                             {files.map((file, idx) => (
                                                                                 <li
                                                                                     key={idx}
-                                                                                    className="cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+                                                                                    className="cursor-pointer hover:bg-gray-700 px-2 py-1 rounded-md text-sm"
                                                                                     onClick={() => {
                                                                                         setSelectedAssignment?.(file);
                                                                                         handleFileClick(file, "assignments");

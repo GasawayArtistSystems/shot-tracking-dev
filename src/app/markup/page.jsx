@@ -1,59 +1,48 @@
 "use client";
-import { initSceneReviewSession } from "./sceneReviewSession";  // ✅ move to top!
 
-// 🩵 Restore last scene_id if present before anything else runs
-const storedSceneId = sessionStorage.getItem("lastSceneId");
-if (storedSceneId) {
-  console.log("🔁 Restored scene_id for markup.js:", storedSceneId);
-  window.scene_id = Number(storedSceneId);
-  sessionStorage.removeItem("lastSceneId");
-}
+export const dynamic = "force-dynamic";
 
 
-window.addEventListener("error", e => console.error("❌ Runtime error:", e.error || e.message));
-window.addEventListener("unhandledrejection", e => console.error("❌ Unhandled promise:", e.reason));
-console.log("🟢 page.jsx: top-level code executing");
-
-// --- Truncated some imports for brevity ---
 import { useEffect, useState, useRef, useCallback } from "react";
 import VideoPlayer from "../../components/VideoPlayer";
 import DrawingTools from "../../components/DrawingTools";
 import SideBar from "../../components/SideBar";
 import OnionSkinSettings from "../../components/OnionSkinSettings";
 import Swal from "sweetalert2";
-import ReactDOM from "react-dom/client";
-import "../globals.css";
-// import "./index.css";
 
 
+// ✅ NOW define this
+const getSessionStorage = () => {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage;
+};
 
+console.log("🟢 page.jsx: top-level code executing");
 
 
 // ✅ Handles both localhost dev and deployed /markup/ path
 const API_BASE_URL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:5000"                     // when running npm run dev
-    : window.location.origin;                     // when built and served by Flask
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:5000"
+    : (typeof window !== "undefined" ? window.location.origin : "");
 
-console.log("🌐 API_BASE_URL =", API_BASE_URL, "mode =", import.meta.env.MODE);
-
-console.log("🔎 Testing import path...");
-import("./sceneReviewSession").then(m => {
-  console.log("✅ sceneReviewSession loaded dynamically:", m);
-}).catch(err => {
-  console.error("❌ Failed to import sceneReviewSession.js:", err);
-});
-
-
+console.log("🌐 API_BASE_URL =", API_BASE_URL, "mode =", process.env.NODE_ENV);
 
 
 // 🔁 Single bridge: push options to global + notify React (if bound)
 function pushStatusOptions(opts) {
   const options = Array.isArray(opts) ? opts : [];
-  window.statusOptionsForStep = options;
-  if (typeof window.refreshSceneStatusOptions === "function") {
-    try { window.refreshSceneStatusOptions(options); }
-    catch (e) { console.warn("refreshSceneStatusOptions threw:", e); }
+
+  if (typeof window !== "undefined") {
+    window.statusOptionsForStep = options;
+
+    if (typeof window.refreshSceneStatusOptions === "function") {
+      try {
+        window.refreshSceneStatusOptions(options);
+      } catch (e) {
+        console.warn("refreshSceneStatusOptions threw:", e);
+      }
+    }
   }
 }
 
@@ -130,7 +119,52 @@ export default function MarkupTool() {
     window.selectedStepCode = stepCode;
   }
 
+  useEffect(() => {
+    const handleHotkeys = (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        document.querySelector("#startObsBtn")?.click();
+      }
 
+      if (e.ctrlKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        document.querySelector("#stopObsBtn")?.click();
+      }
+    };
+
+    window.addEventListener("keydown", handleHotkeys);
+
+    return () => {
+      window.removeEventListener("keydown", handleHotkeys);
+    };
+  }, []);
+
+  useEffect(() => {
+    const storedSceneId = sessionStorage.getItem("lastSceneId");
+
+    if (storedSceneId) {
+      console.log("🔁 Restored scene_id for markup.js:", storedSceneId);
+      window.scene_id = Number(storedSceneId);
+      sessionStorage.removeItem("lastSceneId");
+    }
+  }, []);
+
+
+  useEffect(() => {
+    const handleError = (e) =>
+      console.error("❌ Runtime error:", e.error || e.message);
+
+    const handleRejection = (e) =>
+      console.error("❌ Unhandled promise:", e.reason);
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleRejection);
+
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleRejection);
+    };
+  }, []);
 
   useEffect(() => {
     window.setCurrentStatus = setCurrentStatus;
@@ -144,19 +178,8 @@ export default function MarkupTool() {
     window.markupNotes = noteInput;
   }, [noteInput]);
 
-
   useEffect(() => {
-    fetch("/review/get_permissions", { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        console.log("Permissions loaded:", data);
-        setClassPerm(data?.classes || 0);
-      })
-      .catch(err => console.error("Failed to fetch permissions:", err));
-  }, []);
-
-  useEffect(() => {
-    fetch("/review/get_permissions", { credentials: "include" })
+    fetch(`${API_BASE_URL}/review/get_permissions`, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         console.log("Permissions loaded:", data);
@@ -236,7 +259,7 @@ export default function MarkupTool() {
   // Load films for dropdown
   const loadFilms = async () => {
     try {
-      const res = await fetch("/review/films");
+      const res = await fetch(`${API_BASE_URL}/review/films`);
       const data = await res.json();
       setFilms(data);
     } catch (err) {
@@ -281,7 +304,11 @@ export default function MarkupTool() {
 
     const sceneCode = parseInt(match[1], 10);
     const shotCode = parseInt(match[2], 10);
-    const sceneId = parseInt(item.scene_id ?? window.scene_id ?? 0, 10);
+    const sceneId = parseInt(
+      item.scene_id ??
+      (typeof window !== "undefined" ? window.scene_id : 0),
+      10
+    );
 
     console.log("🔍 Matching shot_id from filename:", {
       sceneCode,
@@ -322,11 +349,20 @@ export default function MarkupTool() {
   }, [showSceneModal]);
 
   async function saveCurrentStatus() {
-    if (!window.currentShotId || !window.feedbackStepId || !window.scene_id) {
+    const sceneId =
+      typeof window !== "undefined" ? window.scene_id : null;
+
+    const shotId =
+      typeof window !== "undefined" ? window.currentShotId : null;
+
+    const stepId =
+      typeof window !== "undefined" ? window.feedbackStepId : null;
+
+    if (!shotId || !stepId || !sceneId) {
       console.warn("Missing ids for save:", {
-        shot_id: window.currentShotId,
-        step_id: window.feedbackStepId,
-        scene_id: window.scene_id,
+        shot_id: shotId,
+        step_id: stepId,
+        scene_id: sceneId,
       });
       return;
     }
@@ -338,9 +374,9 @@ export default function MarkupTool() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "shot",
-          scene_id: Number(window.scene_id),
-          shot_id: Number(window.currentShotId),
-          step_id: Number(window.feedbackStepId),
+          scene_id: Number(sceneId),
+          shot_id: Number(shotId),
+          step_id: Number(stepId),
           new_status: currentStatus,
         }),
       });
@@ -416,7 +452,7 @@ export default function MarkupTool() {
     console.log("📤 SB SEND:", payload);
 
     try {
-      const res = await fetch("/review/update_scene_status", {
+      const res = await fetch(`${API_BASE_URL}/review/update_scene_status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -475,7 +511,9 @@ export default function MarkupTool() {
       }
 
       // ⭐ Hard refresh (same behavior as assignment Save)
-      window.location.reload();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
 
     } catch (err) {
       console.error("❌ Finalize storyboard:", err);
@@ -495,7 +533,9 @@ export default function MarkupTool() {
     if (!selectedSceneId) return;
     try {
       const step = selectedStep || "LAY";
-      window.selectedStepCode = step;
+      if (typeof window !== "undefined") {
+        window.selectedStepCode = step;
+      }
       window.scene_id = Number(selectedSceneId);
       window.selectedSceneId = Number(selectedSceneId);
       window.selectedFilmName =
@@ -516,10 +556,16 @@ export default function MarkupTool() {
       console.log("🎬 Scene Shots for session:", data);
       setShowSceneModal(false);
 
-      initSceneReviewSession({
-        setSelectedFile,
-        allShots: data,
-      });
+      if (typeof window !== "undefined") {
+        import("./sceneReviewSession").then(mod => {
+          mod.initSceneReviewSession({
+            setSelectedFile,
+            allShots,
+            selectedFile,
+            currentStepPrefix
+          });
+        });
+      }
     } catch (err) {
       console.error("❌ Failed to start session:", err);
     }
@@ -529,16 +575,25 @@ export default function MarkupTool() {
 
   // 🩵 Restore last scene_id after page reload
   useEffect(() => {
-    const savedSceneId = sessionStorage.getItem("lastSceneId");
-    if (savedSceneId) {
-      console.log("🔁 Restored lastSceneId from storage:", savedSceneId);
-      // if you already have a variable like setCurrentSceneId, use that:
-      if (typeof setCurrentSceneId === "function") {
-        setCurrentSceneId(Number(savedSceneId));
-      }
-      // or, if you only track selectedItem:
-      setSelectedItem(prev => prev ? { ...prev, scene_id: Number(savedSceneId) } : { scene_id: Number(savedSceneId) });
+    const storage = getSessionStorage();
+    const savedSceneId = storage?.getItem("lastSceneId");
+
+    if (!savedSceneId) return;
+
+    console.log("🔁 Restored lastSceneId:", savedSceneId);
+
+    // ONLY update if nothing is selected yet
+    setSelectedItem(prev => {
+      if (prev && prev.scene_id) return prev;
+
+      return { scene_id: Number(savedSceneId) };
+    });
+
+    // OPTIONAL: only call this if it exists AND hasn't been set yet
+    if (typeof setCurrentSceneId === "function") {
+      setCurrentSceneId(prev => prev || Number(savedSceneId));
     }
+
   }, []);
 
 
@@ -739,14 +794,18 @@ export default function MarkupTool() {
       }
 
       // 🧭 --- Step direction logic (FB vs main) ---
-      const isMarkup = window.location.pathname.includes("/markup");
+      const isMarkup =
+        typeof window !== "undefined" &&
+        window.location.pathname.includes("/markup");
       const targetStepId = isMarkup
         ? (statusMeta?.display_step_id ?? step_id)   // Markup (FB step)
         : (statusMeta?.update_step_id ?? step_id);   // Manual/Maya (main step)
 
       // --- Build payload ---
       const payload = {
-        scene_id: selectedItem.scene_id || window.scene_id,
+        scene_id:
+          selectedItem.scene_id ||
+          (typeof window !== "undefined" ? window.scene_id : null),
         step_id: targetStepId,
         new_status,
         shot_id: shotId,
@@ -902,22 +961,24 @@ export default function MarkupTool() {
       console.log("🎬 Available step keys:", Object.keys(map));
 
 
-      // 🟢 Expose globally so Scene Review can use it
-      window.gradeOptionsByStep = map;
+      if (typeof window !== "undefined") {
+        // 🟢 Expose globally so Scene Review can use it
+        window.gradeOptionsByStep = map;
 
-      // 🟢 Log which step we’re currently in
-      console.log("🎬 Selected step for review:", window.selectedStepCode);
+        // 🟢 Log which step we’re currently in
+        console.log("🎬 Selected step for review:", window.selectedStepCode);
 
-      // 🟢 Log if we actually have options for it
-      if (window.selectedStepCode && map[window.selectedStepCode]) {
-        window.statusOptionsForStep = map[window.selectedStepCode];
-        console.log(
-          "✅ Loaded status options for step:",
-          window.selectedStepCode,
-          window.statusOptionsForStep
-        );
-      } else {
-        console.warn("⚠️ No status options found for step:", window.selectedStepCode);
+        // 🟢 Log if we actually have options for it
+        if (window.selectedStepCode && map[window.selectedStepCode]) {
+          window.statusOptionsForStep = map[window.selectedStepCode];
+          console.log(
+            "✅ Loaded status options for step:",
+            window.selectedStepCode,
+            window.statusOptionsForStep
+          );
+        } else {
+          console.warn("⚠️ No status options found for step:", window.selectedStepCode);
+        }
       }
 
 
@@ -931,7 +992,9 @@ export default function MarkupTool() {
     if (storyboardMode) return;
 
     // 🩵 use stored or global scene_id as fallback
-    const sceneId = selectedItem?.scene_id || window.scene_id;
+    const sceneId =
+      selectedItem?.scene_id ||
+      (typeof window !== "undefined" ? window.scene_id : null);
 
     if (!sceneId || isNaN(sceneId)) {
       console.warn("🚫 Skipping shot fetch. Invalid scene_id:", sceneId);
@@ -985,7 +1048,16 @@ export default function MarkupTool() {
     const tryInit = () => {
       if (allShots && allShots.length > 0) {
         console.log("🟢 Initializing Scene Review Session with", allShots.length, "shots");
-        initSceneReviewSession({ setSelectedFile, allShots, selectedFile });
+        if (typeof window !== "undefined") {
+          import("./sceneReviewSession").then(mod => {
+            mod.initSceneReviewSession({
+              setSelectedFile,
+              allShots,
+              selectedFile,
+              currentStepPrefix
+            });
+          });
+        }
         return true;
       }
       console.log("⏳ Waiting for allShots...");
@@ -1015,7 +1087,7 @@ export default function MarkupTool() {
       } else {
         // 🔁 Fallback: try a backend list endpoint ONLY IF you know it works
         // Change the URL below to YOUR real route (examples: /review/get_all_assignment_files, /review/list, etc.)
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/review/get_files_for_review`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/review/get_files_for_review`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });
@@ -1094,7 +1166,9 @@ export default function MarkupTool() {
       const videoUrl = `${API_BASE_URL}/review/get_video?path=${encodeURIComponent(data.previous_path)}`;
       const url = `/markup?file=${encodeURIComponent(videoUrl)}&readonly=1`;
 
-      window.open(url, "_blank");
+      if (typeof window !== "undefined") {
+        window.open(url, "_blank");
+      }
 
     } catch (err) {
       console.error("❌ Failed to open previous version:", err);
@@ -1146,14 +1220,17 @@ export default function MarkupTool() {
 
       console.log("🚀 Save Payload:", payload);
       console.log("🎬 [UI] Posting to /review/save_annotations", {
-        url: `${import.meta.env.VITE_API_URL}/review/save_annotations`,
+        url: `${process.env.NEXT_PUBLIC_API_URL}/review/save_annotations`,
         payload
       });
 
-      const favorite = document.getElementById("favoriteCheckbox")?.checked || false;
+      const favorite =
+        typeof document !== "undefined"
+          ? document.getElementById("favoriteCheckbox")?.checked || false
+          : false;
       payload.favorite = favorite;
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/review/save_annotations`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/review/save_annotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -1252,7 +1329,9 @@ export default function MarkupTool() {
           console.log("💾 Stored lastSceneId:", selectedItem.scene_id);
         }
 
-        window.location.reload();
+        if (typeof window !== "undefined") {
+          window.location.reload();
+        }
       });
     } catch (err) {
       console.error("❌ Save failed:", err);
@@ -1333,12 +1412,14 @@ export default function MarkupTool() {
   }, [currentFrame, frameAnnotations]);
 
   useEffect(() => {
-    window.__markupDebug = {
-      clearCurrentFrame,
-      get frame() { return currentFrame; },
-      clearCanvasRef,
-      redrawCanvasRef,
-    };
+    if (typeof window !== "undefined") {
+      window.__markupDebug = {
+        clearCurrentFrame,
+        get frame() { return currentFrame; },
+        clearCanvasRef,
+        redrawCanvasRef,
+      };
+    }
   }, [clearCurrentFrame, currentFrame]);
 
   const handleSetClearCanvas = useCallback((fn) => {
@@ -1451,6 +1532,7 @@ export default function MarkupTool() {
 
 
   return (
+    <div className="bg-gray-900 text-white min-h-screen w-full">
     <div className="flex h-screen overflow-hidden bg-gray-800 text-white">
       <SideBar
         apiBaseUrl={API_BASE_URL}
@@ -2109,7 +2191,10 @@ export default function MarkupTool() {
                   console.log("💾 Scene Review Save triggered (_R + JSON beside file)");
 
                   try {
-                    const currentVideoPath = window.currentVideoPath || window.currentSceneVideoPath;
+                    const currentVideoPath =
+                      typeof window !== "undefined"
+                        ? window.currentVideoPath || window.currentSceneVideoPath
+                        : null;
                     if (!currentVideoPath) throw new Error("No active video path found.");
 
                     const normalizedPath = currentVideoPath.replace(/\//g, "\\");
@@ -2120,7 +2205,10 @@ export default function MarkupTool() {
                     console.log("🎬 Base Name:", baseName);
 
                     // ⭐ Get checkbox value
-                    const favorite = document.getElementById("favoriteCheckbox")?.checked || false;
+                    const favorite =
+                      typeof document !== "undefined"
+                        ? document.getElementById("favoriteCheckbox")?.checked || false
+                        : false;
 
                     const renameRes = await fetch(`${API_BASE_URL}/review/save_reviewed`, {
                       method: "POST",
@@ -2131,8 +2219,11 @@ export default function MarkupTool() {
                     if (!renameRes.ok) throw new Error(`Rename failed: ${renameRes.status}`);
 
                     // 2️⃣ Save markups and notes (just like normal review)
-                    const annotations = window.markupData || {};
-                    const notes = window.markupNotes || "";
+                    const annotations =
+                      typeof window !== "undefined" ? window.markupData || {} : {};
+
+                    const notes =
+                      typeof window !== "undefined" ? window.markupNotes || "" : "";
 
 
                     const jsonRes = await fetch(`${API_BASE_URL}/review/save_annotations`, {
@@ -2164,7 +2255,10 @@ export default function MarkupTool() {
                     Swal.fire("Error", "Failed to save Scene Review (_R + JSON).", "error");
                   }
                 }}
-                disabled={saving || !window.currentShotId}
+                disabled={
+                  saving ||
+                  (typeof window !== "undefined" ? !window.currentShotId : true)
+                }
                 className="px-3 py-1 rounded-md bg-blue-600 disabled:opacity-50 hover:bg-blue-500 transition"
                 title="Save the status of the current shot"
               >
@@ -2295,7 +2389,10 @@ export default function MarkupTool() {
                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
                 onClick={() => {
                   // Pull directly from the active video element
-                  const video = document.querySelector("video");
+                  const video =
+                    typeof document !== "undefined"
+                      ? document.querySelector("video")
+                      : null;
 
                   if (!video?.src) {
                     console.error("❌ No video src found for storyboard download");
@@ -2401,7 +2498,7 @@ export default function MarkupTool() {
       </div>
 
       <div
-        className="w-[270px] flex-shrink-0 overflow-hidden bg-gray-900 p-2 border-l border-gray-700"
+        className="w-[270px] flex-shrink-0 overflow-y-auto bg-gray-900 p-2 border-l border-gray-700"
         style={{
           maxWidth: "270px",
           minWidth: "270px",
@@ -2423,7 +2520,10 @@ export default function MarkupTool() {
             style={{ display: "none" }}
             onClick={() => {
               console.log("🎬 Auto-starting Scene Review playback...");
-              const playBtn = document.getElementById("scenePlayBtn");
+              const playBtn =
+                typeof document !== "undefined"
+                  ? document.getElementById("scenePlayBtn")
+                  : null;
               if (playBtn) playBtn.click();
             }}
           >
@@ -2434,7 +2534,11 @@ export default function MarkupTool() {
         {/* 🎞️ Open Review Clips Button */}
         <div className="w-full mb-4 flex justify-left">
           <button
-            onClick={() => window.open("/review/scene_reviews", "_blank")}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.open("/review/scene_reviews", "_blank");
+              }
+            }}
             className="bg-purple-700 hover:bg-purple-600 text-white text-sm px-2 py-1 rounded-md mt-2"
           >
             🎞️ Open Review Clips
@@ -2620,13 +2724,15 @@ export default function MarkupTool() {
             🛑 Stop OBS Recording
           </button>
 
-          <button
+            <button
               onClick={async () => {
+                console.log("🔥 Export button clicked");
                 // Fetch current semester classes
                 let classesPayload;
                 try {
                   const res = await fetch(`${API_BASE_URL}/review/current_semester_classes`);
                   classesPayload = await res.json();
+                  console.log("🔥 classesPayload:", classesPayload);
                 } catch (err) {
                   console.error("❌ Failed to load classes:", err);
                   Swal.fire("Error", "Could not load classes.", "error");
@@ -2641,7 +2747,10 @@ export default function MarkupTool() {
                   return;
                 }
 
-                const inputOptions = {};
+                const inputOptions = {
+                  ALL: "📦 Export All Classes",
+                };
+
                 for (const c of classes) inputOptions[c] = c;
 
                 const { value: className } = await Swal.fire({
@@ -2652,52 +2761,41 @@ export default function MarkupTool() {
                   showCancelButton: true,
                 });
 
-                if (!className) return; // user cancelled
+                if (!className) return;
 
-                fetch(`${API_BASE_URL}/review/export_canvas_csv?class=${encodeURIComponent(className)}`)
+                let url = "";
+                let filename = "";
+
+                if (className === "ALL") {
+                  url = `${API_BASE_URL}/review/export_all_grades_zip`;
+                  filename = "all_classes.zip";
+                } else {
+                  url = `${API_BASE_URL}/review/export_canvas_csv?class=${encodeURIComponent(className)}`;
+                  filename = `${className}.csv`;
+                }
+
+                fetch(url)
                   .then((res) => res.blob())
                   .then((blob) => {
-                    const url = window.URL.createObjectURL(blob);
+                    const downloadUrl = window.URL.createObjectURL(blob);
                     const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `${className}.csv`;
+                    a.href = downloadUrl;
+                    a.download = filename;
                     a.click();
                   })
                   .catch((err) => {
-                    console.error("❌ Failed to download grades CSV:", err);
-                    Swal.fire("Error", "Could not download grades.", "error");
+                    console.error("❌ Failed to download:", err);
+                    Swal.fire("Error", "Could not download export.", "error");
                   });
               }}
 
             className="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-md"
           >
-            📥 Export Grades
+            📥 Export Grades FOOL
           </button>
           </div>
 
 
-
-          {/* ✅ Hotkeys for OBS (Ctrl+R / Ctrl+S) */}
-          {useEffect(() => {
-            const handleHotkeys = (e) => {
-              // 🟢 Ctrl + R → Start OBS Recording
-              if (e.ctrlKey && e.key.toLowerCase() === "r") {
-                e.preventDefault(); // stop Chrome reload
-                console.log("🎬 Ctrl+R → Start OBS Recording");
-                document.querySelector("#startObsBtn")?.click();
-              }
-
-              // 🔴 Ctrl + S → Stop OBS Recording
-              if (e.ctrlKey && e.key.toLowerCase() === "s") {
-                e.preventDefault(); // stop Chrome Save dialog
-                console.log("🛑 Ctrl+S → Stop OBS Recording");
-                document.querySelector("#stopObsBtn")?.click();
-              }
-            };
-
-            window.addEventListener("keydown", handleHotkeys);
-            return () => window.removeEventListener("keydown", handleHotkeys);
-          }, [])}
 
 
         </div>
@@ -2708,11 +2806,9 @@ export default function MarkupTool() {
         </div>
       </div>
     </div>
+    </div>
   );
   
 
 
 }
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<MarkupTool />);

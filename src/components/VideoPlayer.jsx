@@ -50,7 +50,12 @@ export default function VideoPlayer({
         setVideoSrc(selectedFile);
     }, [selectedFile]);
 
-
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.volume = volume;
+            videoRef.current.muted = volume === 0;
+        }
+    }, [volume, videoSrc]);
 
     useEffect(() => {
         isPlayingRef.current = isPlaying;
@@ -337,7 +342,6 @@ export default function VideoPlayer({
                                             src={selectedFile}
                                             className="w-full h-auto max-h-[calc(100vh-260px)] object-contain"
                                             controls={false}
-                                            muted
                                         />
                                     ) : (
                                         <div className="text-red-500">Unsupported file format</div>
@@ -409,7 +413,14 @@ export default function VideoPlayer({
                     {/* Volume Button & Slider */}
                     <div className="flex items-center space-x-2">
                         <button
-                            onClick={() => setVolume((prevVolume) => (prevVolume > 0 ? 0 : 1))}
+                            onClick={() => {
+                                const newVolume = volume > 0 ? 0 : 1;
+                                setVolume(newVolume);
+                                if (videoRef.current) {
+                                    videoRef.current.volume = newVolume;
+                                    videoRef.current.muted = newVolume === 0;
+                                }
+                            }}
                             className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded"
                         >
                             {volume > 0 ? "🔊" : "🔇"}

@@ -1,0 +1,27 @@
+export const classes = `
+bg-gray-900
+bg-gray-800
+bg-gray-700
+bg-gray-600
+text-white
+border-gray-600
+border-gray-700
+hover:bg-gray-600
+hover:bg-gray-700
+flex
+flex-col
+flex-row
+flex-1
+h-screen
+w-full
+overflow-hidden
+items-center
+items-start
+justify-center
+justify-between
+p-2
+p-3
+p-4
+rounded
+border
+`;

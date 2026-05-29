@@ -1,4 +1,5 @@
 ﻿import os, re, glob, shutil, sqlite3, json as stdjson
+import zipfile
 import traceback
 import urllib.parse
 from flask import Blueprint, send_file, request, jsonify, json, session, make_response
@@ -13,10 +14,10 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATABASE_PATH = os.path.join(BASE_DIR, "database", "app.db")
 
 review_routes = Blueprint("review_routes", __name__)
-CORS(review_routes, supports_credentials=True, origins=["http://localhost:5173"])
 
 def copy_to_reviewed_thumbnails(src_path, film_name, scene_number):
     reviewed_dir = os.path.join(
@@ -33,7 +34,6 @@ def copy_to_reviewed_thumbnails(src_path, film_name, scene_number):
 
 @review_routes.after_request
 def apply_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,DELETE,OPTIONS"
     return response
@@ -1505,7 +1505,6 @@ def save_annotations():
 
     if request.method == "OPTIONS":
         response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "POST,OPTIONS")
         return response
@@ -2102,7 +2101,6 @@ def delete_file():
 
     if request.method == "OPTIONS":
         response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
         response.headers.add("Access-Control-Allow-Methods", "DELETE,OPTIONS")
         response.status_code = 200
@@ -2123,27 +2121,25 @@ def delete_file():
         if os.path.exists(json_path):
             os.remove(json_path)
         response = jsonify({"success": True, "message": "File deleted."})
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
         return response
     except Exception as e:
         response = jsonify({"error": str(e)})
-        response.headers.add("Access-Control-Allow-Origin", "http://localhost:5173")
         return response, 500
 
 # ----------------------------------------------------------------------------------------------------------------------
 # UTILS
 # ----------------------------------------------------------------------------------------------------------------------
-@review_routes.route("/current_semester_classes", methods=["GET"])
-def current_semester_classes():
+def get_current_semester_classes_full():
     term_order = {"SPRING": 1, "SUMMER": 2, "FALL": 3, "WINTER": 0}
 
-    conn = get_db()
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     sem_rows = cursor.execute("SELECT id, year, term FROM semesters").fetchall()
     if not sem_rows:
         conn.close()
-        return jsonify({"semester": None, "classes": []})
+        return [], None
 
     def sem_key(r):
         year = int(r["year"]) if r["year"] is not None else 0
@@ -2154,7 +2150,7 @@ def current_semester_classes():
     sem_id = current_sem["id"]
 
     class_rows = cursor.execute("""
-        SELECT class_name
+        SELECT id, class_name
         FROM classes
         WHERE semester_id = ?
         ORDER BY class_name COLLATE NOCASE
@@ -2162,21 +2158,27 @@ def current_semester_classes():
 
     conn.close()
 
+    semester_label = f"{current_sem['year']}-{current_sem['term']}"
+    return class_rows, semester_label
+
+@review_routes.route("/current_semester_classes", methods=["GET"])
+def current_semester_classes():
+    classes, semester_label = get_current_semester_classes_full()
+
+    print("🚨 CLASSES USED FOR ZIP:")
+    for c in classes:
+        print(c["class_name"])
+
     return jsonify({
-        "semester": f"{current_sem['year']}-{current_sem['term']}",
-        "classes": [r["class_name"] for r in class_rows]
+        "semester": semester_label,
+        "classes": [r["class_name"] for r in classes]
     })
 
+def generate_canvas_csv_string(class_id):
+    import csv, io, sqlite3
 
-
-@review_routes.route("/export_canvas_csv", methods=["GET"])
-def export_canvas_csv():
-    import csv, io
-    from flask import send_file, request
-
-    class_filter = request.args.get("class")
-
-    conn = get_db()
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     sql = """
@@ -2197,9 +2199,9 @@ def export_canvas_csv():
     """
     params = ()
 
-    if class_filter:
-        sql += " AND c.class_name = ?"
-        params = (class_filter,)
+    if class_id:
+        sql += " AND c.id = ?"
+        params = (class_id,)
 
     sql += """
         GROUP BY c.class_name, u.name, u.login_name, a.name, s.name
@@ -2210,46 +2212,112 @@ def export_canvas_csv():
     conn.close()
 
     if not rows:
-        # Debug: show what class names exist
-        return {"error": "No rows found", "class_filter": class_filter}
+        return None, None
 
-    # Collect assignments
     assignments = sorted(set(f"{r['assignment_name']} - {r['step_name']}" for r in rows))
-
 
     output = io.StringIO(newline="")
     writer = csv.writer(output, lineterminator="\r\n")
 
-    # Header
-    writer.writerow(["Student", "ID", "SIS User ID", "SIS Login ID", "Section", *assignments])
+    writer.writerow(["Student", "", "", "", "", *assignments])
+    writer.writerow(["Points Possible", "", "", "", "", *["5"] * len(assignments)])
 
-    # Points row
-    writer.writerow(["Points Possible", "", "", "", "", *["5"]*len(assignments)])
-
-    # Students
     by_student = {}
     class_name = rows[0]["class_name"]
+
     for r in rows:
         grade_val = r["grade"].split("-")[0].strip() if r["grade"] else "0"
+
         if r["student_name"] not in by_student:
             by_student[r["student_name"]] = {"login": r["login"], "grades": {}}
+
         col_name = f"{r['assignment_name']} - {r['step_name']}"
         by_student[r["student_name"]]["grades"][col_name] = grade_val
 
-
     for student, sdata in by_student.items():
         row_out = [student, "", "", sdata["login"], class_name]
+
         for a in assignments:
             row_out.append(sdata["grades"].get(a, "0"))
+
         writer.writerow(row_out)
 
     output.seek(0)
+    return output.getvalue(), class_name
+
+@review_routes.route("/export_canvas_csv", methods=["GET"])
+def export_canvas_csv():
+    from flask import request, send_file
+    import io, sqlite3
+
+    class_name = request.args.get("class")
+
+    # 🔥 Step 1 — Convert name → id
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+
+    row = conn.execute(
+        "SELECT id FROM classes WHERE class_name = ?",
+        (class_name,)
+    ).fetchone()
+
+    conn.close()
+
+    if not row:
+        return {"error": "Class not found", "class": class_name}
+
+    class_id = row["id"]
+
+    # 🔥 Step 2 — Use ID (this is the important part)
+    csv_string, class_name = generate_canvas_csv_string(class_id)
+
+    if not csv_string:
+        return {"error": "No rows found", "class_id": class_id}
+
     return send_file(
-        io.BytesIO(("\ufeff" + output.getvalue()).encode("utf-8")),
+        io.BytesIO(("\ufeff" + csv_string).encode("utf-8")),
         mimetype="text/csv",
         as_attachment=True,
         download_name=f"{class_name}.csv"
     )
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+TEMP_DIR = os.path.join(BASE_DIR, "temp_exports")
+
+@review_routes.route("/export_all_grades_zip")
+def export_all_grades_zip():
+    import os, zipfile, sqlite3
+    from datetime import datetime
+    from flask import send_file
+
+    os.makedirs(TEMP_DIR, exist_ok=True)
+
+    zip_filename = f"all_classes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_path = os.path.join(TEMP_DIR, zip_filename)
+
+    print("ZIP PATH:", zip_path)
+
+    # 🔥 THIS IS THE FIX
+    classes, _ = get_current_semester_classes_full()
+
+    print("🚨 CLASSES USED IN ZIP:")
+    for c in classes:
+        print(c["class_name"])
+
+    with zipfile.ZipFile(zip_path, "w") as zipf:
+        for row in classes:
+            class_id = row["id"]
+            class_name = row["class_name"]
+
+            csv_string, _ = generate_canvas_csv_string(class_id)
+
+            if not csv_string:
+                continue
+
+            safe_name = "".join(c for c in class_name if c.isalnum() or c in " _-").replace(" ", "_")
+            zipf.writestr(f"{safe_name}.csv", "\ufeff" + csv_string)
+
+    return send_file(zip_path, as_attachment=True)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # USER PREFERENCES
@@ -2258,7 +2326,8 @@ def export_canvas_csv():
 @review_routes.route("/preferences/<int:user_id>", methods=["GET"])
 def get_user_preferences(user_id):
     """Return user preferences, create defaults if missing."""
-    conn = get_db()
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM user_preferences WHERE user_id = ?", (user_id,))

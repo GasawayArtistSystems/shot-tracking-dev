@@ -5,25 +5,32 @@ console.log("🆕 sceneReviewSession.js tracing enabled");
 // 🔁 Single bridge: push options to global + notify React (if bound)
 function pushStatusOptions(opts) {
     const options = Array.isArray(opts) ? opts : [];
-    window.statusOptionsForStep = options;
-    if (typeof window.refreshSceneStatusOptions === "function") {
-        try {
-            window.refreshSceneStatusOptions(options);
-        } catch (err) {
-            console.warn("refreshSceneStatusOptions threw:", err);
+
+    if (typeof window !== "undefined") {
+        window.statusOptionsForStep = options;
+
+        if (typeof window.refreshSceneStatusOptions === "function") {
+            try {
+                window.refreshSceneStatusOptions(options);
+            } catch (err) {
+                console.warn("refreshSceneStatusOptions threw:", err);
+            }
         }
     }
 }
 
 // Ensure base URL available for fetch
 const API_BASE_URL =
-    window.API_BASE_URL ||
-    (import.meta?.env?.MODE === "development"
-        ? "http://localhost:5000"
-        : window.location.origin);
+    (typeof window !== "undefined" && window.API_BASE_URL)
+        ? window.API_BASE_URL
+        : (process.env.NODE_ENV === "development"
+            ? "http://localhost:5000"
+            : "");
 
 
 // Attach a traced save function to window so your click handler can call it.
+if (typeof window !== "undefined") {
+
 window.saveReviewedTrace = async function saveReviewedTrace(annotations = {}) {
     try {
         console.log("[SAV1] Save clicked");
@@ -77,6 +84,7 @@ window.saveReviewedTrace = async function saveReviewedTrace(annotations = {}) {
         throw err;
     }
 };
+}
 
 
 // 🔹 Helper: fetch live status for a specific shot + step
@@ -633,8 +641,12 @@ async function fetchShotStatus(sceneNumber, shotNumber, stepId) {
 
 
                 const body = { folder, pattern, annotations };
-                const base = window.API_BASE_URL ||
-                    (import.meta?.env?.MODE === "development" ? "http://localhost:5000" : window.location.origin);
+                const base =
+                    (typeof window !== "undefined" && window.API_BASE_URL)
+                        ? window.API_BASE_URL
+                        : (process.env.NODE_ENV === "development"
+                            ? "http://localhost:5000"
+                            : "");
 
                 const res = await fetch(`${base}/review/save_reviewed`, {
                     method: "POST",
