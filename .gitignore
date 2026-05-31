@@ -61,3 +61,18 @@ archive/
 bak/
 Sketches/
 Working/
+
+# =========================
+# Build / Export artifacts
+# =========================
+out/
+temp_exports/
+
+# =========================
+# Student / Roster data (NEVER commit)
+# =========================
+*students*.json
+*roster*.json
+*names*.json
+src/tools/maya/configs/
+src/tools/harmony/configs/
