@@ -30,31 +30,43 @@ def get_db_connection():
     return conn
 
 def extract_assignment_id(assignment_name, class_id):
-    """ [OK] Get assignment_id from assignment name & class_id """
+    """ Get assignment_id from assignment name & class_id — normalizes spaces for camp filenames """
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # First try exact match
     cursor.execute("""
-        SELECT id FROM assignments WHERE name = ? AND class_id = ?
-    """, (assignment_name, class_id))
+        SELECT id, name FROM assignments WHERE class_id = ?
+    """, (class_id,))
 
-    result = cursor.fetchone()
-    
+    rows = cursor.fetchall()
     conn.close()
-    return result["id"] if result else None
+
+    # Normalize: remove spaces, lowercase for comparison
+    normalized_input = assignment_name.replace(" ", "").lower()
+
+    for row in rows:
+        if row["name"].replace(" ", "").lower() == normalized_input:
+            return row["id"]
+
+    return None
 
 def extract_users_id(user_name):
-    """ [OK] Get users_id from user name """
+    """ Get users_id from user name — normalizes spaces for camp filenames """
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT id FROM users WHERE name = ?
-    """, (user_name,))
-
-    result = cursor.fetchone()
+    cursor.execute("SELECT id, name FROM users")
+    rows = cursor.fetchall()
     conn.close()
-    return result["id"] if result else None
+
+    normalized_input = user_name.replace(" ", "").lower()
+
+    for row in rows:
+        if row["name"].replace(" ", "").lower() == normalized_input:
+            return row["id"]
+
+    return None
 
 def get_individual_assignment_id(assignment_id, users_id):
     """ [OK] Get individual_assignment_id from assignment_id & users_id """

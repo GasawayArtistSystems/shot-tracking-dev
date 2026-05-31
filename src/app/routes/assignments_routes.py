@@ -205,6 +205,30 @@ def api_view_assignments(class_id):
 
     return jsonify(assignments)
 
+@assignments_bp.route('/api/get_individual_assignment_id', methods=['GET'])
+def get_individual_assignment_id_api():
+    user_id = request.args.get('user_id', type=int)
+    class_id = request.args.get('class_id', type=int)
+    assignment_name = request.args.get('assignment_name', '')
+
+    if not user_id or not class_id or not assignment_name:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT ia.id, a.name as assignment_name
+        FROM individual_assignments ia
+        JOIN assignments a ON a.id = ia.assignment_id
+        WHERE ia.users_id = ? AND a.class_id = ?
+    """, (user_id, class_id)).fetchall()
+
+    normalized = assignment_name.replace(" ", "").lower()
+    for row in rows:
+        if row["assignment_name"].replace(" ", "").lower() == normalized:
+            return jsonify({"individual_assignment_id": row["id"]})
+
+    return jsonify({"error": "Assignment not found"}), 404
+
 @assignments_bp.route('/api/individual_assignments', methods=['GET'])
 def api_individual_assignments():
     """API to fetch individual assignments grouped by student, with user_name included."""

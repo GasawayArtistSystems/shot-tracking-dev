@@ -190,6 +190,17 @@ def assign_group_route():
         return flash_and_redirect(f'Error assigning group: {e}', 'danger', 'users.view_users')
 
 
+@users_bp.route('/api/by_login/<login_name>', methods=['GET'])
+def get_user_by_login(login_name):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT id, name, login_name FROM users WHERE login_name = ?",
+        (login_name,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(dict(row))
+
 @users_bp.route('/change_password', methods=['POST'])
 @login_required
 def user_change_password():
