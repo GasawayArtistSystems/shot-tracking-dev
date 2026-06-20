@@ -10,7 +10,7 @@ from app.models import (
 
 from app.utils.utils import role_required
 from app.routes.classes_routes import classes_bp
-from app.utils.auth_utils import login_required
+from app.utils.auth_utils import login_required, admin_required
 from app.database.db import get_db
 from app.models.user_model import User
 
@@ -18,6 +18,7 @@ from app.models.user_model import User
 admin_bp = Blueprint('admin', __name__, template_folder='../templates/admin')
 
 @admin_bp.route('/settings/user_groups', methods=['GET', 'POST'])
+@admin_required 
 def manage_user_groups():
     """Manage user groups."""
     if request.method == 'POST':
@@ -59,6 +60,7 @@ def admin_settings():
     return render_template('admin/settings.html')
 
 @admin_bp.route('/archive/classes', methods=['GET', 'POST'], endpoint='archive_classes')
+@admin_required 
 def archive_classes():
     if request.method == 'POST':
         class_ids = request.form.getlist('class_ids')
@@ -76,6 +78,7 @@ def archive_classes():
     return render_template('admin/archive_classes.html', all_classes=unarchived_classes)
 
 @admin_bp.route('/archive/users', methods=['GET', 'POST'], endpoint='archive_users')
+@admin_required 
 def archive_users():
     if request.method == 'POST':
         user_ids = request.form.getlist('user_ids')
@@ -93,6 +96,7 @@ def archive_users():
     return render_template('admin/archive_users.html', students_not_in_classes=students_not_in_classes)
 
 @admin_bp.route('/archive/films', methods=['GET', 'POST'], endpoint='archive_films')
+@admin_required 
 def archive_films():
     """View and archive films."""
     if request.method == 'POST':

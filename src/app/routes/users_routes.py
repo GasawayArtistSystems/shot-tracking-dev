@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from app.models import hash_password, query_users, count_users, get_all_groups, get_user_groups, add_user_to_class, delete_user_by_id
 from app.models.user_model import User
 from app.utils.utils import flash_and_redirect
-from app.utils.auth_utils import login_required
+from app.utils.auth_utils import login_required, admin_required
 from app.database.db import get_db
 from werkzeug.security import check_password_hash
 
@@ -48,6 +48,7 @@ def calculate_total_pages(total_items: int, items_per_page: int) -> int:
 # ----------------------------------------------------------------------------------------------------------------------
 
 @users_bp.route('/users', methods=['GET'])
+@admin_required  
 def view_users():
     search_query = request.args.get('search', '')
     page = int(request.args.get('page', 1))
@@ -164,6 +165,7 @@ def delete_user(user_id):
         return flash_and_redirect(f"Error deleting user: {e}", 'danger', 'users.view_users')
 
 @users_bp.route('/admin/users/<int:user_id>/assign_class', methods=['POST'])
+@admin_required
 def assign_user_to_class(user_id):
 
     class_id = request.form['class_id']
@@ -176,6 +178,7 @@ def assign_user_to_class(user_id):
         return flash_and_redirect(f'Error assigning class: {e}', 'danger', 'users.view_users')
 
 @users_bp.route('/assign_group', methods=['POST'])
+@admin_required
 def assign_group_route():
     user_id = request.form.get('user_id')
     group_id = request.form.get('group_id')

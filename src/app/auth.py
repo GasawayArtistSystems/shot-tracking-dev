@@ -3,31 +3,21 @@ from flask import session, flash, redirect, url_for, jsonify, render_template, r
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from app.models import get_user_by_email, update_user_password, get_user_by_login_name, check_password_hash
-from app.utils.auth_utils import get_user_roles, get_user_permission_level
+from app.utils.auth_utils import get_user_roles, get_user_permission_level, set_user_session
 import smtplib
 from functools import wraps
 
 serializer = URLSafeTimedSerializer(os.getenv("SECRET_KEY"))
 
 def authenticate_user(form_data):
-    """Handles user authentication and session setup."""
     login_name = form_data['login_name']
     password = form_data['password']
 
     user = get_user_by_login_name(login_name)
 
     if user and check_password_hash(user['password_hash'], password):
-        session.clear()
-        session['user_id'] = user['id']
-        session['login_name'] = user['login_name']
-        session['username'] = user['name']
-        session['roles'] = get_user_roles(user['id'])
-        session['permissions'] = get_user_permission_level(user['id'])
-        session.modified = True
-
-        # ✅ Enable 1-hour timeout (set in __init__.py)
+        set_user_session(user)
         session.permanent = True
-
         return redirect(url_for('main.index'))
 
     flash('Incorrect username or password', 'danger')

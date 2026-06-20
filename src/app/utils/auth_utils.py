@@ -1,4 +1,4 @@
-﻿from flask import session, redirect, url_for
+﻿from flask import session, redirect, url_for, render_template
 from functools import wraps
 from werkzeug.security import check_password_hash
 from app.database.db import get_db
@@ -17,6 +17,57 @@ def login_required(view_func):
         return view_func(*args, **kwargs)
     return wrapped_view
 
+def instructor_required(view_func):
+    """Shorthand: must be logged in AND have Instructor or Admin role in any section."""
+    @wraps(view_func)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.login"))
+        
+        roles = session.get("roles", {})
+        
+        # roles can be a dict {section: role_name} or a list of role names
+        if isinstance(roles, dict):
+            allowed = {"instructor", "admin"}
+            if not any(v.lower() in allowed for v in roles.values()):
+                return render_template("error_popup.html", 
+                    message="Forbidden: Instructor or Admin access required", level="error"), 403
+        elif isinstance(roles, list):
+            if not any(r.lower() in {"instructor", "admin"} for r in roles):
+                return render_template("error_popup.html",
+                    message="Forbidden: Instructor or Admin access required", level="error"), 403
+        else:
+            return render_template("error_popup.html",
+                message="Forbidden: No role assigned", level="error"), 403
+        
+        return view_func(*args, **kwargs)
+    return wrapped_view
+
+
+def admin_required(view_func):
+    """Shorthand: must be logged in AND have Admin role."""
+    @wraps(view_func)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("auth.login"))
+        
+        roles = session.get("roles", {})
+        
+        if isinstance(roles, dict):
+            if not any(v.lower() == "admin" for v in roles.values()):
+                return render_template("error_popup.html",
+                    message="Forbidden: Admin access required", level="error"), 403
+        elif isinstance(roles, list):
+            if not any(r.lower() == "admin" for r in roles):
+                return render_template("error_popup.html",
+                    message="Forbidden: Admin access required", level="error"), 403
+        else:
+            return render_template("error_popup.html",
+                message="Forbidden: No role assigned", level="error"), 403
+        
+        return view_func(*args, **kwargs)
+    return wrapped_view
+
 # =======================================================================================================================================
 #  PASSWORD AUTHENTICATION
 # =======================================================================================================================================
@@ -30,16 +81,15 @@ def verify_password(stored_hash, provided_password):
 # =======================================================================================================================================
 
 def set_user_session(user):
-    """Assigns all necessary session keys for the logged-in user."""
     session.clear()
     session['user_id'] = user['id']
     session['login_name'] = user['name']
+    session['username'] = user['name']        # add this
 
     raw_roles = get_user_roles(user['id'])
 
-    # [OK] Normalize roles: always a list of strings
     if isinstance(raw_roles, dict):
-        session['roles'] = list(raw_roles.values())  # e.g., ['Admin', 'Instructor']
+        session['roles'] = list(raw_roles.values())
     elif isinstance(raw_roles, str):
         session['roles'] = [raw_roles]
     elif isinstance(raw_roles, list):
@@ -48,9 +98,20 @@ def set_user_session(user):
         session['roles'] = []
 
     session['permissions'] = get_user_permission_level(user['id'])
-    session.modified = True
 
-    print("[OK] Session Roles:", session['roles'])  # ðŸ” Debug
+    # Set display_role
+    roles_values = session['roles'] if isinstance(session['roles'], list) else list(session['roles'].values())
+    if 'Admin' in roles_values:
+        session['display_role'] = 'Admin'
+    elif 'Instructor' in roles_values:
+        session['display_role'] = 'Instructor'
+    elif 'TA' in roles_values:
+        session['display_role'] = 'TA'
+    else:
+        session['display_role'] = 'Student'
+
+    session.modified = True
+    print("[OK] Session Roles:", session['roles'])
 
 def get_user_roles(user_id):
     """Retrieve a user's roles per section (e.g., 'Instructor', 'TA')."""

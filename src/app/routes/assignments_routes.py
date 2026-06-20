@@ -15,7 +15,7 @@ from app.models import (
 )
 from app.models.assignment_model import get_individual_assignments_by_assignment, get_assignment_form_data
 from app.database.db import get_db
-from app.utils.auth_utils import login_required, get_user_permission_level
+from app.utils.auth_utils import login_required, instructor_required, get_user_permission_level
 
 import traceback
 from dotenv import load_dotenv
@@ -29,7 +29,7 @@ assignments_bp = Blueprint(
 # VIEWS: HTML Pages for Assignments
 # ----------------------------------------------------------------------------------
 @assignments_bp.route('/view_assignments/<int:class_id>', methods=['GET'])
-@login_required
+@instructor_required 
 def view_assignments(class_id):
     """Render the assignments page for a class, even if no assignments exist."""
     try:

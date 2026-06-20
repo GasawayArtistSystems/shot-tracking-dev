@@ -40,11 +40,13 @@
                 Film and Class Tracker
                 </a>
 
-                {% if class_perm >= 3 or film_perm >= 2 %}
+                {% if class_perm >= 2 or film_perm >= 2 %}
                 <div class="hidden md:flex space-x-6 flex-grow justify-center items-center">
                     <a href="{{ url_for('classes.view_classes') }}" class="hover:text-gray-300">Classes</a>
                     <a href="{{ url_for('films.view_films') }}" class="hover:text-gray-300">Films</a>
+                    <a href="/markup" target="_blank" class="hover:text-gray-300">Markup</a>
 
+                    {% if class_perm >= 3 %}
                     <!-- ✅ Add x-cloak to prevent flashing -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="hover:text-gray-300 flex items-center">
@@ -80,16 +82,15 @@
                                 class="block px-4 py-2 hover:bg-gray-700">About</a>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 <!-- ✅ Right Section: User Info, Semester, Logout (Fully Right-Aligned) -->
                 <div class="flex items-center space-x-6 ml-auto">
-                    <a href="/markup" target="_blank" class="hover:text-gray-300">
-                        Markup
-                    </a>
+
                     {% if session['user_id'] %}
                     <button class="px-4 py-2 bg-blue-600 text-sm text-white rounded-lg hover:bg-blue-700 transition">
-                        {{ session.get('username', 'Unknown') }} - {{ session.get('user_role', 'User') }}
+                        {{ session.get('username', 'Unknown') }} - {{ session.get('display_role', 'User') }}
                     </button>
                     {% endif %}
 
