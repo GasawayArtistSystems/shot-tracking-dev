@@ -2337,35 +2337,123 @@ def generate_canvas_csv_string(class_id):
 
 @review_routes.route("/export_canvas_csv", methods=["GET"])
 def export_canvas_csv():
-    from flask import request, send_file
-    import io, sqlite3
+    import csv, io
+    from flask import send_file, request
 
-    class_name = request.args.get("class")
+    class_filter = request.args.get("class")
 
-    # 🔥 Step 1 — Convert name → id
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = get_db()
+    cursor = conn.cursor()
 
-    row = conn.execute(
-        "SELECT id FROM classes WHERE class_name = ?",
-        (class_name,)
-    ).fetchone()
+    # Pull all grade steps with assignment type info
+    sql = """
+    SELECT 
+        c.class_name,
+        u.name AS student_name,
+        u.login_name AS login,
+        a.id AS assignment_id,
+        a.name AS assignment_name,
+        a.parent_step_id,
+        a.max_points,
+        s.name AS step_name,
+        ias.current_status AS grade
+    FROM individual_assignments ia
+    JOIN users u ON ia.users_id = u.id
+    JOIN assignments a ON ia.assignment_id = a.id
+    JOIN classes c ON a.class_id = c.id
+    JOIN individual_assignment_statuses ias ON ia.id = ias.individual_assignment_id
+    JOIN steps s ON ias.step_id = s.id
+    WHERE s.name LIKE 'Grade%'
+    """
+    params = ()
 
+    if class_filter:
+        sql += " AND c.class_name = ?"
+        params = (class_filter,)
+
+    sql += " ORDER BY u.name, a.name, s.name"
+
+    rows = cursor.execute(sql, params).fetchall()
     conn.close()
 
-    if not row:
-        return {"error": "Class not found", "class": class_name}
+    if not rows:
+        return {"error": "No rows found", "class_filter": class_filter}
 
-    class_id = row["id"]
+    def extract_numeric(status_string):
+        """Pull numeric value from grade string e.g. '3 - B' → 3"""
+        if not status_string:
+            return 0
+        try:
+            return float(status_string.split(" - ")[0].strip())
+        except (ValueError, IndexError):
+            return 0
 
-    # 🔥 Step 2 — Use ID (this is the important part)
-    csv_string, class_name = generate_canvas_csv_string(class_id)
+    # POSE_STEP_ID = 342
+    POSE_PARENT_STEP_ID = 342
 
-    if not csv_string:
-        return {"error": "No rows found", "class_id": class_id}
+    # Build assignment column list — pose assignments get ONE column, others get one per grade step
+    # Key: column label, Value: max_points for that column
+    assignment_columns = {}  # ordered dict of col_label → max_points
 
+    # First pass — determine columns
+    seen = set()
+    for r in rows:
+        if r["parent_step_id"] == POSE_PARENT_STEP_ID:
+            col = r["assignment_name"]  # e.g. "Pose #1" — single column
+            if col not in seen:
+                assignment_columns[col] = r["max_points"] or 8
+                seen.add(col)
+        else:
+            col = f"{r['assignment_name']} - {r['step_name']}"
+            if col not in seen:
+                assignment_columns[col] = r["max_points"] or 5
+                seen.add(col)
+
+    # Second pass — build per-student grade map
+    by_student = {}
+    class_name = rows[0]["class_name"]
+
+    for r in rows:
+        name = r["student_name"]
+        if name not in by_student:
+            by_student[name] = {"login": r["login"], "grades": {}}
+
+        numeric = extract_numeric(r["grade"])
+
+        if r["parent_step_id"] == POSE_PARENT_STEP_ID:
+            # Sum pose grades into single column
+            col = r["assignment_name"]
+            by_student[name]["grades"][col] = by_student[name]["grades"].get(col, 0) + numeric
+        else:
+            col = f"{r['assignment_name']} - {r['step_name']}"
+            by_student[name]["grades"][col] = numeric
+
+    # Write CSV
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, lineterminator="\r\n")
+
+    col_labels = list(assignment_columns.keys())
+
+    # Header row
+    writer.writerow(["Student", "ID", "SIS User ID", "SIS Login ID", "Section", *col_labels])
+
+    # Points Possible row
+    writer.writerow([
+        "Points Possible", "", "", "", "",
+        *[str(int(assignment_columns[col])) for col in col_labels]
+    ])
+
+    # Student rows
+    for student, sdata in by_student.items():
+        row_out = [student, "", "", sdata["login"], class_name]
+        for col in col_labels:
+            val = sdata["grades"].get(col, 0)
+            row_out.append(str(int(val)) if val == int(val) else str(val))
+        writer.writerow(row_out)
+
+    output.seek(0)
     return send_file(
-        io.BytesIO(("\ufeff" + csv_string).encode("utf-8")),
+        io.BytesIO(("\ufeff" + output.getvalue()).encode("utf-8")),
         mimetype="text/csv",
         as_attachment=True,
         download_name=f"{class_name}.csv"
