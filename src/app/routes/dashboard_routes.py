@@ -385,6 +385,22 @@ def grade_summary():
 
     return jsonify(summary)
 
+@dashboard_bp.route("/api/grade_history/<int:individual_assignment_id>")
+@login_required
+def get_grade_history(individual_assignment_id):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT gh.old_grade, gh.new_grade, gh.changed_at, s.name as step_name
+        FROM grade_history gh
+        JOIN steps s ON gh.step_id = s.id
+        WHERE gh.individual_assignment_id = ?
+        ORDER BY gh.changed_at DESC
+    """, (individual_assignment_id,)).fetchall()
+
+    return jsonify({
+        "history": [dict(r) for r in rows]
+    })
+
 # --------------------------------------------------------------------------------------------------------------
 #    REVIEWS
 # --------------------------------------------------------------------------------------------------------------

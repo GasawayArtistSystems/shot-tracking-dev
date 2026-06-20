@@ -61,14 +61,3 @@ function updateDropdownColor(selectElement) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  fetchUserAssignmentsForSemester();
-  fetchAndRenderUserClasses();
-
-  if (window.is_admin === true || window.is_admin === "true") {
-    console.log("👑 Admin detected, loading dropdown...");
-    loadStudentDropdown();
-  } else {
-    console.log("👤 Not an admin — skipping dropdown.");
-  }
-});

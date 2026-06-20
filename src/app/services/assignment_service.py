@@ -99,11 +99,12 @@ def get_user_assignments_by_semester(user_id, semester_id):
     conn = get_db()
     query = """
         SELECT ia.id AS individual_assignment_id,
-               ia.assignment_id,
-               a.name AS assignment_name,
-               a.parent_step_id,
-               c.class_name,
-               ia.completion_date
+            ia.assignment_id,
+            a.name AS assignment_name,
+            a.parent_step_id,
+            c.id AS class_id,
+            c.class_name,
+            ia.completion_date
         FROM class_enrollments ce
         JOIN classes c ON ce.class_id = c.id AND c.semester_id = ?
         JOIN assignments a ON a.class_id = c.id
@@ -197,11 +198,12 @@ def get_user_assignments_by_semester(user_id, semester_id):
             results.append({
                 "assignment_name": row["assignment_name"],
                 "class_name": row["class_name"],
+                "class_id": row["class_id"],        # ← add this
                 "completion_date": row["completion_date"],
                 "individual_assignment_id": ia_id,
                 "assignment_status": assignment_status,
                 "fb_status": fb_status,
-                "grades": step_grades,   # ✅ hybrid: scoped OR collected
+                "grades": step_grades,
                 "step_name": step["name"],
                 "step_id": step_id,
                 "dropdown_options": dropdown_options
