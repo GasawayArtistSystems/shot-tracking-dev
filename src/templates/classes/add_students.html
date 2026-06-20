@@ -13,6 +13,12 @@
         </option>
         {% endfor %}
     </select>
+    <div class="flex justify-end mb-4">
+        <button onclick="document.getElementById('canvas-import-modal').classList.remove('hidden')"
+            class="bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+            📥 Import from Canvas CSV
+        </button>
+    </div>
 
     <!-- ✅ Right: Navigation Buttons -->
     <div class="flex space-x-4">
@@ -86,6 +92,155 @@
         </div>
     </div>
 </div>
+
+
+<!-- Canvas Import Modal -->
+<div id="canvas-import-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div class="bg-gray-800 p-6 rounded-xl w-[600px] shadow-lg max-h-[80vh] overflow-y-auto">
+        <h2 class="text-xl font-bold text-white mb-4">📥 Import Students from Canvas CSV</h2>
+
+        <input type="file" id="canvas-csv-input" accept=".csv"
+            class="block w-full text-sm text-gray-300 mb-4 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-700 file:text-white hover:file:bg-purple-600">
+
+        <div class="flex items-center gap-2 mb-4">
+            <input type="checkbox" id="canvasAlsoAddToAssignments" class="w-4 h-4 rounded cursor-pointer accent-yellow-400">
+            <label for="canvasAlsoAddToAssignments" class="text-white text-sm cursor-pointer select-none">
+                Also add to all assignments
+            </label>
+        </div>
+
+        <button onclick="previewCanvasImport()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-4">
+            Preview Import
+        </button>
+
+        <!-- Preview Table -->
+        <div id="canvas-preview" class="hidden">
+            <table class="w-full text-sm text-white mb-4">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Name</th>
+                        <th class="px-3 py-2 text-left">Login</th>
+                        <th class="px-3 py-2 text-left">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="canvas-preview-body"></tbody>
+            </table>
+
+            <div id="canvas-import-summary" class="text-gray-300 text-sm mb-4"></div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="document.getElementById('canvas-import-modal').classList.add('hidden')"
+                    class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded">
+                    Cancel
+                </button>
+                <button onclick="confirmCanvasImport()"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Confirm Import
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function previewCanvasImport() {
+        const fileInput = document.getElementById('canvas-csv-input');
+        if (!fileInput.files[0]) {
+            Swal.fire('No file', 'Please select a Canvas CSV file first.', 'warning');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        formData.append('action', 'preview');
+
+        try {
+            const res = await fetch(`/classes/import_canvas_students/{{ class_id }}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                Swal.fire('Error', data.error, 'error');
+                return;
+            }
+
+            const tbody = document.getElementById('canvas-preview-body');
+            tbody.innerHTML = '';
+
+            let newCount = 0, existsCount = 0, skippedCount = 0;
+
+            data.students.forEach(s => {
+                const row = document.createElement('tr');
+                let statusBadge = '';
+
+                if (s.status === 'skipped') {
+                    statusBadge = `<span class="bg-red-800 text-white px-2 py-1 rounded text-xs">Skipped — ${s.reason}</span>`;
+                    skippedCount++;
+                } else if (s.status === 'exists') {
+                    statusBadge = `<span class="bg-gray-600 text-white px-2 py-1 rounded text-xs">Already Exists</span>`;
+                    existsCount++;
+                } else {
+                    statusBadge = `<span class="bg-green-700 text-white px-2 py-1 rounded text-xs">Will be Created</span>`;
+                    newCount++;
+                }
+
+                row.innerHTML = `
+                <td class="px-3 py-2">${s.name || s.raw}</td>
+                <td class="px-3 py-2">${s.login}</td>
+                <td class="px-3 py-2">${statusBadge}</td>
+            `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('canvas-import-summary').innerHTML = `
+            <strong>${newCount}</strong> will be created &nbsp;|&nbsp;
+            <strong>${existsCount}</strong> already exist &nbsp;|&nbsp;
+            <strong>${skippedCount}</strong> skipped
+        `;
+
+            document.getElementById('canvas-preview').classList.remove('hidden');
+
+        } catch (err) {
+            Swal.fire('Error', 'Failed to parse CSV', 'error');
+        }
+    }
+
+    async function confirmCanvasImport() {
+        const fileInput = document.getElementById('canvas-csv-input');
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        formData.append('action', 'import');
+        formData.append('also_add_to_assignments', alsoAddToAssignments ? 'true' : 'false');
+
+
+        try {
+            const res = await fetch(`/classes/import_canvas_students/{{ class_id }}`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Import Complete',
+                    text: `${data.created} students created, ${data.enrolled} enrolled${data.assigned ? `, added to ${data.assigned} assignments` : ''}.`,
+                    timer: 3000,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            } else {
+                Swal.fire('Error', data.error || 'Import failed', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Import failed', 'error');
+        }
+    }
+</script>
+
+
+
 <script src="{{ url_for('static', filename='js/assignments.js') }}"></script>
 
 

@@ -19,7 +19,7 @@ from app.models.classes import (
 )
 from app.utils.utils import role_required
 from app.database.db import get_db
-from app.utils.auth_utils import login_required
+from app.utils.auth_utils import login_required, instructor_required
 from app.models.user_model import User
 
 
@@ -394,6 +394,189 @@ def manage_students_in_class(class_id):
     except Exception as e:
         print(f"Error in managing students: {e}")
         return jsonify({"success": False, "message": f"Error managing students: {e}"}), 500
+
+@classes_bp.route('/import_canvas_students/<int:class_id>', methods=['POST'])
+@instructor_required
+def import_canvas_students(class_id):
+    import csv, io
+    from werkzeug.security import generate_password_hash
+
+    action = request.form.get('action', 'preview')
+    file = request.files.get('csv_file')
+
+    if not file:
+        return jsonify({"error": "No file provided"}), 400
+
+    stream = io.StringIO(file.stream.read().decode("utf-8-sig"))
+    reader = csv.DictReader(stream)
+
+    DEFAULT_PASSWORD = generate_password_hash("00Cats00")
+    STUDENT_GROUP_ID = 1
+
+    students = []
+    for row in reader:
+        raw_name = row.get("Student", "").strip()
+        login = row.get("SIS Login ID", "").strip()
+
+        # Skip empty rows, Points Possible row, and Test Student
+        if not raw_name or not login:
+            continue
+        if raw_name.lower() == "points possible":
+            continue
+        if "test" in raw_name.lower():
+            students.append({"raw": raw_name, "login": login, "skip": True, "reason": "Test Student"})
+            continue
+
+        # Convert "Last, First" → "First Last"
+        parts = raw_name.split(",")
+        if len(parts) == 2:
+            full_name = f"{parts[1].strip()} {parts[0].strip()}"
+        else:
+            full_name = raw_name
+
+        students.append({
+            "raw": raw_name,
+            "name": full_name,
+            "login": login,
+            "skip": False
+        })
+
+    if not students:
+        return jsonify({"error": "No valid students found in CSV"}), 400
+
+    conn = get_db()
+
+    # Check which students already exist
+    results = []
+    for s in students:
+        if s.get("skip"):
+            results.append({**s, "status": "skipped"})
+            continue
+
+        existing = conn.execute(
+            "SELECT id, name FROM users WHERE login_name = ?", (s["login"],)
+        ).fetchone()
+
+        results.append({
+            **s,
+            "status": "exists" if existing else "new",
+            "user_id": existing["id"] if existing else None
+        })
+
+    if action == "preview":
+        return jsonify({"students": results, "class_id": class_id})
+
+    # action == "import" — create missing users and enroll everyone
+    enrolled = 0
+    created = 0
+    assigned = 0  # ← add this line
+
+    also_add_to_assignments = request.form.get('also_add_to_assignments') == 'true'
+
+    # Pre-fetch assignments once if needed
+    class_assignments = []
+    if also_add_to_assignments:
+        class_assignments = conn.execute("""
+            SELECT id, name, start_date, completion_date, parent_step_id
+            FROM assignments
+            WHERE class_id = ?
+        """, (class_id,)).fetchall()
+
+    class_row = conn.execute(
+        "SELECT semester_id FROM classes WHERE id = ?", (class_id,)
+    ).fetchone()
+    semester_id = class_row["semester_id"] if class_row else None
+
+    for s in results:
+        if s["status"] == "skipped":
+            continue
+
+        user_id = s.get("user_id")
+
+        if s["status"] == "new":
+            # Create user
+            cur = conn.execute("""
+                INSERT INTO users (name, login_name, email, password_hash)
+                VALUES (?, ?, ?, ?)
+            """, (
+                s["name"],
+                s["login"],
+                f"{s['login']}@mail.uc.edu",
+                DEFAULT_PASSWORD
+            ))
+            user_id = cur.lastrowid
+
+            # Assign Student group
+            conn.execute("""
+                INSERT OR IGNORE INTO user_groups (user_id, group_id)
+                VALUES (?, ?)
+            """, (user_id, STUDENT_GROUP_ID))
+
+            created += 1
+
+        # Enroll in class (skip if already enrolled)
+        already_enrolled = conn.execute("""
+            SELECT user_id FROM class_enrollments
+            WHERE user_id = ? AND class_id = ?
+        """, (user_id, class_id)).fetchone()
+
+        if not already_enrolled:
+            conn.execute("""
+                INSERT INTO class_enrollments (user_id, class_id, semester_id)
+                VALUES (?, ?, ?)
+            """, (user_id, class_id, semester_id))
+            enrolled += 1
+
+        if also_add_to_assignments and class_assignments:
+            for assignment in class_assignments:
+                already_assigned = conn.execute("""
+                    SELECT users_id FROM individual_assignments
+                    WHERE assignment_id = ? AND users_id = ?
+                """, (assignment["id"], user_id)).fetchone()
+
+                if not already_assigned:
+                    conn.execute("""
+                        INSERT INTO individual_assignments
+                        (assignment_id, users_id, name, start_date, completion_date)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        assignment["id"],
+                        user_id,
+                        assignment["name"],
+                        assignment["start_date"],
+                        assignment["completion_date"]
+                    ))
+                    ia_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+                    steps = conn.execute("""
+                        SELECT id FROM steps WHERE parent_id = ?
+                    """, (assignment["parent_step_id"],)).fetchall()
+
+                    for step in steps:
+                        top_node = conn.execute("""
+                            SELECT name FROM nodes
+                            WHERE step_id = ?
+                            ORDER BY CAST(SUBSTR(position, INSTR(position, ' ') + 1) AS INTEGER)
+                            LIMIT 1
+                        """, (step["id"],)).fetchone()
+
+                        if top_node:
+                            conn.execute("""
+                                INSERT INTO individual_assignment_statuses
+                                (individual_assignment_id, step_id, current_status)
+                                VALUES (?, ?, ?)
+                            """, (ia_id, step["id"], top_node["name"]))
+
+                    assigned += 1
+
+    conn.commit()
+
+    return jsonify({
+        "success": True,
+        "created": created,
+        "enrolled": enrolled,
+        "assigned": assigned
+    })
 
 # ----------------------------------------------------------------------------------
 # SEMESTERS
