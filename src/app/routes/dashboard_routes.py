@@ -10,6 +10,7 @@ from app.services.assignment_service import fetch_user_assignments, fetch_todo_a
 from app.services.assignment_service import get_user_assignments_by_semester as assignment_data_fetcher
 from app.services.film_service import get_user_films
 from app.services.shot_service import get_todo_shots
+from app.services.grade_service import get_student_grade_summary
 from collections import defaultdict
 from urllib.parse import quote
 
@@ -173,7 +174,6 @@ def get_user_assignments_api():
         import traceback
         tb = traceback.format_exc()
         return jsonify({"error": "Internal server error", "details": tb}), 500
-
 
 @dashboard_bp.route("/api/user_classes")
 @login_required
@@ -364,6 +364,26 @@ def api_individual_assignments():
         traceback.print_exc()
         print("ðŸ”¥ API Crash:", e, flush=True)
         return jsonify({"error": str(e)}), 500
+
+# --------------------------------------------------------------------------------------------------------------
+#    GRADES
+# --------------------------------------------------------------------------------------------------------------
+
+@dashboard_bp.route("/api/grade_summary")
+@login_required
+def grade_summary():
+    """Return grade summary for the logged-in student for a specific class."""
+    class_id = request.args.get("class_id", type=int)
+    if not class_id:
+        return jsonify({"error": "Missing class_id"}), 400
+
+    user_id = get_active_user_id()
+    summary = get_student_grade_summary(user_id, class_id)
+
+    if not summary:
+        return jsonify({"error": "No grade data found"}), 404
+
+    return jsonify(summary)
 
 # --------------------------------------------------------------------------------------------------------------
 #    REVIEWS
