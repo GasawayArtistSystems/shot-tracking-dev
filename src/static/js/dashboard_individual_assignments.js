@@ -186,7 +186,6 @@ async function renderTodoAssignments(assignments) {
       headerRow.classList.add("bg-gray-800", "text-white");
       headerRow.innerHTML = `
         <td class="px-4 py-2 border-b border-gray-600 font-bold">${assignment_name}</td>
-        <td class="px-4 py-2 border-b border-gray-600">${class_name}</td>
         <td class="px-4 py-2 border-b border-gray-600">${completion_date}</td>
         <td class="px-4 py-2 border-b border-gray-600" colspan="2"></td>
         <td class="px-4 py-2 border-b border-gray-600 text-green-400">
@@ -200,6 +199,7 @@ async function renderTodoAssignments(assignments) {
             History ▾
           </button>
         </td>
+        <td class="px-4 py-2 border-b border-gray-600"></td>
       `;
       tbody.appendChild(headerRow);
 
@@ -250,12 +250,12 @@ async function renderTodoAssignments(assignments) {
         row.innerHTML = `
           <td></td>
           <td></td>
-          <td></td>
           <td class="px-4 py-2 border-b border-gray-600">${step_name}</td>
           <td class="px-4 py-2 border-b border-gray-600">${dropdownHTML}</td>
           <td class="px-4 py-2 border-b border-gray-600">
             ${(grades && grades.length > 0) ? grades.join(", ") : "—"}
           </td>
+          <td class="px-4 py-2 border-b border-gray-600"></td>
           <td class="px-4 py-2 border-b border-gray-600" id="${reviewCellId}">Checking...</td>
         `;
         tbody.appendChild(row);
