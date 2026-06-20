@@ -290,17 +290,21 @@ def add_assignment_to_db(assignment_data):
         cursor = conn.cursor()
         print(f"ðŸ“¢ Creating assignment with data: {assignment_data}")
 
-        # [OK] Insert into assignments table (keep legacy single progress_step_id)
+        # Auto-calculate max_points from parent_step_id
+        max_points_map = {1: 4, 2: 16, 342: 8}
+        max_points = max_points_map.get(int(assignment_data["parent_step_id"]), 4)
+
         cursor.execute("""
-            INSERT INTO assignments (class_id, name, start_date, completion_date, parent_step_id, progress_step_id)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO assignments (class_id, name, start_date, completion_date, parent_step_id, progress_step_id, max_points)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             assignment_data["class_id"],
             assignment_data["name"],
             assignment_data["start_date"],
             assignment_data["completion_date"],
             assignment_data["parent_step_id"],
-            assignment_data["progress_step_ids"][0]  # use first as default
+            assignment_data["progress_step_ids"][0],
+            max_points
         ))
         assignment_id = cursor.lastrowid
         print(f"[OK] Assignment {assignment_id} created successfully.")
