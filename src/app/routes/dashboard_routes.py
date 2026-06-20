@@ -5,6 +5,7 @@ import mimetypes
 from flask import Blueprint, render_template, session, jsonify, request, send_file, send_from_directory
 from app.database.db import get_db
 from app.utils.auth_utils import login_required, get_current_semester_id
+from app.utils.grade_utils import save_grade_history
 from app.services.assignment_service import fetch_user_assignments, fetch_todo_assignments, fetch_graded_assignments
 from app.services.assignment_service import get_user_assignments_by_semester as assignment_data_fetcher
 from app.services.film_service import get_user_films
@@ -248,6 +249,9 @@ def update_status():
 
     try:
         if task_type == "assignment":
+            # ✅ Save history before overwrite
+            save_grade_history(conn, task_id, step_id, new_status)
+
             conn.execute("""
                 UPDATE individual_assignment_statuses
                 SET current_status = ?

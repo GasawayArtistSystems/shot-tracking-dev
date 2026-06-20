@@ -16,6 +16,7 @@ from app.models import (
 from app.models.assignment_model import get_individual_assignments_by_assignment, get_assignment_form_data
 from app.database.db import get_db
 from app.utils.auth_utils import login_required, instructor_required, get_user_permission_level
+from app.utils.grade_utils import save_grade_history
 
 import traceback
 from dotenv import load_dotenv
@@ -760,6 +761,7 @@ def delete_assignment(assignment_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 @assignments_bp.route('/api/update-status', methods=['POST'])
+@login_required
 def update_assignment_status():
     data = request.json
     individual_assignment_id = data.get("individual_assignment_id")
@@ -777,8 +779,10 @@ def update_assignment_status():
         return jsonify({"error": "Missing required parameters"}), 400
     
     try:
+        # ✅ Save history before overwrite
         conn = get_db()
         cursor = conn.cursor()
+        save_grade_history(conn, individual_assignment_id, step_id, new_status)
 
         # 1. Update the current status for this step_id
         cursor.execute("""

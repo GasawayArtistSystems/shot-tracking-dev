@@ -5,6 +5,7 @@ import urllib.parse
 from flask import Blueprint, send_file, request, jsonify, json, session, make_response
 from app.utils.get_files_for_review import get_assignments_for_review, get_films_for_review, get_all_film_files
 from app.utils.auth_utils import login_required
+from app.utils.grade_utils import save_grade_history
 from app.database.db import get_db
 from urllib.parse import unquote
 from flask_cors import CORS
@@ -1698,6 +1699,9 @@ def save_annotations():
                     step_id = g.get("step_id")
                     status = g.get("status")
 
+                    # ✅ Save history before overwrite
+                    save_grade_history(cursor, assignment_id, step_id, status)
+
                     cursor.execute("""
                         UPDATE individual_assignment_statuses
                         SET current_status = ?
@@ -2097,6 +2101,8 @@ def update_grade():
 
     conn = get_db()
     cursor = conn.cursor()
+
+    save_grade_history(cursor, individual_assignment_id, step_id, new_grade)
 
     # ✅ Update only this row
     cursor.execute("""
