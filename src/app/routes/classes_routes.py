@@ -13,7 +13,7 @@ from app.models import get_assignments_by_class
 from app.models.classes import (
     query_classes, get_all_classes, get_all_classes_minimal, get_class_by_id, get_all_classes_dict, fetch_unique_class_names, serialize_classes_for_dropdown,
     validate_class_exists, validate_class_number, get_class_folder_path,
-    delete_classes, delete_class_by_id, create_class_folder_if_missing,
+    delete_classes, delete_class_by_id, create_class_folder_if_missing,copy_assignments_from_class,
     parse_class_form, bulk_delete_from_form, get_instructors_dropdown, get_semesters_dropdown,
     filter_students_by_name, get_students_by_class_with_enrollment_marked, validate_student_action_payload, add_students_to_class, remove_students_from_class_db, add_students_to_class_and_assignments
 )
@@ -676,6 +676,20 @@ def save_draft_config():
     except Exception as e:
         print(f"âŒ Draft save failed: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@classes_bp.route('/copy_assignments/<int:target_class_id>', methods=['POST'])
+@role_required('classes', ['Instructor', 'Admin'])
+def copy_assignments(target_class_id):
+    try:
+        source_class_id = request.form.get('source_class_id', type=int)
+        if not source_class_id:
+            return jsonify({"success": False, "message": "No source class selected."}), 400
+        
+        copy_assignments_from_class(source_class_id, target_class_id)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 # ----------------------------------------------------------------------------------
 # RIGS

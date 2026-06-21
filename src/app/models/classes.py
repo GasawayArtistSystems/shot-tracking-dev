@@ -517,5 +517,32 @@ def create_class_folder_if_missing(class_id):
     os.makedirs(path, exist_ok=True)
     return path  # optional: return for logging/debugging
 
+def copy_assignments_from_class(source_class_id, target_class_id):
+    from app.models import add_assignment_to_db
+    db = get_db()
 
+    source_assignments = db.execute("""
+        SELECT a.name, a.parent_step_id, a.max_points,
+               GROUP_CONCAT(aps.step_id) AS step_ids
+        FROM assignments a
+        JOIN assignment_progress_steps aps ON aps.assignment_id = a.id
+        WHERE a.class_id = ?
+        GROUP BY a.id
+    """, (source_class_id,)).fetchall()
+
+    if not source_assignments:
+        raise ValueError("No assignments found in source class.")
+
+    for a in source_assignments:
+        step_ids = [int(s) for s in a["step_ids"].split(",")]
+        add_assignment_to_db({
+            "class_id": target_class_id,
+            "name": a["name"],
+            "start_date": "",
+            "completion_date": "",
+            "parent_step_id": a["parent_step_id"],
+            "progress_step_ids": step_ids,
+            "assign_option": "none",
+            "selected_students": []
+        })
 

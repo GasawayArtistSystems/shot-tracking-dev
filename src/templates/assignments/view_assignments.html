@@ -122,7 +122,12 @@
         <a href="{{ url_for('assignments.add_assignment', class_id=class_id) }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
             Add New Assignment
         </a>
+        <!-- Copy Assignments Button -->
+        <button onclick="openCopyModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg ml-2">
+            Copy From Class
+        </button>
     </div>
+
 </div>
 
 <div id="editAssignmentModal" class="hidden fixed inset-0 flex items-center justify-center bg-black z-50">
@@ -160,6 +165,28 @@
     </div>
 </div>
 
+
+<!-- Copy Assignments Modal -->
+<div id="copyAssignmentsModal"
+    class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+    <div class="bg-red-950 rounded-lg p-6 w-full max-w-md shadow-lg">
+        <h5 class="text-xl font-bold text-white mb-4">Copy Assignments From Class</h5>
+        <select id="sourceClassSelect" class="w-full border rounded-lg p-2 text-gray-900 mb-4">
+            <option value="">Select a class...</option>
+            {% for cls in all_classes %}
+            <option value="{{ cls.id }}">{{ cls.full_class_name }}</option>
+            {% endfor %}
+        </select>
+        <div class="flex justify-between">
+            <button onclick="closeCopyModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                Cancel
+            </button>
+            <button onclick="submitCopy()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                Copy Assignments
+            </button>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
@@ -211,7 +238,38 @@
         checkTableExists(); // Start checking when the page loads
     });
 
+    function openCopyModal() {
+        document.getElementById('copyAssignmentsModal').classList.remove('hidden');
+    }
 
+    function closeCopyModal() {
+        document.getElementById('copyAssignmentsModal').classList.add('hidden');
+    }
+
+    function submitCopy() {
+        const sourceClassId = document.getElementById('sourceClassSelect').value;
+        if (!sourceClassId) {
+            Swal.fire('Error', 'Please select a class to copy from.', 'error');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('source_class_id', sourceClassId);
+
+        fetch(`/classes/copy_assignments/{{ class_id }}`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Done!', 'Assignments copied successfully.', 'success')
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+    }
 
 
 </script>
