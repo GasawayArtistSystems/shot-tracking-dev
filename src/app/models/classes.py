@@ -156,9 +156,7 @@ def serialize_classes_for_dropdown():
     ]
 
 def get_class_folder_path(semester_label: str, class_name: str) -> str:
-    safe_semester = semester_label.replace(" ", "_")
-    safe_class = class_name.replace(" ", "_")
-    return os.path.join(BASE_CLASS_FOLDER, safe_semester, safe_class)
+    return os.path.join(BASE_CLASS_FOLDER, semester_label, class_name)
 
 
 # ----------------------------------------------------------------------------------
@@ -192,6 +190,17 @@ def delete_class_by_id(class_id):
     db = get_db()
     db.execute("PRAGMA foreign_keys = ON")
     try:
+        # Remove grade history (must go before individual_assignments)
+        db.execute("""
+            DELETE FROM grade_history 
+            WHERE individual_assignment_id IN (
+                SELECT id FROM individual_assignments 
+                WHERE assignment_id IN (
+                    SELECT id FROM assignments WHERE class_id = ?
+                )
+            )
+        """, (class_id,))
+
         # Remove individual assignment statuses
         db.execute("""
             DELETE FROM individual_assignment_statuses 
