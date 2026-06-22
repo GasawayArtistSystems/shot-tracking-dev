@@ -1,0 +1,22 @@
+// UC GAA Maya 2026 - userSetup.mel
+// Controlled environment - do not modify
+
+// ── Renderer ──────────────────────────────────────────────
+optionVar -stringValue "defaultRenderer" "mayaHardware2";
+
+// ── Suppress Arnold warning ────────────────────────────────
+optionVar -intValue "suppressMtoANotLoadedWarning" 1;
+
+// ── Timeline ───────────────────────────────────────────────
+playbackOptions -min 1 -max 72 -animationStartTime 1 -animationEndTime 72;
+currentUnit -time "film";
+
+// ── Viewport ───────────────────────────────────────────────
+modelEditor -edit -displayAppearance "smoothShaded" -activeOnly false modelPanel4;
+
+// ── UI Cleanup ─────────────────────────────────────────────
+scriptEditorInfo -clearHistory;
+optionVar -intValue "showScriptEditorOnStart" 0;
+
+// ── FPS Display on timeline ────────────────────────────────
+optionVar -intValue "timeShowTimecode" 0;

@@ -1,0 +1,12 @@
+//Maya Preference 2026 (Release 1)
+evalDeferred("autoLoadPlugin(\"\", \"invertShape\", \"invertShape\")");
+evalDeferred("autoLoadPlugin(\"\", \"mayaHIK\", \"mayaHIK\")");
+evalDeferred("autoLoadPlugin(\"\", \"curveWarp\", \"curveWarp\")");
+evalDeferred("autoLoadPlugin(\"\", \"poseInterpolator\", \"poseInterpolator\")");
+evalDeferred("autoLoadPlugin(\"\", \"ikSpringSolver\", \"ikSpringSolver\")");
+evalDeferred("autoLoadPlugin(\"\", \"ik2Bsolver\", \"ik2Bsolver\")");
+evalDeferred("autoLoadPlugin(\"\", \"mayaCharacterization\", \"mayaCharacterization\")");
+evalDeferred("autoLoadPlugin(\"\", \"matrixNodes\", \"matrixNodes\")");
+evalDeferred("autoLoadPlugin(\"\", \"gpuCache\", \"gpuCache\")");
+evalDeferred("autoLoadPlugin(\"\", \"objExport\", \"objExport\")");
+evalDeferred("autoLoadPlugin(\"\", \"fbxmaya\", \"fbxmaya\")");
