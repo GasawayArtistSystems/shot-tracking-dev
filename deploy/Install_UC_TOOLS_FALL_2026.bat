@@ -22,6 +22,15 @@ mkdir "C:\Cincy\Autosave" 2>nul
 mkdir "%USERPROFILE%\Documents\maya\2026\prefs" 2>nul
 mkdir "%USERPROFILE%\Documents\maya\2026\scripts" 2>nul
 
+REM ── 1b. Cleanup legacy folders ───────────────────────────
+echo [1b/8] Cleaning up legacy folders...
+rd /S /Q "C:\Cincy\obs-bridge" 2>nul
+rd /S /Q "C:\Cincy\review_manager" 2>nul
+rd /S /Q "C:\Cincy\maya_tools" 2>nul
+del /F /Q "C:\Cincy\Blinker.mb" 2>nul
+del /F /Q "C:\Cincy\cleanup_done.flag" 2>nul
+del /F /Q "C:\Cincy\ProRigs_Install_Bundle.zip" 2>nul
+
 REM ── 2. Deploy Maya.env to Documents ──────────────────────────
 echo [2/8] Deploying Maya.env...
 copy /Y "R:\UC_GAA\deploy\maya\2026\Maya.env" "%USERPROFILE%\Documents\maya\2026\Maya.env"
