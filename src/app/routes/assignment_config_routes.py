@@ -352,5 +352,53 @@ def list_rigs():
         return jsonify([]), 200
 
 
+@config_bp.route('/api/launcher/assignment-config', methods=['GET'])
+def get_launcher_assignment_config():
+    assignment_id = request.args.get('assignment_id', type=int)
+    username = request.args.get('username', type=str)
 
+    if not assignment_id or not username:
+        return jsonify({"error": "Missing assignment_id or username"}), 400
+
+    conn = get_db()
+
+    # Get assignment + class + semester info
+    row = conn.execute("""
+        SELECT 
+            a.id AS assignment_id,
+            a.name AS assignment_name,
+            c.class_name,
+            s.year || '-' || s.term AS semester,
+            acp.rigs,
+            acp.camera,
+            a.start_date,
+            a.completion_date
+        FROM assignments a
+        JOIN classes c ON a.class_id = c.id
+        JOIN semesters s ON c.semester_id = s.id
+        LEFT JOIN assignment_config_presets acp 
+            ON acp.class_id = c.id 
+            AND acp.assignment_name = a.name
+        WHERE a.id = ?
+    """, (assignment_id,)).fetchone()
+
+    if not row:
+        return jsonify({"error": "Assignment not found"}), 404
+
+    rigs = json.loads(row['rigs']) if row['rigs'] else []
+
+    save_path = f"\\\\artscifs1.ad.uc.edu\\Departments\\GAA\\Classes\\{row['semester']}\\{row['class_name']}\\{username}"
+
+    return jsonify({
+        "assignment_id": assignment_id,
+        "assignment_name": row['assignment_name'],
+        "class_name": row['class_name'],
+        "semester": row['semester'],
+        "rigs": rigs,
+        "camera": bool(row['camera']),
+        "frame_start": 1,
+        "frame_end": 72,
+        "save_path": save_path,
+        "username": username
+    })
 
