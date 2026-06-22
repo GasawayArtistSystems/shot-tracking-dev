@@ -1,0 +1,13 @@
+// UC GAA Maya 2026 - userPrefs.mel
+// Controlled environment - do not modify
+
+// ── Undo ──────────────────────────────────────────────────
+optionVar -intValue "undoQueueSize" 50;
+optionVar -intValue "undoEnable" 1;
+
+// ── Auto-save ─────────────────────────────────────────────
+optionVar -intValue "autoSaveEnable" 1;
+optionVar -intValue "autoSaveInterval" 10;
+optionVar -intValue "autoSaveMaxBackups" 5;
+optionVar -stringValue "autoSaveFolder" "C:\\Cincy\\Autosave";
+optionVar -intValue "autoSavePrompt" 0;
