@@ -198,7 +198,8 @@ def get_user_assignments_by_semester(user_id, semester_id):
             results.append({
                 "assignment_name": row["assignment_name"],
                 "class_name": row["class_name"],
-                "class_id": row["class_id"],        # ← add this
+                "class_id": row["class_id"],
+                "assignment_id": row["assignment_id"],
                 "completion_date": row["completion_date"],
                 "individual_assignment_id": ia_id,
                 "assignment_status": assignment_status,

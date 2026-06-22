@@ -214,6 +214,7 @@
 <script>
   window.testUserId = {{ user_id | tojson }};
   window.defaultSemesterId = {{ semester_id | tojson }};
+  window.currentUsername = {{ session['username'] | tojson }};
 </script>
 
 
