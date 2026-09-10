@@ -36,7 +36,8 @@ def get_all_classes(minimal=False):
                s.year || ' ' || s.term || ' ' || c.code || ' - ' || c.class_name AS full_class_name 
         FROM classes c
         JOIN semesters s ON c.semester_id = s.id
-        ORDER BY s.year, 
+        WHERE c.archived = 0
+        ORDER BY s.year,
                  CASE s.term
                     WHEN 'Spring' THEN 1
                     WHEN 'Summer' THEN 2
@@ -58,7 +59,8 @@ def get_all_classes(minimal=False):
         FROM classes c
         JOIN semesters s ON c.semester_id = s.id
         LEFT JOIN users u ON c.instructor_id = u.id
-        ORDER BY s.year, 
+        WHERE c.archived = 0
+        ORDER BY s.year,
                  CASE s.term
                     WHEN 'Spring' THEN 1
                     WHEN 'Summer' THEN 2
