@@ -2564,77 +2564,6 @@ def current_semester_classes():
         "classes": [r["class_name"] for r in classes]
     })
 
-def generate_canvas_csv_string(class_id):
-    import csv, io, sqlite3
-
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    sql = """
-    SELECT 
-        c.class_name,
-        u.name AS student_name,
-        u.login_name AS login,
-        a.name AS assignment_name,
-        s.name AS step_name,
-        MAX(ias.current_status) AS grade
-        FROM individual_assignments ia
-        JOIN users u ON ia.users_id = u.id
-        JOIN assignments a ON ia.assignment_id = a.id
-        JOIN classes c ON a.class_id = c.id
-        JOIN individual_assignment_statuses ias ON ia.id = ias.individual_assignment_id
-        JOIN steps s ON ias.step_id = s.id
-        WHERE s.name LIKE 'Grade%'
-    """
-    params = ()
-
-    if class_id:
-        sql += " AND c.id = ?"
-        params = (class_id,)
-
-    sql += """
-        GROUP BY c.class_name, u.name, u.login_name, a.name, s.name
-        ORDER BY u.name, a.name
-    """
-
-    rows = cursor.execute(sql, params).fetchall()
-    conn.close()
-
-    if not rows:
-        return None, None
-
-    assignments = sorted(set(f"{r['assignment_name']} - {r['step_name']}" for r in rows))
-
-    output = io.StringIO(newline="")
-    writer = csv.writer(output, lineterminator="\r\n")
-
-    writer.writerow(["Student", "", "", "", "", *assignments])
-    writer.writerow(["Points Possible", "", "", "", "", *["5"] * len(assignments)])
-
-    by_student = {}
-    class_name = rows[0]["class_name"]
-
-    for r in rows:
-        grade_val = r["grade"].split("-")[0].strip() if r["grade"] else "0"
-
-        if r["student_name"] not in by_student:
-            by_student[r["student_name"]] = {"login": r["login"], "grades": {}}
-
-        col_name = f"{r['assignment_name']} - {r['step_name']}"
-        by_student[r["student_name"]]["grades"][col_name] = grade_val
-
-    for student, sdata in by_student.items():
-        row_out = [student, "", "", sdata["login"], class_name]
-
-        for a in assignments:
-            row_out.append(sdata["grades"].get(a, "0"))
-
-        writer.writerow(row_out)
-
-    output.seek(0)
-    return output.getvalue(), class_name
-
 POSE_PARENT_STEP_ID = 342
 
 
@@ -2664,6 +2593,29 @@ def _canvas_extract_numeric(status_string):
 
 def _fmt_num(val):
     return str(int(val)) if float(val) == int(val) else str(val)
+
+
+def _plain_canvas_csv_text(class_name, students, columns):
+    """Build the 'plain export' CSV text (no Canvas template) for one class.
+
+    One column per grade value, "Grade-" prefix dropped from the label.
+    Shared by the single-class export and the all-classes ZIP export so both
+    produce Canvas-importable columns the same way.
+    """
+    import csv, io
+
+    out = io.StringIO(newline="")
+    writer = csv.writer(out, lineterminator="\r\n")
+    writer.writerow(["Student", "ID", "SIS User ID", "SIS Login ID", "Section", *columns])
+    writer.writerow(["    Points Possible", "", "", "", "", *["" for _ in columns]])
+    for s in students:
+        row_out = [s["name"], "", "", s["login"], class_name]
+        for col in columns:
+            val = s["values"].get(col)
+            row_out.append(_fmt_num(val) if val is not None else "")
+        writer.writerow(row_out)
+
+    return out.getvalue()
 
 
 def _build_canvas_grade_data(class_filter):
@@ -2931,19 +2883,7 @@ def export_canvas_csv():
         return _send(out.getvalue(), unmatched=unmatched, matched=matched)
 
     # ---- Fallback mode (no template) --------------------------------------
-    # One column per grade value, "Grade-" prefix dropped from the label.
-    out = io.StringIO(newline="")
-    writer = csv.writer(out, lineterminator="\r\n")
-    writer.writerow(["Student", "ID", "SIS User ID", "SIS Login ID", "Section", *columns])
-    writer.writerow(["    Points Possible", "", "", "", "", *["" for _ in columns]])
-    for s in students:
-        row_out = [s["name"], "", "", s["login"], class_name]
-        for col in columns:
-            val = s["values"].get(col)
-            row_out.append(_fmt_num(val) if val is not None else "")
-        writer.writerow(row_out)
-
-    return _send(out.getvalue())
+    return _send(_plain_canvas_csv_text(class_name, students, columns))
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -2951,7 +2891,7 @@ TEMP_DIR = os.path.join(BASE_DIR, "temp_exports")
 
 @review_routes.route("/export_all_grades_zip")
 def export_all_grades_zip():
-    import os, zipfile, sqlite3
+    import os, zipfile
     from datetime import datetime
     from flask import send_file
 
@@ -2960,26 +2900,19 @@ def export_all_grades_zip():
     zip_filename = f"all_classes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
     zip_path = os.path.join(TEMP_DIR, zip_filename)
 
-    print("ZIP PATH:", zip_path)
-
-    # 🔥 THIS IS THE FIX
     classes, _ = get_current_semester_classes_full()
-
-    print("🚨 CLASSES USED IN ZIP:")
-    for c in classes:
-        print(c["class_name"])
 
     with zipfile.ZipFile(zip_path, "w") as zipf:
         for row in classes:
-            class_id = row["id"]
             class_name = row["class_name"]
 
-            csv_string, _ = generate_canvas_csv_string(class_id)
-
-            if not csv_string:
+            resolved_name, students, alias_map, columns = _build_canvas_grade_data(class_name)
+            if resolved_name is None:
                 continue
 
-            safe_name = "".join(c for c in class_name if c.isalnum() or c in " _-").replace(" ", "_")
+            csv_string = _plain_canvas_csv_text(resolved_name, students, columns)
+
+            safe_name = "".join(c for c in resolved_name if c.isalnum() or c in " _-").replace(" ", "_")
             zipf.writestr(f"{safe_name}.csv", "\ufeff" + csv_string)
 
     return send_file(zip_path, as_attachment=True)
@@ -2988,9 +2921,13 @@ def export_all_grades_zip():
 # USER PREFERENCES
 # ----------------------------------------------------------------------------------------------------------------------
 
-@review_routes.route("/preferences/<int:user_id>", methods=["GET"])
-def get_user_preferences(user_id):
-    """Return user preferences, create defaults if missing."""
+@review_routes.route("/preferences", methods=["GET"])
+def get_user_preferences():
+    """Return the logged-in user's preferences, create defaults if missing."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
     conn = sqlite3.connect(DATABASE_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -3008,25 +2945,33 @@ def get_user_preferences(user_id):
     return jsonify(dict(prefs))
 
 
-@review_routes.route("/preferences/<int:user_id>", methods=["POST"])
-def update_user_preferences(user_id):
-    """Update brush, color, and onion skin preferences."""
+@review_routes.route("/preferences", methods=["POST"])
+def update_user_preferences():
+    """Update the logged-in user's brush, color, and onion skin preferences."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
     data = request.get_json()
     conn = get_db()
     cursor = conn.cursor()
+
+    cursor.execute("SELECT 1 FROM user_preferences WHERE user_id = ?", (user_id,))
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO user_preferences (user_id) VALUES (?)", (user_id,))
 
     cursor.execute("""
         UPDATE user_preferences
         SET brush_size = ?,
             brush_color = ?,
-            onion_skin_opacity = ?,
-            onion_skin_frames = ?
+            onion_skin_frames_before = ?,
+            onion_skin_frames_after = ?
         WHERE user_id = ?
     """, (
         data.get("brush_size", 5),
         data.get("brush_color", "#FF0000"),
-        data.get("onion_skin_opacity", 0.5),
-        data.get("onion_skin_frames", 2),
+        data.get("onion_skin_frames_before", 4),
+        data.get("onion_skin_frames_after", 4),
         user_id
     ))
 

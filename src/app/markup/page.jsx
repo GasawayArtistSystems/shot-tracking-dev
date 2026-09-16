@@ -158,6 +158,107 @@ export default function MarkupTool() {
     }
   }, []);
 
+  // Load the user's saved preferences (default color, brush size, onion
+  // skin frames before/after) so the tool opens with their last settings.
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/review/preferences`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.brush_color) setBrushColor(data.brush_color);
+        if (data.brush_size != null) setBrushSize(data.brush_size);
+        setOnionSkinConfig((prev) => ({
+          ...prev,
+          beforeCount: data.onion_skin_frames_before ?? prev.beforeCount,
+          afterCount: data.onion_skin_frames_after ?? prev.afterCount,
+        }));
+      })
+      .catch((err) => console.error("❌ Failed to load preferences:", err));
+  }, []);
+
+  async function openPreferencesModal() {
+    const current = {
+      brush_color: brushColor,
+      brush_size: brushSize,
+      onion_skin_frames_before: onionSkinConfig.beforeCount,
+      onion_skin_frames_after: onionSkinConfig.afterCount,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/review/preferences`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.brush_color) current.brush_color = data.brush_color;
+        if (data.brush_size != null) current.brush_size = data.brush_size;
+        if (data.onion_skin_frames_before != null) current.onion_skin_frames_before = data.onion_skin_frames_before;
+        if (data.onion_skin_frames_after != null) current.onion_skin_frames_after = data.onion_skin_frames_after;
+      }
+    } catch (err) {
+      console.error("❌ Failed to load preferences:", err);
+    }
+
+    const { value: formValues } = await Swal.fire({
+      title: "Preferences",
+      html:
+        '<div style="text-align:left">' +
+        '<label style="display:block;margin-bottom:4px;">Default Color</label>' +
+        `<input id="pref-color" type="color" value="${current.brush_color}" style="width:100%;height:40px;margin-bottom:12px;padding:0;border:none;">` +
+        '<label style="display:block;margin-bottom:4px;">Brush Size</label>' +
+        `<input id="pref-brush-size" type="number" min="1" value="${current.brush_size}" class="swal2-input" style="margin:0 0 12px;">` +
+        '<label style="display:block;margin-bottom:4px;">Onion Skinning Frames Before</label>' +
+        `<input id="pref-onion-before" type="number" min="0" value="${current.onion_skin_frames_before}" class="swal2-input" style="margin:0 0 12px;">` +
+        '<label style="display:block;margin-bottom:4px;">Onion Skinning Frames After</label>' +
+        `<input id="pref-onion-after" type="number" min="0" value="${current.onion_skin_frames_after}" class="swal2-input" style="margin:0;">` +
+        "</div>",
+      showCancelButton: true,
+      confirmButtonText: "Save",
+      focusConfirm: false,
+      preConfirm: () => {
+        const brush_color = document.getElementById("pref-color").value;
+        const brush_size = Number(document.getElementById("pref-brush-size").value);
+        const onion_skin_frames_before = Number(document.getElementById("pref-onion-before").value);
+        const onion_skin_frames_after = Number(document.getElementById("pref-onion-after").value);
+
+        if (!brush_size || brush_size < 1) {
+          Swal.showValidationMessage("Brush size must be at least 1");
+          return false;
+        }
+        if (onion_skin_frames_before < 0 || onion_skin_frames_after < 0) {
+          Swal.showValidationMessage("Onion skin frame counts can't be negative");
+          return false;
+        }
+
+        return { brush_color, brush_size, onion_skin_frames_before, onion_skin_frames_after };
+      },
+    });
+
+    if (!formValues) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/review/preferences`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formValues),
+      });
+      if (!res.ok) throw new Error(`Save failed (${res.status})`);
+    } catch (err) {
+      console.error("❌ Failed to save preferences:", err);
+      Swal.fire("Error", "Could not save preferences.", "error");
+      return;
+    }
+
+    setBrushColor(formValues.brush_color);
+    setBrushSize(formValues.brush_size);
+    setOnionSkinConfig((prev) => ({
+      ...prev,
+      beforeCount: formValues.onion_skin_frames_before,
+      afterCount: formValues.onion_skin_frames_after,
+    }));
+
+    Swal.fire({ icon: "success", title: "Preferences saved", timer: 1200, showConfirmButton: false });
+  }
+
 
   useEffect(() => {
     const handleError = (e) =>
@@ -2960,7 +3061,7 @@ export default function MarkupTool() {
 
         </div>
         <div className="bg-gray-800 p-3 rounded-lg mt-4">
-        <button id="openPreferences" class="toolbar-btn">
+        <button id="openPreferences" className="toolbar-btn" onClick={openPreferencesModal}>
           ⚙️ Preferences
         </button>
         </div>

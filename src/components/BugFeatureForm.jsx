@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactDOM from 'react-dom/client';
 import Swal from 'sweetalert2';
 
 const departments = {
@@ -6,13 +7,15 @@ const departments = {
     Classes: [
         "Add Class", "Edit Class", "Delete Class", "Class issues",
         "Assignment issues", "Add Assignment", "Edit Assignment", "Delete Assignment",
-        "Entering Grades", "Changing Grades", "Saving Grades", "Other Grades"
+        "Entering Grades", "Changing Grades", "Saving Grades", "Other Grades",
+        "Student Issues"
     ],
     Films: [
         "Add Film", "Edit Film", "Delete Film", "Film Issues", "Add Scenes",
         "Delete Scenes", "Edit Scenes", "Scenes issues",
         "Add Shots", "Edit Shots", "Delete Shots", "Shot issues",
-        "Assets issues", "Add Assets"
+        "Assets issues", "Add Assets", "Crew Issues", "Add Asset", "Edit Asset",
+        "Delete Asset", "Other Assets", "Timeline Issues"
     ],
     Workflow: [
         "Add Overall Flow", "Add Individual Flow", "Edit flows", "Moving nodes in window",
@@ -23,8 +26,8 @@ const departments = {
     Dashboard:[
         "Class Assignments", "Film Assignments"
     ],
-    Markup_Tool: [
-        "Overall", "Sidebar", "Drawing Canvas", "Drawing Tools", "Video Player", "Video Tools"
+    Markup: [
+        "File Area", "Drawing Area", "Playback/Frame by Frame", "Tools"
     ]
 };
 
@@ -165,4 +168,14 @@ export default function BugFeatureForm() {
             </div>
         </div>
     );
+}
+
+function mountBugForm() {
+    const el = document.getElementById('bug-form');
+    if (!el) { console.error('#bug-form container not found'); return; }
+    ReactDOM.createRoot(el).render(<BugFeatureForm />);
+}
+
+if (typeof window !== 'undefined') {
+    window.mountBugForm = mountBugForm;
 }
