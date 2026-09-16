@@ -37,9 +37,14 @@ def reset_token(token):
         return redirect(url_for('auth.request_reset'))
 
     if request.method == 'POST':
+        user = get_user_by_email(email)
+        if not user:
+            flash("No account found with that email.", "danger")
+            return redirect(url_for('auth.request_reset'))
+
         new_password = request.form['password']
         hashed_password = generate_password_hash(new_password)
-        update_user_password(email, hashed_password)
+        update_user_password(user['id'], hashed_password)
         flash("Your password has been reset successfully!", "success")
         return redirect(url_for('auth.login'))
 
