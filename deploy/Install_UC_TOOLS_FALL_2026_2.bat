@@ -44,7 +44,7 @@ echo ============================================================
 echo.
 
 REM -- 1. Create local folder structure -------------------------
-echo [1/21] Creating local folder structure...
+echo [1/19] Creating local folder structure...
 mkdir "C:\Cincy\MayaApp\2026\prefs" 2>nul
 mkdir "C:\Cincy\MayaApp\2026\scripts" 2>nul
 mkdir "C:\Cincy\MayaApp\2026\plug-ins" 2>nul
@@ -69,7 +69,7 @@ REM and under SYSTEM this script's %USERPROFILE% resolves to the
 REM SYSTEM profile anyway, not any student's.
 
 REM -- 1b. Cleanup legacy folders ---------------------------
-echo [1b/21] Cleaning up legacy folders...
+echo [1b/19] Cleaning up legacy folders...
 rd /S /Q "C:\Cincy\obs-bridge" 2>nul
 rd /S /Q "C:\Cincy\review_manager" 2>nul
 rd /S /Q "C:\Cincy\maya_tools" 2>nul
@@ -99,7 +99,7 @@ REM     Uses [Environment]::SetEnvironmentVariable, not setx, for the
 REM     same reason as the ffmpeg PATH step below (setx silently
 REM     truncates past 1024 chars). Checks current value first so
 REM     repeat runs don't do pointless rewrites.
-echo [2/21] Setting MAYA_APP_DIR (machine environment variable)...
+echo [2/19] Setting MAYA_APP_DIR (machine environment variable)...
 powershell -NoProfile -Command "$cur = [Environment]::GetEnvironmentVariable('MAYA_APP_DIR','Machine'); if ($cur -ne 'C:\Cincy\MayaApp') { [Environment]::SetEnvironmentVariable('MAYA_APP_DIR', 'C:\Cincy\MayaApp', 'Machine') }"
 
 REM -- 2b. Set PYTHONPATH at the OS/machine level ------------------
@@ -108,20 +108,20 @@ REM     and does not pick up C:\Cincy\python_libs automatically --
 REM     launcher.py fails immediately with
 REM     "ModuleNotFoundError: No module named 'requests'" without
 REM     this. Confirmed missing on a fresh machine 2026-08-10.
-echo [2b/21] Setting PYTHONPATH (machine environment variable)...
+echo [2b/19] Setting PYTHONPATH (machine environment variable)...
 powershell -NoProfile -Command "$cur = [Environment]::GetEnvironmentVariable('PYTHONPATH','Machine'); if ($cur -notlike '*C:\Cincy\python_libs*') { [Environment]::SetEnvironmentVariable('PYTHONPATH', 'C:\Cincy\python_libs', 'Machine') }"
 
 REM -- 3. Deploy Maya.env ------------------------------------------
 REM     Now targets C:\Cincy\MayaApp\2026 -- with MAYA_APP_DIR set at
 REM     the OS level (step 2), that's where Maya will actually look
 REM     for Maya.env, not Documents\maya\2026 anymore.
-echo [3/21] Deploying Maya.env...
+echo [3/19] Deploying Maya.env...
 robocopy "%SRC%\deploy\maya\2026" "C:\Cincy\MayaApp\2026" Maya.env /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Maya.env"
 
 REM -- 4. Deploy userSetup.mel -----------------------------------
-echo [4/21] Deploying userSetup.mel...
+echo [4/19] Deploying userSetup.mel...
 REM Documents-targeted copy removed: under SYSTEM, %USERPROFILE%
 REM resolves to the SYSTEM profile, not the student's, and
 REM MAYA_APP_DIR=C:\Cincy\MayaApp means Maya never reads from
@@ -131,14 +131,14 @@ set RC=%ERRORLEVEL%
 call :CheckRC %RC% "userSetup.mel (Cincy)"
 
 REM -- 5. Deploy userPrefs.mel -----------------------------------
-echo [5/21] Deploying userPrefs.mel...
+echo [5/19] Deploying userPrefs.mel...
 REM Documents-targeted copy removed -- same reasoning as step 3.
 robocopy "%SRC%\deploy\maya\2026\prefs" "C:\Cincy\MayaApp\2026\prefs" userPrefs.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "userPrefs.mel (Cincy)"
 
 REM -- 6. Deploy pluginPrefs.mel (delete dirty, copy clean, lock)
-echo [6/21] Deploying pluginPrefs.mel...
+echo [6/19] Deploying pluginPrefs.mel...
 REM Documents-targeted delete/copy/lock removed -- was silently
 REM locking a file under the SYSTEM profile that Maya never reads
 REM (MAYA_APP_DIR redirects to C:\Cincy\MayaApp), while leaving the
@@ -152,7 +152,7 @@ call :CheckRC %RC% "pluginPrefs.mel (Cincy)"
 attrib +R "C:\Cincy\MayaApp\2026\prefs\pluginPrefs.mel"
 
 REM -- 7. Deploy CODE.mod ---------------------------------------
-echo [7/21] Deploying CODE.mod...
+echo [7/19] Deploying CODE.mod...
 robocopy "%SRC%\modules" "C:\Cincy" CODE.mod /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "CODE.mod"
@@ -161,7 +161,7 @@ REM -- 8. Deploy Maya scripts ------------------------------------
 REM     Mirrors the whole scripts folder so anything placed there --
 REM     FaceCam, UCSetSceneV1, studiolibrary, tweenMachinePython3,
 REM     zvparentmaster, MG-PickerStudio, etc. -- deploys automatically.
-echo [8/21] Deploying scripts...
+echo [8/19] Deploying scripts...
 robocopy "%SRC%\scripts" "C:\Cincy\scripts" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "scripts"
@@ -172,7 +172,7 @@ REM     source of truth, not the copy under deploy\. A true mirror
 REM     means only what's actually on the server survives locally,
 REM     so this machine only ever has whatever shelf tabs the server
 REM     folder has (currently just shelf_GAA.mel).
-echo [9/21] Deploying GAA shelf...
+echo [9/19] Deploying GAA shelf...
 robocopy "%SRC%\Shelves" "C:\Cincy\Shelves" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Shelves"
@@ -190,43 +190,63 @@ REM     loads empty on every single launch, regardless of how
 REM     correct/current C:\Cincy\Shelves\shelf_GAA.mel itself is.
 REM     Per-profile, not machine-wide -- must run for every student
 REM     the same as steps 4/5/6.
-echo [9b/21] Deploying GAA shelf cache...
+echo [9b/19] Deploying GAA shelf cache...
 robocopy "C:\Cincy\Shelves" "C:\Cincy\MayaApp\2026\prefs\shelves" shelf_GAA.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "GAA shelf cache"
 
 REM -- 10. Deploy icons --------------------------------------------
-echo [10/21] Deploying icons...
+echo [10/19] Deploying icons...
 robocopy "%SRC%\icons" "C:\Cincy\icons" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "icons"
 
 REM -- 11. Deploy Rigs --------------------------------------------
-echo [11/21] Deploying rigs...
+echo [11/19] Deploying rigs...
 robocopy "%SRC%\Rigs" "C:\Cincy\Rigs" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Rigs"
 
 REM -- 12. Deploy plug-ins ----------------------------------------
-echo [12/21] Deploying plug-ins...
+echo [12/19] Deploying plug-ins...
 robocopy "%SRC%\plug-ins" "C:\Cincy\plug-ins" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "plug-ins"
 
+REM -- 12b. ProRigs licence plug-in -------------------------------
+REM     ProRigs installs PRLicensePlugin.mll to its own ProgramData
+REM     folder, which is NOT one of Maya's trusted plug-in locations and
+REM     NOT tied to a Windows profile that survives a student logout. So
+REM     two things here, both machine-wide (one run covers every student):
+REM       1. Delete any PRLicensePlugin.mll under C:\Cincy\plug-ins. Old
+REM          machines have a stale copy there (built for a different Maya
+REM          year); Maya finds it by name first and dies with "specified
+REM          procedure could not be found". Step 12 above can even mirror
+REM          it back from the share, so this runs AFTER step 12.
+REM          ** Also delete it from %SRC%\plug-ins so the mirror stops
+REM             carrying it. **
+REM       2. Copy the CURRENT plug-in from ProRigs' ProgramData install
+REM          into Maya's own bin\plug-ins - a default-trusted location and
+REM          the exact path launcher.py loads at OPEN time.
+REM     No-ops cleanly if ProRigs is not installed yet. Not fatal to the
+REM     install if it fails (ErrorActionPreference SilentlyContinue).
+echo [12b/19] ProRigs licence plug-in...
+powershell -NoProfile -Command "$ErrorActionPreference='SilentlyContinue'; Remove-Item 'C:\Cincy\plug-ins\PRLicensePlugin.mll' -Force; $src = Join-Path $env:ProgramData 'ProRigs\maya\2026\plug-ins\PRLicensePlugin.mll'; $mk = (Get-ItemProperty 'HKLM:\SOFTWARE\Autodesk\Maya\2026\Setup\InstallPath' -Name MAYA_INSTALL_LOCATION).MAYA_INSTALL_LOCATION; if ((Test-Path $src) -and $mk) { $d = Join-Path $mk 'bin\plug-ins'; New-Item -ItemType Directory -Force $d | Out-Null; Copy-Item $src (Join-Path $d 'PRLicensePlugin.mll') -Force }"
+
 REM -- 13. Deploy Audio -------------------------------------------
-echo [13/21] Deploying audio...
+echo [13/19] Deploying audio...
 robocopy "%SRC%\Audio" "C:\Cincy\Audio" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Audio"
 
 REM -- 14. Deploy Pose Library ------------------------------------
-echo [14/21] Deploying pose library...
+echo [14/19] Deploying pose library...
 robocopy "%SRC%\Pose Library" "C:\Cincy\Pose Library" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Pose Library"
 
 REM -- 15. Deploy ToonBoom ----------------------------------------
-echo [15/21] Deploying ToonBoom...
+echo [15/19] Deploying ToonBoom...
 robocopy "%SRC%\ToonBoom" "C:\Cincy\ToonBoom" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "ToonBoom"
@@ -235,7 +255,7 @@ REM -- 16. Deploy modules -----------------------------------------
 REM     CODE.mod itself is already handled explicitly in step 6
 REM     (that's the proven, working path) -- this additionally mirrors
 REM     the whole modules folder in case anything else lives there.
-echo [16/21] Deploying modules...
+echo [16/19] Deploying modules...
 robocopy "%SRC%\modules" "C:\Cincy\modules" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "modules"
@@ -248,7 +268,7 @@ REM     already been working throughout everything tested today, so
 REM     something else already puts this folder on Python's path
 REM     (system-wide PYTHONPATH, set outside anything in this repo).
 REM     Not touching that mechanism since it's already working.
-echo [17/21] Deploying python_libs...
+echo [17/19] Deploying python_libs...
 robocopy "%SRC%\python_libs" "C:\Cincy\python_libs" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "python_libs"
@@ -262,7 +282,7 @@ REM     silently truncates PATH past 1024 characters -- a real risk
 REM     on a machine with this much software already on PATH. Checks
 REM     for an existing entry first so repeat runs don't pile up
 REM     duplicates.
-echo [18/21] Deploying ffmpeg...
+echo [18/19] Deploying ffmpeg...
 robocopy "%SRC%\ffmpeg" "C:\Cincy\ffmpeg" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "ffmpeg"
@@ -276,27 +296,20 @@ REM     matches every other step's mirror-based pull. The old c$
 REM     pull failed here because SYSTEM on a lab machine has no
 REM     rights on GAAAP1PRD01W's admin share (confirmed via
 REM     install_log ERROR 5, 2026-08-10).
-echo [19/21] Deploying assignments_config.json...
+echo [19/19] Deploying assignments_config.json...
 robocopy "%SRC%\Configs" "C:\Cincy\Configs" assignments_config.json /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "assignments_config.json"
 
-REM -- 20. Add shottracker:// URI scheme to registry ------------
-echo [20/21] Registering shottracker:// URI scheme...
-reg add "HKLM\SOFTWARE\Classes\shottracker" /ve /d "URL:Shot Tracker Protocol" /f
-reg add "HKLM\SOFTWARE\Classes\shottracker" /v "URL Protocol" /d "" /f
-reg add "HKLM\SOFTWARE\Classes\shottracker\shell\open\command" /ve /d "\"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe\" \"C:\Cincy\scripts\launcher.py\" \"%%1\"" /f
-
-REM -- 21. Deploy Shot Tracker desktop shortcut --------------------
-REM     Public\Desktop (not per-user) so it shows up for every student
-REM     on a shared lab machine without needing per-profile deployment.
-REM     Source and dest keep the identical "Shot Tracker.url" filename
-REM     since robocopy copies a file's name as-is, it can't rename on
-REM     the way through.
-echo [21/21] Deploying Shot Tracker desktop shortcut...
-robocopy "%SRC%\deploy\shortcuts" "C:\Users\Public\Desktop" "Shot Tracker.url" /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
-set RC=%ERRORLEVEL%
-call :CheckRC %RC% "Shot Tracker.url"
+REM -- shottracker:// URI scheme and the Public desktop shortcut are NOT
+REM     deployed here. Both are one-time machine setup that is already in
+REM     place on the lab machines, the shortcut robocopy reported a failure
+REM     on every run, and re-running this installer has no need to touch
+REM     either. If a fresh machine ever needs them:
+REM       reg add "HKLM\SOFTWARE\Classes\shottracker" /ve /d "URL:Shot Tracker Protocol" /f
+REM       reg add "HKLM\SOFTWARE\Classes\shottracker" /v "URL Protocol" /d "" /f
+REM       reg add "HKLM\SOFTWARE\Classes\shottracker\shell\open\command" /ve /d "\"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe\" \"C:\Cincy\scripts\launcher.py\" \"%%1\"" /f
+REM       copy "%SRC%\deploy\shortcuts\Shot Tracker.url" "C:\Users\Public\Desktop\"
 
 echo.
 echo ============================================================

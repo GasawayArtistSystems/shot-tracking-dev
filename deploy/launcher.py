@@ -319,6 +319,47 @@ def write_asset_session(context):
 # ── Maya Launch ───────────────────────────────────────────────
 _SAFE_LOGIN_NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 
+# ProRigs licence plug-in, copied into Maya's own (trusted) plug-ins folder
+# by Fix_ProRigs_Trust.ps1. Derived from MAYA_EXE so it tracks a non-standard
+# Maya location. We load THIS explicit path, never the bare name
+# "PRLicensePlugin": MAYA_PLUG_IN_PATH still lists C:\Cincy\plug-ins, which on
+# older machines holds a stale PRLicensePlugin.mll built for a different Maya
+# year - loading by name finds that one first and dies with "specified
+# procedure could not be found".
+PRORIGS_MLL = os.path.join(
+    os.path.dirname(MAYA_EXE), "plug-ins", "PRLicensePlugin.mll"
+).replace("\\", "/")
+
+
+def _mel_launch(python_code):
+    r"""
+    Build the Maya ``-command`` payload for a launch flow: load the ProRigs
+    licence plug-in FIRST (from its trusted, version-correct path), then run
+    the flow's Python.
+
+    Every ProRigs rig carries a ProRigs licence node; without the plug-in
+    loaded those nodes come in as "unknown" and the rig is dead. Maya does not
+    reliably auto-load it on a lab machine - the shared pluginPrefs.mel
+    autoload list gets rewritten by Maya and loses the entry, and the per-user
+    "trust this location" approval for the ProRigs folder does not carry
+    across student logins.
+
+    The load is wrapped in ``catchQuiet`` so a missing or broken plug-in still
+    lets the student's scene open (broken rig beats no Maya). ``loadPlugin``
+    is given the full path in an escaped MEL string; build the payload by
+    concatenation rather than an f-string so the three quote levels
+    (mel_command -> evalDeferred string -> catchQuiet argument) stay legible.
+    """
+    bs, dq = "\\", '"'
+    load = (
+        "catchQuiet(" + bs + dq
+        + "loadPlugin -quiet " + bs + bs + bs + dq
+        + PRORIGS_MLL
+        + bs + bs + bs + dq + bs + dq + "); "
+    )
+    inner = load + "python(" + bs + dq + python_code + bs + dq + ")"
+    return "evalDeferred(" + dq + inner + dq + ")"
+
 def launch_maya(login_name, individual_assignment_id=None):
     """
     Launches Maya and, via the -command startup flag, immediately runs
@@ -356,7 +397,7 @@ def launch_maya(login_name, individual_assignment_id=None):
     # queues this to run once Maya's idle event loop picks it up, after
     # the UI is actually built — same idiom userSetup.mel already uses
     # for plugin autoloading.
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -387,7 +428,7 @@ def launch_maya_scene_layout(login_name, scene_id):
         "import CapstoneLayout; "
         f"CapstoneLayout.run(login_name='{login_name}', scene_id={scene_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -417,7 +458,7 @@ def launch_maya_shot_layout(login_name, shot_id):
         "import CapstoneLayout; "
         f"CapstoneLayout.run_shot(login_name='{login_name}', shot_id={shot_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -447,7 +488,7 @@ def launch_maya_shot_blocking(login_name, shot_id):
         "import CapstoneBlocking; "
         f"CapstoneBlocking.run_shot(login_name='{login_name}', shot_id={shot_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -477,7 +518,7 @@ def launch_maya_shot_animation(login_name, shot_id):
         "import CapstoneAnimation; "
         f"CapstoneAnimation.run_shot(login_name='{login_name}', shot_id={shot_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -507,7 +548,7 @@ def launch_maya_shot_lighting(login_name, shot_id):
         "import CapstoneLighting; "
         f"CapstoneLighting.run_shot(login_name='{login_name}', shot_id={shot_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 
@@ -538,7 +579,7 @@ def launch_maya_asset(login_name, asset_id):
         "import Assets; "
         f"Assets.run(login_name='{login_name}', asset_id={asset_id_arg})"
     )
-    mel_command = f'evalDeferred("python(\\"{python_code}\\")")'
+    mel_command = _mel_launch(python_code)
 
     subprocess.Popen([MAYA_EXE, "-command", mel_command])
 

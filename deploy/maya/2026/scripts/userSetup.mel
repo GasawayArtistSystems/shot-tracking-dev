@@ -20,3 +20,7 @@ optionVar -intValue "showScriptEditorOnStart" 0;
 
 // ── FPS Display on timeline ────────────────────────────────
 optionVar -intValue "timeShowTimecode" 0;
+
+// NOTE: the ProRigs licence plug-in is loaded by launcher.py's -command
+// payload at OPEN time (from its trusted full path), NOT here - editing
+// userSetup.mel trips Maya 2026's Safe Mode script-hash check.

@@ -1,12 +1,16 @@
 //Maya Preference 2026 (Release 1)
-evalDeferred("autoLoadPlugin(\"\", \"invertShape\", \"invertShape\")");
-evalDeferred("autoLoadPlugin(\"\", \"mayaHIK\", \"mayaHIK\")");
-evalDeferred("autoLoadPlugin(\"\", \"curveWarp\", \"curveWarp\")");
+// Trimmed to the plug-ins that provide NODE TYPES a referenced rig can embed
+// (so the rig does not open with "unknown" nodes). Everything else Maya loads
+// on demand when a scene or a tool actually needs it - it does not need to be
+// in this autoload list.
+//   dropped, still available on demand: invertShape, curveWarp, gpuCache,
+//   objExport, fbxmaya
+// PRLicensePlugin is deliberately NOT here - launcher.py loads it from its
+// trusted full path at OPEN time.
+evalDeferred("autoLoadPlugin(\"\", \"matrixNodes\", \"matrixNodes\")");
+evalDeferred("autoLoadPlugin(\"\", \"quatNodes\", \"quatNodes\")");
 evalDeferred("autoLoadPlugin(\"\", \"poseInterpolator\", \"poseInterpolator\")");
 evalDeferred("autoLoadPlugin(\"\", \"ikSpringSolver\", \"ikSpringSolver\")");
 evalDeferred("autoLoadPlugin(\"\", \"ik2Bsolver\", \"ik2Bsolver\")");
+evalDeferred("autoLoadPlugin(\"\", \"mayaHIK\", \"mayaHIK\")");
 evalDeferred("autoLoadPlugin(\"\", \"mayaCharacterization\", \"mayaCharacterization\")");
-evalDeferred("autoLoadPlugin(\"\", \"matrixNodes\", \"matrixNodes\")");
-evalDeferred("autoLoadPlugin(\"\", \"gpuCache\", \"gpuCache\")");
-evalDeferred("autoLoadPlugin(\"\", \"objExport\", \"objExport\")");
-evalDeferred("autoLoadPlugin(\"\", \"fbxmaya\", \"fbxmaya\")");
