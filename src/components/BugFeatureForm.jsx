@@ -28,6 +28,9 @@ const departments = {
     ],
     Markup: [
         "File Area", "Drawing Area", "Playback/Frame by Frame", "Tools"
+    ],
+    "Maya Tools": [
+        "Scripts", "Admin"
     ]
 };
 
