@@ -46,7 +46,7 @@
     <div class="bg-gray-800 p-6 rounded-xl mb-8">
       <p class="text-lg mb-4">A STUDENT can:</p>
       <ul class="list-disc list-inside text-lg space-y-2">
-        <li><a href="{{ url_for('help.help_classes') }}#assignment-open"
+        <li><a href="{{ url_for('help.help_classes') }}#maya-walk-through"
             class="font-semibold text-blue-400 hover:text-yellow-500">Open Maya assignments</a></li>
         <li><a href="{{ url_for('help.help_classes') }}#class-submit"
             class="font-semibold text-blue-400 hover:text-yellow-500">Submit assignments through animation software</a></li>
@@ -353,34 +353,19 @@
       <p class="text-sm text-gray-400 italic">The space where all the film shots that are not completed are listed.</p>
       <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-collapse">Collapsible Scenes</h3>
       <p class="mb-6 text-lg leading-relaxed">
-      Each scene is collapsible for ease of use. Just click on the space next to the name of the film to open and close.</p>
+      Each scene is collapsible for ease of use. Just click on the triangle next to the name of the scene to open and close.</p>
       <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-script">View Script</h3>
       <p class="mb-6 text-lg leading-relaxed">
       Click on View Script to see the script. A new window will open if a pdf. If a doc, it will save the file.</p>
+      <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-open">Open Shot in Maya</h3>
+      <p class="mb-6 text-lg leading-relaxed">
+        If a shot is ready to be worked on, it will have an OPEN button next to the name of the shot. If there is not a button, it's not ready. Talk
+      to your coordinator.</p>
       <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-filmshots-status">Change Status</h3>
     <p class="mb-6 text-lg leading-relaxed">
       Students can change the status of their shots here. They should only change it to In Progress, Help Needed, or Graded.
     Maya and ToonBoom handle changing the status to Submitted.</p>
     </div>
-
-    <div class="bg-gray-800 p-6 rounded-xl mb-8">
-      <h3 class="text-3xl font-semibold text-green-400 mb-4" id="dashboard-filmshots">To-Do Film Shots</h3>
-      <img src="{{ url_for('static', filename='help/images/dashboard-filmassets.png') }}" alt="Film Assets"
-        class="rounded-xl shadow-lg mb-4">
-      <p class="text-sm text-gray-400 italic">The space where all the film assets that are not completed are listed.</p>
-    </div>
-
-    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-assignments">To-Do Assignments</h3>
-    <p class="mb-6 text-lg leading-relaxed">
-      All assignments due and not completed for the semester. Divided by class.</p>
-    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-film">To-Do Film Shots</h3>
-    <p class="mb-6 text-lg leading-relaxed">
-      All shots due and not completed for the film. Divided by Film and Scene.</p>
-    <h3 class="text-xl font-semibold text-green-400 mt-8 mb-2" id="dashboard-to-do-film">Classes and Films</h3>
-    <p class="mb-6 text-lg leading-relaxed">
-      All completed assignments and shots for films.</p>
-
-  </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {

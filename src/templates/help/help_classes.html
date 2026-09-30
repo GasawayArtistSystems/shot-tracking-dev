@@ -85,6 +85,18 @@
     <img src="{{ url_for('static', filename='help/images/add-students-page.png') }}" alt="Add Students"
       class="rounded-xl shadow-lg mb-8 w-full md:w-2/3">
 
+    <p class="mb-6 text-lg leading-relaxed">You can add students by searching for their name in the search bar, then clicking on the 
+      checkbox next to their name. You can do this with multiple students.
+    </p>
+    <p class="mb-6 text-lg leading-relaxed">You can also add students by the csv file out of Canvas. Go to Grades->Export. It will
+      export the name and email for the student. This will also add the student to the Users list.
+    </p>
+    <div class="bg-red-800 p-4 rounded-xl shadow-lg mb-8">
+      <strong class="text-green-400">⚠️ NOTE:</strong> Check the Also Add to all Assignments checkbox to automatically add the 
+      assignments to the student.
+    </div>
+
+
     <h3 class="text-3xl font-semibold text-green-400 mt-10 mb-4" id="removing-students-from-class">Removing Students
       from a Class</h3>
     <p class="mb-6 text-lg leading-relaxed">
@@ -277,23 +289,20 @@
     <img src="{{ url_for('static', filename='help/images/xsheet-add-frames.png') }}" alt="Add Frames control"
       class="rounded-xl shadow-lg mb-4 w-[60%] h-auto">
 
-    <h4 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="x-sheet-save-share">Save and Share for Feedback</h4>
-    <img src="{{ url_for('static', filename='help/images/xsheet-save-share.png') }}" alt="Save and Share for Feedback buttons"
-      class="rounded-xl shadow-lg mb-4 w-[60%] h-auto">
-    <ol class="list-decimal list-inside mb-4 space-y-3 text-lg">
-      <li><span class="text-yellow-400 font-semibold">Save</span> -- saves your work. Nothing autosaves, so save
-        often.</li>
-      <li><span class="text-yellow-400 font-semibold">Share for Feedback</span> -- sends the current sheet to the
-        Markup tool so your instructor can review and draw notes on it, the same way they do with your other Planning
-        images. Long sheets get split into multiple pages of 24 frames each.</li>
-    </ol>
+    <h4 class="text-2xl font-semibold text-green-400 mt-8 mb-2" id="x-sheet-save-share">Save</h4>
+    <p class="mb-4 text-lg leading-relaxed">
+      <span class="text-yellow-400 font-semibold">Save</span> -- saves your work. Nothing autosaves, so save often.
+    </p>
     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-900 p-4 rounded-lg text-sm">
-      <strong>📌 NOTE:</strong> Share for Feedback is optional -- Submit Planning only requires that the X-Sheet has
-      been saved with something on it, not that you've shared it. Share it if you want feedback before you submit.
+      <strong>📌 NOTE:</strong> There's no separate "Share for Feedback" step anymore -- clicking
+      <span class="font-semibold">Submit Planning</span> on the dashboard automatically sends the current sheet to
+      the Markup tool so your instructor can review and draw notes on it, the same way they do with your other
+      Planning images. Long sheets get split into multiple pages of 24 frames each. Just make sure the sheet is
+      Saved before you submit.
     </div>
     <img src="{{ url_for('static', filename='help/images/xsheet-markup-view.png') }}" alt="X-Sheet shared in the Markup tool"
       class="rounded-xl shadow-lg mb-4 w-full h-auto">
-    <p class="text-sm text-gray-400 italic">A shared X-Sheet page, as it appears in the Markup tool.</p>
+    <p class="text-sm text-gray-400 italic">A submitted X-Sheet page, as it appears in the Markup tool.</p>
 
     <div class="my-8">
       <hr class="border-gray-700">
