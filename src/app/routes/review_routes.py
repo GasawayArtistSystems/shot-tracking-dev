@@ -1846,9 +1846,7 @@ def save_reviewed():
     
 @review_routes.route("/save_annotations", methods=["POST", "OPTIONS"])
 def save_annotations():
-    print(">>> /save_annotations HIT")
     data = request.get_json(force=True, silent=True)
-    print(">>> BODY:", data)
 
     if request.method == "OPTIONS":
         response = make_response()
