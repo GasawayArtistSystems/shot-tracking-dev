@@ -528,6 +528,46 @@
     }
   });
 
+  // The x-sheet used to need its own "Share for Feedback" click to produce
+  // the PNG snapshot(s) an instructor reviews (same planning_files
+  // mechanism as hand-drawn Planning pages) -- easy to forget separately
+  // from Submit Planning, so Submit Planning now triggers that capture
+  // itself. It's reused as-is (rather than re-implemented here) by loading
+  // the x-sheet page in a hidden iframe with ?autoShare=1; xsheet.js
+  // recognizes that flag, runs the same capture its removed button used
+  // to, and reports back via postMessage.
+  function shareXsheetForFeedback(assignmentId) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = `/xsheet/${assignmentId}/view?autoShare=1`;
+
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timed out sharing the X-sheet for feedback."));
+      }, 30000);
+
+      function cleanup() {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", onMessage);
+        iframe.remove();
+      }
+
+      function onMessage(event) {
+        if (event.origin !== window.location.origin) return;
+        const msg = event.data;
+        if (!msg || msg.type !== "xsheet-auto-share") return;
+        if (String(msg.individualAssignmentId) !== String(assignmentId)) return;
+        cleanup();
+        if (msg.ok) resolve();
+        else reject(new Error(msg.error || "Failed to share the X-sheet for feedback."));
+      }
+
+      window.addEventListener("message", onMessage);
+      document.body.appendChild(iframe);
+    });
+  }
+
   document.addEventListener("click", async (e) => {
     const submitBtn = e.target.closest && e.target.closest("#submit-planning-submit");
     if (!submitBtn || submitBtn.disabled) return;
@@ -537,6 +577,8 @@
     submitBtn.textContent = "Submitting...";
 
     try {
+      await shareXsheetForFeedback(assignmentId);
+
       const res = await fetch(`/planning/submit/${assignmentId}`, { method: "POST" });
       const data = await res.json();
       if (res.ok) {
@@ -555,7 +597,7 @@
       }
     } catch (err) {
       console.error("Submit planning error:", err);
-      Swal.fire("Error", "See console for details", "error");
+      Swal.fire("Error", err.message || "See console for details", "error");
       submitBtn.disabled = false;
       submitBtn.textContent = "Submit Planning";
     }

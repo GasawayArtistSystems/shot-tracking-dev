@@ -1,6 +1,11 @@
 // X-Sheet interactive grid: loads /xsheet/<id>, renders an editable frame
-// grid, and wires Save / Share-for-Feedback / snapshot history / instructor
-// annotation. Explicit-save model -- nothing here autosaves.
+// grid, and wires Save / snapshot history / instructor annotation.
+// Explicit-save model -- nothing here autosaves. Share-for-Feedback no
+// longer has its own button -- the dashboard's Submit Planning modal
+// triggers it automatically by loading this page in a hidden iframe with
+// ?autoShare=1 (see shareXsheetForFeedback() in
+// dashboard_individual_assignments.js), so it runs once at submission time
+// instead of needing a separate manual step.
 (() => {
   const root = document.getElementById("xsheet-root");
   if (!root) return;
@@ -43,6 +48,35 @@
   // Saved as empty xsheet_rows entries so the extended range survives a
   // reload (MAX(frame) already covers it -- no new "row count" column needed).
   let manualFrames = new Set();
+
+  // Column add/rename/remove go through their own API endpoint and then
+  // re-GET the whole sheet. That reload would otherwise wipe anything the
+  // student has typed but not yet Saved (rowData/symbols/manualFrames are
+  // local until Save). Snapshot those, reload, then overlay them back so a
+  // structural change never costs unsaved work.
+  async function reloadPreservingEdits() {
+    const snapRowData = JSON.parse(JSON.stringify(rowData));
+    const snapSymbols = symbols.map(s => ({ ...s }));
+    const snapManual = new Set(manualFrames);
+
+    await load();
+
+    const colKeys = new Set(state.columns.map(c => c.column_key));
+    for (const [frame, cols] of Object.entries(snapRowData)) {
+      const merged = { ...(rowData[frame] || {}) };
+      for (const [k, v] of Object.entries(cols)) {
+        if (colKeys.has(k)) merged[k] = v; // drop data for a removed column
+      }
+      rowData[frame] = merged;
+    }
+    const soundsKeys = new Set(
+      state.columns.filter(c => c.category === "sounds").map(c => c.column_key)
+    );
+    symbols = snapSymbols.filter(s => soundsKeys.has(s.column_key));
+    for (const f of snapManual) manualFrames.add(f);
+
+    renderTable();
+  }
 
   // The live editing view always shows every frame continuously -- this is
   // only used to chunk "Share for Feedback" captures into 24-frame images
@@ -137,7 +171,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "add", category, display_name }),
         });
-        await load();
+        await reloadPreservingEdits();
       } catch (e) {
         notify(e.message, true);
       }
@@ -175,7 +209,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "rename", column_key: key, display_name: name }),
           });
-          await load();
+          await reloadPreservingEdits();
         } catch (e) { notify(e.message, true); }
       });
     });
@@ -188,7 +222,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "remove", column_key: btn.dataset.remove }),
           });
-          await load();
+          await reloadPreservingEdits();
         } catch (e) { notify(e.message, true); }
       });
     });
@@ -199,7 +233,11 @@
     const val = (rowData[frame] || {})[key] ?? "";
 
     if (col.category === "frame") {
-      return `<td class="border border-gray-700 px-2 py-1 text-center text-gray-400">${frame}</td>`;
+      // Right-click target for the insert/delete-frame context menu (owner
+      // only -- the menu itself no-ops for staff). data-frame-cell carries
+      // the frame the menu should act on.
+      return `<td class="xsheet-frame-cell border border-gray-700 px-2 py-1 text-center text-gray-400 cursor-context-menu"
+                  data-frame-cell="${frame}" title="Right-click to insert or delete frames here">${frame}</td>`;
     }
 
     if (col.category === "sounds") {
@@ -320,6 +358,14 @@
       });
     });
 
+    if (state.is_owner) {
+      tbody.querySelectorAll(".xsheet-frame-cell").forEach(el => {
+        el.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          openFrameMenu(Number(el.dataset.frameCell), e.clientX, e.clientY);
+        });
+      });
+    }
   }
 
   function collectRowsForSave() {
@@ -530,39 +576,33 @@
   }
 
   async function shareForFeedback() {
-    const shareBtn = document.getElementById("xsheet-share-btn");
     const rowCount = effectiveRowCount();
     const pages = totalPages();
 
-    shareBtn.disabled = true;
-    try {
-      for (let page = 0; page < pages; page++) {
-        const pageStart = (state.frame_start || 1) + page * PAGE_SIZE;
-        const pageEnd = Math.min(pageStart + PAGE_SIZE - 1, rowCount);
+    for (let page = 0; page < pages; page++) {
+      const pageStart = (state.frame_start || 1) + page * PAGE_SIZE;
+      const pageEnd = Math.min(pageStart + PAGE_SIZE - 1, rowCount);
 
-        const canvas = renderExportCanvas(pageStart, pageEnd);
-        const image_data = canvas.toDataURL("image/png");
+      const canvas = renderExportCanvas(pageStart, pageEnd);
+      const image_data = canvas.toDataURL("image/png");
 
-        await fetchJSON(`${API}/snapshot`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image_data }),
-        });
-      }
-
-      // Saved as planning_files rows -- they now show up in the same
-      // Markup Sidebar as hand-drawn Planning pages, where an instructor
-      // can open and annotate them the same way they already do for those.
-      notify(`Shared ${pages} page${pages > 1 ? "s" : ""} for feedback! Your instructor can review and annotate ${pages > 1 ? "them" : "it"} in the Markup tool.`);
-    } catch (e) {
-      notify(e.message, true);
-    } finally {
-      shareBtn.disabled = false;
+      await fetchJSON(`${API}/snapshot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_data }),
+      });
     }
+    // Saved as planning_files rows -- they show up in the same Markup
+    // Sidebar as hand-drawn Planning pages, where an instructor can open
+    // and annotate them the same way they already do for those.
   }
 
   async function load() {
-    state = await fetchJSON(API);
+    // Fetch first, mutate second: if the request fails, the in-memory
+    // sheet (including anything typed but not yet Saved) is left untouched
+    // rather than being blanked and then left blank for the next Save.
+    const next = await fetchJSON(API);
+    state = next;
     rowData = {};
     for (const r of state.rows) rowData[r.frame] = r.data;
 
@@ -577,12 +617,13 @@
     manualFrames = new Set();
 
     document.getElementById("xsheet-assignment-name").textContent = state.assignment_name;
+    const frameHint = document.getElementById("xsheet-frame-hint");
+    if (frameHint) frameHint.classList.toggle("hidden", !state.is_owner);
     renderAddColumnBar();
     renderTable();
   }
 
   document.getElementById("xsheet-save-btn").addEventListener("click", save);
-  document.getElementById("xsheet-share-btn").addEventListener("click", shareForFeedback);
   document.getElementById("xsheet-add-frames-btn").addEventListener("click", () => {
     const input = document.getElementById("xsheet-add-frames-count");
     const n = parseInt(input.value, 10);
@@ -594,5 +635,194 @@
     for (let f = start; f < start + n; f++) manualFrames.add(f);
     renderTable();
   });
-  load().catch(e => notify(e.message, true));
+
+  // Insert N blank frames after a given frame, shifting every later frame's
+  // row data and symbol spans down by N. Purely a local remap -- persisted
+  // on the next Save like any other edit.
+  function insertFrames(afterFrame, count) {
+    const shift = f => (f > afterFrame ? f + count : f);
+
+    const shifted = {};
+    for (const [frame, cols] of Object.entries(rowData)) {
+      shifted[shift(Number(frame))] = cols;
+    }
+    rowData = shifted;
+
+    symbols = symbols.map(s => ({
+      ...s,
+      frame_start: shift(s.frame_start),
+      frame_end: shift(s.frame_end),
+    }));
+
+    const shiftedManual = new Set();
+    for (const f of manualFrames) shiftedManual.add(shift(f));
+    // The freshly opened gap frames persist as blank rows so the inserted
+    // range survives a reload even before anything is typed into it.
+    for (let i = 1; i <= count; i++) shiftedManual.add(afterFrame + i);
+    manualFrames = shiftedManual;
+
+    renderTable();
+  }
+
+  // Remove one frame, pulling every later frame (and symbol span) up by 1.
+  // Destructive of whatever was on that frame, so callers confirm first.
+  function deleteFrame(frame) {
+    const pulled = {};
+    for (const [f, cols] of Object.entries(rowData)) {
+      const n = Number(f);
+      if (n === frame) continue;
+      pulled[n > frame ? n - 1 : n] = cols;
+    }
+    rowData = pulled;
+
+    symbols = symbols
+      .map(s => {
+        let { frame_start, frame_end } = s;
+        if (frame_start > frame) frame_start -= 1;
+        if (frame_end >= frame) frame_end -= 1;
+        return { ...s, frame_start, frame_end };
+      })
+      .filter(s => s.frame_end >= s.frame_start);
+
+    const pulledManual = new Set();
+    for (const f of manualFrames) {
+      if (f === frame) continue;
+      pulledManual.add(f > frame ? f - 1 : f);
+    }
+    manualFrames = pulledManual;
+
+    renderTable();
+  }
+
+  // --- Right-click "insert / delete frames" menu (Frame column only) ---
+  const frameMenu = document.getElementById("xsheet-context-menu");
+  let frameMenuFrame = null; // frame the currently-open menu acts on
+
+  function closeFrameMenu() {
+    if (frameMenu) frameMenu.classList.add("hidden");
+    frameMenuFrame = null;
+  }
+
+  function promptCount(verb) {
+    const raw = prompt(`How many frames to ${verb}?`, "1");
+    if (raw == null) return null;
+    const n = parseInt(raw, 10);
+    if (!Number.isInteger(n) || n < 1) {
+      notify("Enter a whole number of 1 or more.", true);
+      return null;
+    }
+    return n;
+  }
+
+  const FRAME_MENU_ITEMS = [
+    { label: "Insert 1 frame above", run: (f) => insertFrames(f - 1, 1) },
+    { label: "Insert 1 frame below", run: (f) => insertFrames(f, 1) },
+    { label: "Insert frames above…", run: (f) => { const n = promptCount("insert"); if (n) insertFrames(f - 1, n); } },
+    { label: "Insert frames below…", run: (f) => { const n = promptCount("insert"); if (n) insertFrames(f, n); } },
+    { divider: true },
+    {
+      label: "Delete this frame", danger: true,
+      run: (f) => {
+        if (!confirm(`Delete frame ${f}? Anything on it is removed and every later frame shifts up by one.`)) return;
+        deleteFrame(f);
+        notify(`Deleted frame ${f}. Save to keep the change.`);
+      },
+    },
+  ];
+
+  function openFrameMenu(frame, x, y) {
+    if (!frameMenu) return;
+    frameMenuFrame = frame;
+
+    frameMenu.innerHTML = "";
+    for (const item of FRAME_MENU_ITEMS) {
+      if (item.divider) {
+        const hr = document.createElement("div");
+        hr.className = "my-1 border-t border-gray-600";
+        frameMenu.appendChild(hr);
+        continue;
+      }
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = item.label;
+      btn.className = "block w-full px-3 py-1.5 text-left hover:bg-gray-700 " +
+        (item.danger ? "text-red-400 hover:text-red-300" : "");
+      btn.addEventListener("click", () => {
+        const f = frameMenuFrame;
+        closeFrameMenu();
+        item.run(f);
+      });
+      frameMenu.appendChild(btn);
+    }
+
+    // Show off-screen first to measure, then clamp inside the viewport.
+    frameMenu.classList.remove("hidden");
+    frameMenu.style.left = "0px";
+    frameMenu.style.top = "0px";
+    const rect = frameMenu.getBoundingClientRect();
+    const left = Math.min(x, window.innerWidth - rect.width - 4);
+    const top = Math.min(y, window.innerHeight - rect.height - 4);
+    frameMenu.style.left = `${Math.max(4, left)}px`;
+    frameMenu.style.top = `${Math.max(4, top)}px`;
+  }
+
+  document.addEventListener("click", (e) => {
+    if (frameMenu && !frameMenu.contains(e.target)) closeFrameMenu();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeFrameMenu(); });
+  window.addEventListener("scroll", closeFrameMenu, true);
+  window.addEventListener("resize", closeFrameMenu);
+
+  // Guarded: if a cached/older xsheet.html is served alongside this script,
+  // these elements won't exist -- skip wiring rather than throwing and
+  // breaking the whole sheet (Save, Add Frames, load()).
+  const insertBtn = document.getElementById("xsheet-insert-frames-btn");
+  if (insertBtn) insertBtn.addEventListener("click", () => {
+    const count = parseInt(document.getElementById("xsheet-insert-count").value, 10);
+    const afterFrame = parseInt(document.getElementById("xsheet-insert-after").value, 10);
+    const minAfter = (state.frame_start || 1) - 1;
+    if (!Number.isInteger(count) || count < 1) {
+      notify("Enter a valid number of frames to insert.", true);
+      return;
+    }
+    if (!Number.isInteger(afterFrame) || afterFrame < minAfter || afterFrame > effectiveRowCount()) {
+      notify(`Enter a frame between ${minAfter} and ${effectiveRowCount()} to insert after.`, true);
+      return;
+    }
+    insertFrames(afterFrame, count);
+    notify(`Inserted ${count} frame${count > 1 ? "s" : ""} after frame ${afterFrame}. Save to keep the change.`);
+  });
+
+  // Loaded inside a hidden iframe by the dashboard's Submit Planning flow
+  // (shareXsheetForFeedback() in dashboard_individual_assignments.js) to
+  // run the same capture Share-for-Feedback used to do, without needing a
+  // visible page or a manual click. Report success/failure back to whoever
+  // embedded us so that flow knows whether to proceed with the submit.
+  const autoShare = new URLSearchParams(window.location.search).get("autoShare") === "1";
+
+  load()
+    .then(async () => {
+      if (!autoShare) return;
+      try {
+        await shareForFeedback();
+        window.parent.postMessage(
+          { type: "xsheet-auto-share", ok: true, individualAssignmentId },
+          window.location.origin
+        );
+      } catch (e) {
+        window.parent.postMessage(
+          { type: "xsheet-auto-share", ok: false, error: e.message, individualAssignmentId },
+          window.location.origin
+        );
+      }
+    })
+    .catch(e => {
+      notify(e.message, true);
+      if (autoShare) {
+        window.parent.postMessage(
+          { type: "xsheet-auto-share", ok: false, error: e.message, individualAssignmentId },
+          window.location.origin
+        );
+      }
+    });
 })();

@@ -12,10 +12,6 @@
               class="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
         Save
       </button>
-      <button id="xsheet-share-btn" type="button"
-              class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
-        Share for Feedback
-      </button>
     </div>
   </div>
 
@@ -28,13 +24,34 @@
     </table>
   </div>
 
-  <div class="flex items-center gap-2 mt-3 text-sm">
+  <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
     <input id="xsheet-add-frames-count" type="number" min="1" value="24"
            class="bg-gray-700 text-white rounded px-2 py-1 w-20" />
     <button id="xsheet-add-frames-btn" type="button"
             class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded">
       + Add Frames at End
     </button>
+
+    <span class="text-gray-500 mx-2">|</span>
+
+    <label class="text-gray-400">Insert</label>
+    <input id="xsheet-insert-count" type="number" min="1" value="1"
+           class="bg-gray-700 text-white rounded px-2 py-1 w-16" />
+    <label class="text-gray-400">frame(s) after frame</label>
+    <input id="xsheet-insert-after" type="number" min="0" value="1"
+           class="bg-gray-700 text-white rounded px-2 py-1 w-20" />
+    <button id="xsheet-insert-frames-btn" type="button"
+            class="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded">
+      Insert Frames
+    </button>
+  </div>
+
+  <p id="xsheet-frame-hint" class="mt-2 text-xs text-gray-500 hidden">
+    Tip: right-click a frame number to insert or delete frames at that spot.
+  </p>
+
+  <div id="xsheet-context-menu"
+       class="hidden fixed z-50 min-w-[13rem] rounded-md border border-gray-600 bg-gray-800 py-1 text-sm text-gray-100 shadow-xl">
   </div>
 
 </div>
