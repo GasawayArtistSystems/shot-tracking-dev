@@ -223,8 +223,8 @@ REM          machines have a stale copy there (built for a different Maya
 REM          year); Maya finds it by name first and dies with "specified
 REM          procedure could not be found". Step 12 above can even mirror
 REM          it back from the share, so this runs AFTER step 12.
-REM          ** Also delete it from %SRC%\plug-ins so the mirror stops
-REM             carrying it. **
+REM          (%SRC%\plug-ins verified clean of it 2026-09-30; keep it
+REM          that way or the mirror will carry it again.)
 REM       2. Copy the CURRENT plug-in from ProRigs' ProgramData install
 REM          into Maya's own bin\plug-ins - a default-trusted location and
 REM          the exact path launcher.py loads at OPEN time.

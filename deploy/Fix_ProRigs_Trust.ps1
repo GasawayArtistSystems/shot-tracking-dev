@@ -25,11 +25,12 @@
     DOES NOT TOUCH: C:\ProgramData\ProRigs\ (licence, machine ID, config),
     the ProRigs.mod files, or any Maya file other than the added .mll.
 
-    IMPORTANT: also delete the stale plug-in from the DEPLOY SHARE
-        \\artscifs1.ad.uc.edu\Departments\GAA\UC_GAA\plug-ins\PRLicensePlugin.mll
-    or the installer's /MIR copy will put it back on every machine. This
-    script cannot do that for you (it may not have write access to the share);
-    it only reports whether the share copy is present.
+    DEPLOY SHARE: the stale plug-in has been removed from
+        \\artscifs1.ad.uc.edu\Departments\GAA\UC_GAA\plug-ins\
+    (verified clean 2026-09-30). The check below stays as a guard: if a
+    PRLicensePlugin.mll ever reappears there, the installer's /MIR copy would
+    put it back on every machine, so this script warns. It does not delete the
+    share copy itself (it may not have write access to the share).
 
     USAGE:  right-click Fix_ProRigs_Trust.bat -> Run as administrator
     Safe to re-run.
@@ -75,7 +76,7 @@ if (Test-Path $share) {
     Write-Host ""
     Write-Host " *** ACTION NEEDED: a stale PRLicensePlugin.mll is on the deploy share:"
     Write-Host "       $share"
-    Write-Host "     Delete it there too, or the installer's /MIR will restore it."
+    Write-Host "     It should not be there - delete it, or the installer's /MIR will restore it."
 }
 Write-Host ""
 
