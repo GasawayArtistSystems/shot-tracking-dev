@@ -2985,36 +2985,72 @@ export default function MarkupTool() {
                   return;
                 }
 
+                // The server remembers the last Canvas gradebook CSV uploaded
+                // for this class -- offer to reuse it rather than asking for
+                // the same file every time.
+                let saved = null;
+                try {
+                  const infoRes = await fetch(
+                    `${API_BASE_URL}/review/canvas_template_info?class=${encodeURIComponent(className)}`
+                  );
+                  const info = await infoRes.json();
+                  if (info.exists) saved = info;
+                } catch (e) {}
+
+                let useSaved = false;
+                if (saved) {
+                  const esc = (s) => String(s).replace(/</g, "&lt;");
+                  const savedDate = new Date(saved.saved_at);
+                  const savedLabel = isNaN(savedDate) ? saved.saved_at : savedDate.toLocaleString();
+                  const choice = await Swal.fire({
+                    title: "Canvas gradebook CSV",
+                    html:
+                      `Use the saved gradebook CSV for <b>${esc(className)}</b>?<br><br>` +
+                      `<b>${esc(saved.filename)}</b><br>uploaded ${esc(savedLabel)}<br><br>` +
+                      "<i>Upload a new one if you've added assignments or students in Canvas since then.</i>",
+                    showCancelButton: true,
+                    confirmButtonText: "Use saved file",
+                    showDenyButton: true,
+                    denyButtonText: "Upload updated file",
+                  });
+                  if (choice.isDismissed) return;
+                  useSaved = choice.isConfirmed;
+                }
+
                 // Ask for the Canvas gradebook CSV so the export lines up
                 // exactly (column names + assignment ids) for re-import.
-                const { value: file } = await Swal.fire({
-                  title: "Canvas gradebook CSV",
-                  html:
-                    "Upload the gradebook CSV you exported from Canvas for " +
-                    `<b>${className}</b>. Grades are written into a copy of that ` +
-                    "file so the columns line up for re-import.<br><br>" +
-                    "<i>Skip to get a plain export with generated column names.</i>",
-                  input: "file",
-                  inputAttributes: { accept: ".csv,text/csv" },
-                  showCancelButton: true,
-                  confirmButtonText: "Export",
-                  showDenyButton: true,
-                  denyButtonText: "Skip (plain export)",
-                });
-
-                const usePlain = file === false; // Deny button
-                if (file === undefined) return; // Cancel
+                let file = null;
+                if (!useSaved) {
+                  const upload = await Swal.fire({
+                    title: "Canvas gradebook CSV",
+                    html:
+                      "Upload the gradebook CSV you exported from Canvas for " +
+                      `<b>${className}</b>. Grades are written into a copy of that ` +
+                      "file so the columns line up for re-import. The file is " +
+                      "remembered for next time.<br><br>" +
+                      "<i>Skip to get a plain export with generated column names.</i>",
+                    input: "file",
+                    inputAttributes: { accept: ".csv,text/csv" },
+                    showCancelButton: true,
+                    confirmButtonText: "Export",
+                    showDenyButton: true,
+                    denyButtonText: "Skip (plain export)",
+                  });
+                  if (upload.isDismissed) return; // Cancel
+                  file = upload.isConfirmed ? upload.value : null; // Deny = plain
+                }
 
                 const filename = `${className}.csv`;
                 let fetchPromise;
-                if (usePlain || !file) {
+                if (!useSaved && !file) {
                   fetchPromise = fetch(
                     `${API_BASE_URL}/review/export_canvas_csv?class=${encodeURIComponent(className)}`
                   );
                 } else {
                   const fd = new FormData();
                   fd.append("class", className);
-                  fd.append("template", file);
+                  if (useSaved) fd.append("use_saved", "1");
+                  else fd.append("template", file);
                   fetchPromise = fetch(`${API_BASE_URL}/review/export_canvas_csv`, {
                     method: "POST",
                     body: fd,

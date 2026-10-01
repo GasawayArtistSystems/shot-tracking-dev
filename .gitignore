@@ -67,6 +67,7 @@ Working/
 # =========================
 out/
 temp_exports/
+canvas_templates/
 
 # =========================
 # Student / Roster data (NEVER commit)

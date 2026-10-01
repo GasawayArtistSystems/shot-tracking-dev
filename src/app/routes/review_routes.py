@@ -2762,12 +2762,54 @@ def _match_canvas_column(col_norm, alias_map):
     return None
 
 
+# The Canvas gradebook CSV an instructor uploads as the export template is
+# kept per class, so the next export can reuse it instead of asking for the
+# same file again. It holds student names/ids -- the folder is gitignored.
+CANVAS_TEMPLATE_DIR = os.path.join(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
+    "canvas_templates",
+)
+
+
+def _canvas_template_paths(class_filter):
+    """Return (csv_path, meta_path) for a class's saved Canvas template."""
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", class_filter or "").strip("_.") or "class"
+    return (
+        os.path.join(CANVAS_TEMPLATE_DIR, safe + ".csv"),
+        os.path.join(CANVAS_TEMPLATE_DIR, safe + ".json"),
+    )
+
+
+@review_routes.route("/canvas_template_info", methods=["GET"])
+def canvas_template_info():
+    """Report whether a Canvas gradebook CSV is saved for a class."""
+    csv_path, meta_path = _canvas_template_paths(request.args.get("class"))
+    if not os.path.isfile(csv_path):
+        return jsonify({"exists": False})
+    meta = {}
+    try:
+        with open(meta_path, encoding="utf-8") as f:
+            meta = stdjson.load(f)
+    except (OSError, ValueError):
+        pass
+    saved_at = meta.get("saved_at") or datetime.fromtimestamp(
+        os.path.getmtime(csv_path)
+    ).isoformat(timespec="seconds")
+    return jsonify({
+        "exists": True,
+        "filename": meta.get("filename") or os.path.basename(csv_path),
+        "saved_at": saved_at,
+    })
+
+
 @review_routes.route("/export_canvas_csv", methods=["GET", "POST"])
 def export_canvas_csv():
     """Export grades as a Canvas-importable CSV.
 
     POST (preferred): multipart form with a `template` file -- the gradebook CSV
-    exported from Canvas. The response reuses that file's exact header and
+    exported from Canvas -- or `use_saved=1` to reuse the template last
+    uploaded for this class (an uploaded template is saved for next time).
+    The response reuses that file's exact header and
     Points Possible rows (so every column, including the `(id)` suffix Canvas
     matches on, lines up) and only fills in the columns we can map to internal
     grades. Unmatched assignment columns are reported in the
@@ -2799,14 +2841,39 @@ def export_canvas_csv():
         return resp
 
     # ---- Template-aligned mode ---------------------------------------------
+    template_bytes = None
+    csv_path, meta_path = _canvas_template_paths(class_filter)
     if template_file is not None:
-        raw = template_file.read().decode("utf-8-sig", errors="replace")
+        template_bytes = template_file.read()
+    elif request.method == "POST" and request.form.get("use_saved"):
+        try:
+            with open(csv_path, "rb") as f:
+                template_bytes = f.read()
+        except OSError:
+            return jsonify({"error": "No saved Canvas gradebook CSV for this class"}), 404
+
+    if template_bytes is not None:
+        raw = template_bytes.decode("utf-8-sig", errors="replace")
         reader = list(csv.reader(io.StringIO(raw)))
         if len(reader) < 2:
             return jsonify({"error": "Template CSV has no header / Points Possible rows"}), 400
 
         header = reader[0]
         points_row = reader[1]
+
+        # Remember a freshly uploaded template (only once it parses).
+        if template_file is not None:
+            try:
+                os.makedirs(CANVAS_TEMPLATE_DIR, exist_ok=True)
+                with open(csv_path, "wb") as f:
+                    f.write(template_bytes)
+                with open(meta_path, "w", encoding="utf-8") as f:
+                    stdjson.dump({
+                        "filename": os.path.basename(template_file.filename or ""),
+                        "saved_at": datetime.now().isoformat(timespec="seconds"),
+                    }, f)
+            except OSError:
+                logger.exception("Could not save Canvas template for %r", class_filter)
 
         try:
             login_idx = next(
