@@ -103,7 +103,8 @@
                             data-start-date="{{ assignment.start_date }}"
                             data-completion-date="{{ assignment.completion_date }}"
                             data-frame-start="{{ assignment.frame_start if assignment.frame_start is not none else '' }}"
-                            data-frame-end="{{ assignment.frame_end if assignment.frame_end is not none else '' }}">
+                            data-frame-end="{{ assignment.frame_end if assignment.frame_end is not none else '' }}"
+                            data-xsheet-enabled="{{ 1 if assignment.xsheet_enabled else 0 }}">
                             Edit
                         </button>
                         <button class="bg-red-200 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
@@ -173,6 +174,17 @@
                     <input type="number" class="w-full border rounded-lg p-2 text-gray-900 focus:ring focus:ring-blue-300"
                         id="edit-frame-end" name="frame_end">
                 </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="flex items-center gap-2 text-white font-semibold">
+                    <input type="checkbox" id="edit-xsheet-enabled" name="xsheet_enabled" class="h-4 w-4">
+                    Optional X-Sheet
+                </label>
+                <p class="text-xs text-gray-300 mt-1">
+                    Gives students an X-sheet for this assignment even though it has no Planning step.
+                    Not required or graded.
+                </p>
             </div>
 
             <div class="flex justify-between">

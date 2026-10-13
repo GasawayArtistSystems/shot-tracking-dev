@@ -91,6 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const completionDate = event.target.getAttribute("data-completion-date");
         const frameStart = event.target.getAttribute("data-frame-start");
         const frameEnd = event.target.getAttribute("data-frame-end");
+        const xsheetEnabled = event.target.getAttribute("data-xsheet-enabled");
 
         document.getElementById("edit-assignment-id").value = assignmentId;
         document.getElementById("edit-assignment-name").value = assignmentName;
@@ -98,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("edit-completion-date").value = completionDate;
         document.getElementById("edit-frame-start").value = frameStart || "";
         document.getElementById("edit-frame-end").value = frameEnd || "";
+        document.getElementById("edit-xsheet-enabled").checked = xsheetEnabled === "1";
 
         document.getElementById("editAssignmentModal").classList.remove("hidden");
     });
@@ -172,6 +174,7 @@ function submitEditForm(event) {
     const completionDate = document.getElementById("edit-completion-date").value;
     const frameStart = document.getElementById("edit-frame-start").value;
     const frameEnd = document.getElementById("edit-frame-end").value;
+    const xsheetEnabled = document.getElementById("edit-xsheet-enabled").checked;
 
     fetch(`/assignments/assignments/${assignmentId}/edit`, {
         method: "POST",
@@ -181,7 +184,8 @@ function submitEditForm(event) {
             start_date: startDate,
             completion_date: completionDate,
             frame_start: frameStart || null,
-            frame_end: frameEnd || null
+            frame_end: frameEnd || null,
+            xsheet_enabled: xsheetEnabled
         }),
     })
         .then(response => {
@@ -330,7 +334,8 @@ window.updateAssignmentsTable = function (assignments) {
                     data-start-date="${assignment.start_date}"
                     data-completion-date="${assignment.completion_date}"
                     data-frame-start="${assignment.frame_start ?? ''}"
-                    data-frame-end="${assignment.frame_end ?? ''}">
+                    data-frame-end="${assignment.frame_end ?? ''}"
+                    data-xsheet-enabled="${assignment.xsheet_enabled ? 1 : 0}">
                     Edit
                 </button><br>
                 <button class="bg-red-800 hover:bg-red-600 text-white px-3 py-1 rounded-lg"
