@@ -55,6 +55,18 @@ def _resolve_planning_step(db, assignment_id):
     """, (assignment_id,)).fetchone()
 
 
+def _xsheet_allowed(db, assignment_id):
+    """Planning-step assignments always get the X-sheet; anything else only
+    when the instructor turned on the optional X-sheet for that assignment
+    (assignments.xsheet_enabled, e.g. the Intermediate Talker)."""
+    if _resolve_planning_step(db, assignment_id):
+        return True
+    row = db.execute(
+        "SELECT xsheet_enabled FROM assignments WHERE id = ?", (assignment_id,)
+    ).fetchone()
+    return bool(row and row["xsheet_enabled"])
+
+
 def _get_owning_assignment(db, individual_assignment_id):
     return db.execute("""
         SELECT ia.id, ia.assignment_id, ia.users_id, ia.frame_start, ia.frame_end,
@@ -112,8 +124,8 @@ def get_xsheet(individual_assignment_id):
         return jsonify({"error": f"individual_assignment_id {individual_assignment_id} not found"}), 404
     if not _check_owner_or_staff(ia_row):
         return jsonify({"error": "You can only view your own X-sheet"}), 403
-    if not _resolve_planning_step(db, ia_row["assignment_id"]):
-        return jsonify({"error": "This assignment has no Planning step"}), 400
+    if not _xsheet_allowed(db, ia_row["assignment_id"]):
+        return jsonify({"error": "This assignment has no X-sheet"}), 400
 
     _ensure_default_columns(db, individual_assignment_id)
 
@@ -183,8 +195,8 @@ def save_xsheet(individual_assignment_id):
     session_user_id = session.get("user_id")
     if str(ia_row["users_id"]) != str(session_user_id):
         return jsonify({"error": "Only the owning student can edit this X-sheet"}), 403
-    if not _resolve_planning_step(db, ia_row["assignment_id"]):
-        return jsonify({"error": "This assignment has no Planning step"}), 400
+    if not _xsheet_allowed(db, ia_row["assignment_id"]):
+        return jsonify({"error": "This assignment has no X-sheet"}), 400
 
     # Save must work even if the client never GET-loaded the sheet first
     # (category-based validation below depends on columns existing).
@@ -280,8 +292,8 @@ def update_xsheet_columns(individual_assignment_id):
     session_user_id = session.get("user_id")
     if str(ia_row["users_id"]) != str(session_user_id):
         return jsonify({"error": "Only the owning student can edit columns"}), 403
-    if not _resolve_planning_step(db, ia_row["assignment_id"]):
-        return jsonify({"error": "This assignment has no Planning step"}), 400
+    if not _xsheet_allowed(db, ia_row["assignment_id"]):
+        return jsonify({"error": "This assignment has no X-sheet"}), 400
 
     _ensure_default_columns(db, individual_assignment_id)
 
@@ -380,8 +392,8 @@ def create_xsheet_snapshot(individual_assignment_id):
         return jsonify({"error": f"individual_assignment_id {individual_assignment_id} not found"}), 404
     if not _check_owner_or_staff(ia_row):
         return jsonify({"error": "You can only share your own X-sheet for feedback"}), 403
-    if not _resolve_planning_step(db, ia_row["assignment_id"]):
-        return jsonify({"error": "This assignment has no Planning step"}), 400
+    if not _xsheet_allowed(db, ia_row["assignment_id"]):
+        return jsonify({"error": "This assignment has no X-sheet"}), 400
 
     data = request.get_json(force=True, silent=True) or {}
     image_data = data.get("image_data", "")

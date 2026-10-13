@@ -921,6 +921,24 @@
           }
         });
 
+        // 📝 Optional X-Sheet — for assignments with no Planning step whose
+        // instructor turned the X-sheet on anyway (e.g. Intermediate
+        // Talker). Not part of the assignment, so no checklist/submit --
+        // just a link to the same sheet Submit Planning uses.
+        const hasPlanningStep = steps.some(s => s.step_name === "Planning");
+        if (!hasPlanningStep && steps[0]?.xsheet_enabled) {
+          const xsheetRow = document.createElement("div");
+          xsheetRow.classList.add("mt-1", "mb-1");
+          xsheetRow.innerHTML = `
+            <a href="/xsheet/${individual_assignment_id}/view" target="_blank" rel="noopener noreferrer"
+               class="block w-full text-center text-xs bg-gray-700 hover:bg-gray-600 text-white
+                      border border-gray-500 rounded px-2 py-2 transition">
+              📝 X-Sheet (optional)
+            </a>
+          `;
+          stepsPanel.appendChild(xsheetRow);
+        }
+
         // Reviews — aggregated across all steps for this assignment (the
         // card no longer has one row per step, so no ?step= filter here).
         const reviewGroup = card.querySelector(`#${reviewGroupId}`);

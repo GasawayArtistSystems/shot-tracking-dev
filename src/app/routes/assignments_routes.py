@@ -142,6 +142,7 @@ def add_assignment():
     selected_students = request.form.getlist("selected_students")
     frame_start = data.get('frame_start') or None
     frame_end = data.get('frame_end') or None
+    xsheet_enabled = data.get('xsheet_enabled') == 'on'
 
     if not all([class_id, name, start_date, completion_date, parent_step_id, progress_step_ids]):
         context = get_assignment_form_data(class_id)
@@ -159,7 +160,8 @@ def add_assignment():
             "assign_option": assign_option,
             "selected_students": selected_students,
             "frame_start": frame_start,
-            "frame_end": frame_end
+            "frame_end": frame_end,
+            "xsheet_enabled": xsheet_enabled
         })
         return redirect(url_for("assignments.view_assignments", class_id=class_id, success=True))
 
@@ -202,7 +204,7 @@ def api_view_assignments(class_id):
 
     db = get_db()
     query = """
-        SELECT id, name, start_date, completion_date, progress_step_id, parent_step_id, frame_start, frame_end
+        SELECT id, name, start_date, completion_date, progress_step_id, parent_step_id, frame_start, frame_end, xsheet_enabled
         FROM assignments
         WHERE class_id = ?
     """
@@ -744,6 +746,7 @@ def edit_assignment(assignment_id):
         completion_date = data.get("completion_date")
         frame_start = data.get("frame_start") or None
         frame_end = data.get("frame_end") or None
+        xsheet_enabled = bool(data.get("xsheet_enabled"))
 
         # Validate fields
         if not all([name, start_date, completion_date]):
@@ -751,7 +754,7 @@ def edit_assignment(assignment_id):
             return jsonify({"success": False, "error": "Missing required fields"}), 400
 
         # Call function to update the database
-        update_assignment(assignment_id, name, start_date, completion_date, frame_start, frame_end)
+        update_assignment(assignment_id, name, start_date, completion_date, frame_start, frame_end, xsheet_enabled)
 
         print(f"[OK] Assignment {assignment_id} updated successfully!")
         return jsonify({"success": True, "message": "Assignment updated successfully!"})

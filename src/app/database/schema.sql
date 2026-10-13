@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS assignments (
     frame_start INTEGER,
     frame_end INTEGER,
     max_points INTEGER,
+    xsheet_enabled INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (class_id) REFERENCES classes (id)
 );
 

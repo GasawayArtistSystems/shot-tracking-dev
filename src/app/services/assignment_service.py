@@ -196,6 +196,7 @@ def get_user_assignments_by_semester(user_id, semester_id):
             ia.assignment_id,
             a.name AS assignment_name,
             a.parent_step_id,
+            a.xsheet_enabled,
             c.id AS class_id,
             c.class_name,
             ia.completion_date,
@@ -360,7 +361,8 @@ def get_user_assignments_by_semester(user_id, semester_id):
                 "step_id": step_id,
                 "dropdown_options": dropdown_options,
                 "latest_version": latest_version,
-                "current_file_step": current_file_step
+                "current_file_step": current_file_step,
+                "xsheet_enabled": bool(row["xsheet_enabled"])
             })
 
     return {"todo": results}

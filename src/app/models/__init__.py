@@ -277,7 +277,7 @@ def get_assignments(class_id):
 def get_assignments_by_class(class_id, conn):
     """Fetch all assignments for a given class."""
     query = """
-        SELECT DISTINCT id, name, description, start_date, completion_date, frame_start, frame_end
+        SELECT DISTINCT id, name, description, start_date, completion_date, frame_start, frame_end, xsheet_enabled
         FROM assignments
         WHERE class_id = ?
     """
@@ -298,10 +298,11 @@ def add_assignment_to_db(assignment_data):
         # live join, so it stays put even if the assignment is edited later.
         frame_start = assignment_data.get("frame_start") or None
         frame_end = assignment_data.get("frame_end") or None
+        xsheet_enabled = 1 if assignment_data.get("xsheet_enabled") else 0
 
         cursor.execute("""
-            INSERT INTO assignments (class_id, name, start_date, completion_date, parent_step_id, progress_step_id, max_points, frame_start, frame_end)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO assignments (class_id, name, start_date, completion_date, parent_step_id, progress_step_id, max_points, frame_start, frame_end, xsheet_enabled)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             assignment_data["class_id"],
             assignment_data["name"],
@@ -311,7 +312,8 @@ def add_assignment_to_db(assignment_data):
             assignment_data["progress_step_ids"][0],
             max_points,
             frame_start,
-            frame_end
+            frame_end,
+            xsheet_enabled
         ))
         assignment_id = cursor.lastrowid
         print(f"[OK] Assignment {assignment_id} created successfully.")
@@ -532,7 +534,7 @@ def get_assignment_name_by_id(assignment_id):
     conn = get_db()
     return conn.execute(query, (assignment_id,)).fetchone()['name']
 
-def update_assignment(assignment_id, name, start_date, completion_date, frame_start=None, frame_end=None):
+def update_assignment(assignment_id, name, start_date, completion_date, frame_start=None, frame_end=None, xsheet_enabled=False):
     """Update an assignment and its associated individual assignments."""
     conn = get_db()
     try:
@@ -541,9 +543,9 @@ def update_assignment(assignment_id, name, start_date, completion_date, frame_st
         # [OK] Update the main assignment
         cursor.execute("""
             UPDATE assignments
-            SET name = ?, start_date = ?, completion_date = ?, frame_start = ?, frame_end = ?
+            SET name = ?, start_date = ?, completion_date = ?, frame_start = ?, frame_end = ?, xsheet_enabled = ?
             WHERE id = ?
-        """, (name, start_date, completion_date, frame_start, frame_end, assignment_id))
+        """, (name, start_date, completion_date, frame_start, frame_end, 1 if xsheet_enabled else 0, assignment_id))
 
         # [OK] Update individual assignments linked to this assignment
         cursor.execute("""

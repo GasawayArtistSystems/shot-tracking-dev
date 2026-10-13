@@ -564,7 +564,7 @@ def copy_assignments_from_class(source_class_id, target_class_id):
     db = get_db()
 
     source_assignments = db.execute("""
-        SELECT a.name, a.parent_step_id, a.max_points, a.frame_start, a.frame_end,
+        SELECT a.name, a.parent_step_id, a.max_points, a.frame_start, a.frame_end, a.xsheet_enabled,
                GROUP_CONCAT(aps.step_id) AS step_ids
         FROM assignments a
         JOIN assignment_progress_steps aps ON aps.assignment_id = a.id
@@ -587,6 +587,7 @@ def copy_assignments_from_class(source_class_id, target_class_id):
             "assign_option": "none",
             "selected_students": [],
             "frame_start": a["frame_start"],
-            "frame_end": a["frame_end"]
+            "frame_end": a["frame_end"],
+            "xsheet_enabled": a["xsheet_enabled"]
         })
 
