@@ -9,15 +9,20 @@
 # Intermediate class, since that's what prompted it. Anything else is
 # toggled from the New/Edit Assignment forms.
 #
-# Run once, from the src/ directory:
-#   python scripts/migrate_add_assignment_xsheet_enabled.py
+# Run once (from any folder -- the DB path is resolved from this file):
+#   python src/scripts/migrate_add_assignment_xsheet_enabled.py
 
+import os
 import sqlite3
 
-DB_PATH = "app/database/app.db"  # Update path if needed
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "database", "app.db")
 
 
 def migrate():
+    # sqlite3.connect would silently create an empty DB at a wrong path.
+    if not os.path.exists(DB_PATH):
+        print(f"Database not found at {os.path.abspath(DB_PATH)}")
+        return
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
