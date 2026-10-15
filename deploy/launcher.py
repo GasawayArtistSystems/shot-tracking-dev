@@ -357,19 +357,23 @@ def _mel_launch(python_code):
     is given the full path in an escaped MEL string; build the payload by
     concatenation rather than an f-string so the three quote levels
     (mel_command -> evalDeferred string -> catchQuiet argument) stay legible.
+
+    Each catchQuiet wraps its command in eval(): catchQuiet takes an
+    expression, so handing it a bare string literal just evaluates the
+    string and never runs the command inside it.
     """
     bs, dq = "\\", '"'
     load = (
-        "catchQuiet(" + bs + dq
+        "catchQuiet(eval(" + bs + dq
         + "loadPlugin -quiet " + bs + bs + bs + dq
         + PRORIGS_MLL
-        + bs + bs + bs + dq + bs + dq + "); "
+        + bs + bs + bs + dq + bs + dq + ")); "
     )
     recent = (
-        "catchQuiet(" + bs + dq
+        "catchQuiet(eval(" + bs + dq
         + "python(" + bs + bs + bs + dq
         + RECENT_FILES_PY
-        + bs + bs + bs + dq + ")" + bs + dq + "); "
+        + bs + bs + bs + dq + ")" + bs + dq + ")); "
     )
     inner = load + recent + "python(" + bs + dq + python_code + bs + dq + ")"
     return "evalDeferred(" + dq + inner + dq + ")"
