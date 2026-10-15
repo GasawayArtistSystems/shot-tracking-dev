@@ -851,13 +851,22 @@ def _main_blank_scene(params):
     """
     shottracker://open?action=blank_scene&login_name=bariann
 
-    No context lookup, no session file, no Assignments/Assets -command --
-    just launches Maya with an empty scene. login_name is accepted only
-    for log-line parity with the other actions; it isn't used to launch.
+    No context lookup, no session file, no Assignments/Assets flow --
+    just an empty scene. login_name is accepted only for log-line parity
+    with the other actions; it isn't used to launch.
+
+    Still goes through the same -command setup as every other launch
+    (C:/Cincy/scripts on sys.path, ProRigs plug-in loaded). A bare
+    Popen([MAYA_EXE]) skipped both, so the GAA shelf buttons' Python
+    imports failed and any rig referenced in came in dead.
     """
     login_name = params.get("login_name", "unknown")
     log(f"action=blank_scene login_name={login_name}")
-    subprocess.Popen([MAYA_EXE])
+    python_code = (
+        "import sys; "
+        "sys.path.insert(0, 'C:/Cincy/scripts')"
+    )
+    subprocess.Popen([MAYA_EXE, "-command", _mel_launch(python_code)])
     log("Maya launch initiated (blank scene)")
 
 
