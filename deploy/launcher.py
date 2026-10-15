@@ -330,12 +330,19 @@ PRORIGS_MLL = os.path.join(
     os.path.dirname(MAYA_EXE), "plug-ins", "PRLicensePlugin.mll"
 ).replace("\\", "/")
 
+# Single quotes only -- this sits three quote levels deep in _mel_launch.
+RECENT_FILES_PY = (
+    "import sys; sys.path.insert(0, 'C:/Cincy/scripts'); "
+    "import GAARecentFiles; GAARecentFiles.install()"
+)
+
 
 def _mel_launch(python_code):
     r"""
     Build the Maya ``-command`` payload for a launch flow: load the ProRigs
-    licence plug-in FIRST (from its trusted, version-correct path), then run
-    the flow's Python.
+    licence plug-in FIRST (from its trusted, version-correct path), then
+    install GAARecentFiles' save/open callbacks (so files the flow opens or
+    saves land in File > Recent Files), then run the flow's Python.
 
     Every ProRigs rig carries a ProRigs licence node; without the plug-in
     loaded those nodes come in as "unknown" and the rig is dead. Maya does not
@@ -345,7 +352,8 @@ def _mel_launch(python_code):
     across student logins.
 
     The load is wrapped in ``catchQuiet`` so a missing or broken plug-in still
-    lets the student's scene open (broken rig beats no Maya). ``loadPlugin``
+    lets the student's scene open (broken rig beats no Maya); the Recent
+    Files hook is wrapped the same way so it can never block a launch. ``loadPlugin``
     is given the full path in an escaped MEL string; build the payload by
     concatenation rather than an f-string so the three quote levels
     (mel_command -> evalDeferred string -> catchQuiet argument) stay legible.
@@ -357,7 +365,13 @@ def _mel_launch(python_code):
         + PRORIGS_MLL
         + bs + bs + bs + dq + bs + dq + "); "
     )
-    inner = load + "python(" + bs + dq + python_code + bs + dq + ")"
+    recent = (
+        "catchQuiet(" + bs + dq
+        + "python(" + bs + bs + bs + dq
+        + RECENT_FILES_PY
+        + bs + bs + bs + dq + ")" + bs + dq + "); "
+    )
+    inner = load + recent + "python(" + bs + dq + python_code + bs + dq + ")"
     return "evalDeferred(" + dq + inner + dq + ")"
 
 def launch_maya(login_name, individual_assignment_id=None):
