@@ -42,11 +42,15 @@ def extract_assignment_id(assignment_name, class_id):
     rows = cursor.fetchall()
     conn.close()
 
-    # Normalize: remove spaces, lowercase for comparison
-    normalized_input = assignment_name.replace(" ", "").lower()
+    # Normalize: drop spaces and the characters upload_assignment strips
+    # from filenames (Windows-illegal chars and "_"), lowercase.
+    def _norm(name):
+        return re.sub(r'[\s\\/:*?"<>|_]', "", name).lower()
+
+    normalized_input = _norm(assignment_name)
 
     for row in rows:
-        if row["name"].replace(" ", "").lower() == normalized_input:
+        if _norm(row["name"]) == normalized_input:
             return row["id"]
 
     return None
@@ -156,13 +160,14 @@ def get_all_assignment_files():
             all_files[display_key] = []
 
             for file in os.listdir(assignments_path):
-                if file.endswith(".webm") or file.endswith(".png"):
+                if file.lower().endswith((".webm", ".png", ".jpg", ".jpeg")):
                     file_path = os.path.join(assignments_path, file)
 
                     # Assignment name (can have spaces, #, numbers, letters, dashes) before first underscore
                     match = re.match(
-                        r"^(.+?)_([^_]+(?: [^_]+)*)(?:_([A-Z]{1,2}))?_v(\d+)(_R)?\.(webm|png)$",
-                        file
+                        r"^(.+?)_([^_]+(?: [^_]+)*)(?:_([A-Z]{1,2}))?_v(\d+)(_R)?\.(webm|png|jpe?g)$",
+                        file,
+                        re.IGNORECASE,
                     )
 
 
@@ -204,7 +209,8 @@ def get_all_assignment_files():
 
                     # Skip originals if an _R version exists on disk
                     if not file_entry["is_reviewed"]:
-                        reviewed_name = file_entry["file_name"].replace(".webm", "_R.webm")
+                        stem, file_ext = os.path.splitext(file_entry["file_name"])
+                        reviewed_name = f"{stem}_R{file_ext}"
                         reviewed_path = os.path.join(assignments_path, reviewed_name)
                         if os.path.exists(reviewed_path):
                             print(f"⚠️ Skipping original because reviewed exists: {file_entry['file_name']}")

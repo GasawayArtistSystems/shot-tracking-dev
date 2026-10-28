@@ -39,6 +39,18 @@ def extract_numeric_grade(status_string):
         return None
 
 
+# Extra credit assignments use the "Extra Credit Assignment" workflow (a
+# grade step only, no submission). Older ones are recognised by name. Their
+# points are a bonus: they never add to the points possible, and not doing
+# one doesn't count against the student.
+def is_extra_credit_assignment(assignment_name, workflow_name=None):
+    """True if an assignment is extra credit (by workflow, or by name)."""
+    if "extra credit" in (workflow_name or "").lower():
+        return True
+    name = (assignment_name or "").lower()
+    return "extra credit" in name or "evaluation" in name
+
+
 # ------------------------------------------------------------------
 # CORE GRADE CALCULATION
 # ------------------------------------------------------------------
@@ -66,8 +78,9 @@ def get_student_grade_summary(user_id, class_id):
 
     # Get all assignments for this class with their max_points
     assignments = conn.execute("""
-        SELECT a.id, a.name, a.max_points, a.parent_step_id
+        SELECT a.id, a.name, a.max_points, a.parent_step_id, wf.name AS workflow_name
         FROM assignments a
+        LEFT JOIN steps wf ON wf.id = a.parent_step_id
         WHERE a.class_id = ?
         ORDER BY a.name
     """, (class_id,)).fetchall()
@@ -116,13 +129,17 @@ def get_student_grade_summary(user_id, class_id):
                 earned += val
                 is_graded = True
 
-        # Extra credit assignments (Evaluation) don't count toward max
-        # Identified by having no max_points or being flagged separately
-        # For now: if assignment name contains 'Evaluation', treat as extra credit
-        is_extra_credit = "evaluation" in assignment["name"].lower()
+        # Extra credit adds to the points earned but never to the points
+        # possible, so skipping it doesn't lower the grade.
+        is_extra_credit = is_extra_credit_assignment(
+            assignment["name"], assignment["workflow_name"]
+        )
 
         if is_extra_credit:
             extra_credit += earned
+            projected_points += earned
+            if is_graded:
+                current_points += earned
         else:
             total_max_points += max_pts
             projected_points += earned  # counts as 0 if not graded

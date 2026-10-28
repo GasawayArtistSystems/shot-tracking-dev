@@ -6,6 +6,7 @@ from flask import Blueprint, send_file, request, jsonify, json, session, make_re
 from app.utils.get_files_for_review import get_assignments_for_review, get_films_for_review, get_all_film_files
 from app.utils.auth_utils import login_required
 from app.utils.grade_utils import save_grade_history
+from app.services.grade_service import is_extra_credit_assignment
 from app.database.db import get_db
 from urllib.parse import unquote
 from flask_cors import CORS
@@ -95,6 +96,8 @@ def get_video():
             ".mp4": "video/mp4",
             ".mov": "video/quicktime",
             ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
         }.get(ext, "application/octet-stream")
         return send_file(cleaned, mimetype=mime_type, as_attachment=False)
 
@@ -1359,16 +1362,26 @@ def upload_assignment():
         os.makedirs(base_dir, exist_ok=True)
 
         ext = os.path.splitext(file.filename)[1].lower()
-        if ext not in [".webm", ".png"]:
-            return jsonify({"error": "Unsupported file type"}), 400
+        if ext == ".jpeg":
+            ext = ".jpg"
+        if ext not in [".webm", ".png", ".jpg"]:
+            return jsonify({"error": "Unsupported file type -- use .png, .jpg or .webm"}), 400
 
-        existing_files = [f for f in os.listdir(base_dir)
-                          if f.startswith(f"{assignment_name}_{user_name}_v") and f.endswith(ext)]
-        versions = [int(re.search(r"_v(\\d+)", f).group(1))
-                    for f in existing_files if re.search(r"_v(\\d+)", f)]
+        # Characters Windows can't put in a filename (e.g. the ":" in
+        # "Extra Credit: Course Evaluation") are dropped, and "_" separates
+        # name/student/version so it can't be in the name either.
+        # get_files_for_review.extract_assignment_id ignores the same chars.
+        file_assignment_name = re.sub(r'[\\/:*?"<>|_]', "", assignment_name).strip()
+
+        # Version across every extension so a .png after a .jpg doesn't
+        # reuse v1 -- the markup sidebar keys on name + version.
+        version_re = re.compile(
+            rf"^{re.escape(file_assignment_name)}_{re.escape(user_name)}_v(\d+)", re.IGNORECASE
+        )
+        versions = [int(m.group(1)) for f in os.listdir(base_dir) if (m := version_re.match(f))]
         next_version = max(versions, default=0) + 1
 
-        new_filename = f"{assignment_name}_{user_name}_v{next_version}{ext}"
+        new_filename = f"{file_assignment_name}_{user_name}_v{next_version}{ext}"
         filepath = os.path.join(base_dir, new_filename)
         file.save(filepath)
 
@@ -2537,10 +2550,15 @@ def get_current_semester_classes_full():
     current_sem = max(sem_rows, key=sem_key)
     sem_id = current_sem["id"]
 
+    # Grades are looked up by class name, so a semester with two rows sharing
+    # a name (e.g. a duplicated class) must only be listed -- and exported --
+    # once. Archived classes are left out, matching the grade export query.
     class_rows = cursor.execute("""
-        SELECT id, class_name
+        SELECT MIN(id) AS id, class_name
         FROM classes
         WHERE semester_id = ?
+          AND COALESCE(archived, 0) = 0
+        GROUP BY class_name
         ORDER BY class_name COLLATE NOCASE
     """, (sem_id,)).fetchall()
 
@@ -2652,10 +2670,12 @@ def _build_canvas_grade_data(class_filter):
         a.name AS assignment_name,
         a.parent_step_id,
         s.name AS step_name,
+        wf.name AS workflow_name,
         ias.current_status AS grade
     FROM individual_assignments ia
     JOIN users u ON ia.users_id = u.id
     JOIN assignments a ON ia.assignment_id = a.id
+    LEFT JOIN steps wf ON wf.id = a.parent_step_id
     JOIN classes c ON a.class_id = c.id
     -- Only students enrolled in THIS class for the current semester
     JOIN class_enrollments ce
@@ -2735,14 +2755,21 @@ def _build_canvas_grade_data(class_filter):
         if canon not in columns:
             columns.append(canon)
 
+        aliases = [_canvas_norm(label) for label in dict.fromkeys(match_labels)]
+        for alias in aliases:
+            alias_map.setdefault(alias, canon)
+
+        # Extra credit the student didn't do stays blank, not 0, so it
+        # can't count against them in Canvas.
+        if numeric == 0 and is_extra_credit_assignment(a_name, r["workflow_name"]):
+            continue
+
         if combine:
             st["values"][canon] = st["values"].get(canon, 0) + numeric
         else:
             st["values"][canon] = numeric
 
-        for label in dict.fromkeys(match_labels):
-            alias = _canvas_norm(label)
-            alias_map.setdefault(alias, canon)
+        for alias in aliases:
             if combine:
                 st["aliases"][alias] = st["aliases"].get(alias, 0) + numeric
             else:

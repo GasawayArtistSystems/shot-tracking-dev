@@ -803,14 +803,33 @@
         // include Planning alongside Blocking/Polish/etc. still get OPEN,
         // since those steps do need Maya.
         const isPlanningOnlyAssignment = steps.length > 0 && steps.every(s => /planning/i.test(s.step_name || ""));
+        // Extra credit has no submission at all -- nothing to open in Maya.
+        const isExtraCredit = !!assignmentGrade?.is_extra_credit;
 
         const assignmentId = steps[0]?.assignment_id || "";
         const loginName = window.currentLoginName || "";
-        const openUri = (!isPlanningOnlyAssignment && assignmentId && loginName)
+        const openUri = (!isPlanningOnlyAssignment && !isExtraCredit && assignmentId && loginName)
           ? `shottracker://open?class_id=${class_id}&login_name=${encodeURIComponent(loginName)}&assignment_id=${assignmentId}`
           : null;
 
-        const openButtonHTML = openUri
+        // Extra credit: upload an image or .webm instead of opening Maya.
+        // The file lands in the class's Assignments folder, where the
+        // markup page picks it up for grading (see the .assignment-upload
+        // handler at the top of this file).
+        const escAttr = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+        const openButtonHTML = isExtraCredit
+          ? `<form class="flex-1"
+                   data-assignment-id="${individual_assignment_id}"
+                   data-assignment-name="${escAttr(assignment_name)}"
+                   data-class-name="${escAttr(class_name)}">
+              <label class="block text-center text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded cursor-pointer"
+                     title="Upload a .png, .jpg or .webm for grading">
+                ⬆️ UPLOAD
+                <input type="file" class="assignment-upload hidden"
+                       accept=".png,.jpg,.jpeg,.webm,image/png,image/jpeg,video/webm">
+              </label>
+            </form>`
+          : openUri
           ? `<a href="${openUri}"
               class="flex-1 text-center text-xs font-bold bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded"
               title="Open in Maya">
@@ -839,7 +858,7 @@
             <span class="text-white font-bold">${assignment_name}</span>
             <div class="flex flex-col items-end gap-1">
               <span class="text-xs px-2 py-1 rounded" style="background-color:${badge.color};color:#000">${badge.label}</span>
-              <span class="text-xs text-green-400">${assignmentGrade ? `${assignmentGrade.earned}/${assignmentGrade.max_points}` : "—"}</span>
+              <span class="text-xs text-green-400">${!assignmentGrade ? "—" : isExtraCredit ? `+${assignmentGrade.earned} extra credit` : `${assignmentGrade.earned}/${assignmentGrade.max_points}`}</span>
             </div>
           </div>
           <div class="flex items-center gap-3 text-xs text-gray-400 mb-3">
