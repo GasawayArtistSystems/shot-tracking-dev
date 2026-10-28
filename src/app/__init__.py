@@ -133,6 +133,19 @@ def create_app(config_override=None):
         static_dir = os.path.join(os.path.dirname(__file__), "..", "static", "react", "static")
         return send_from_directory(static_dir, path)
 
+    # Cache busting: every url_for('static', filename=...) gets ?v=<file
+    # modified time>, so after files are synced to the server browsers fetch
+    # the new copy instead of a cached one -- no Ctrl+F5 needed. The query
+    # string is ignored when the file is served.
+    @app.url_defaults
+    def add_static_cache_buster(endpoint, values):
+        if endpoint != "static" or "v" in values or not values.get("filename"):
+            return
+        try:
+            values["v"] = int(os.path.getmtime(os.path.join(app.static_folder, values["filename"])))
+        except OSError:
+            pass
+
     return app
 
 
