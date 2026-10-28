@@ -2975,12 +2975,48 @@ export default function MarkupTool() {
                 };
 
                 if (className === "ALL") {
+                  // Each class uses its saved Canvas gradebook CSV when there
+                  // is one, otherwise a plain export -- same as single-class.
                   fetch(`${API_BASE_URL}/review/export_all_grades_zip`)
-                    .then((res) => res.blob())
-                    .then((blob) => triggerDownload(blob, "all_classes.zip"))
+                    .then(async (res) => {
+                      if (!res.ok) {
+                        const msg = await res.json().catch(() => ({}));
+                        throw new Error(msg.error || `Export failed (${res.status})`);
+                      }
+                      let summary = [];
+                      try {
+                        summary = JSON.parse(res.headers.get("X-Export-Summary") || "[]");
+                      } catch (e) {}
+                      const blob = await res.blob();
+                      triggerDownload(blob, "all_classes.zip");
+
+                      const esc = (s) => String(s).replace(/</g, "&lt;");
+                      const labels = {
+                        template: "saved Canvas CSV",
+                        plain: "plain export (no saved Canvas CSV)",
+                        skipped: "skipped",
+                        error: "failed",
+                      };
+                      const lines = summary.map((e) => {
+                        let line = `<b>${esc(e.class)}</b>: ${labels[e.mode] || e.mode}`;
+                        if (e.reason) line += ` (${esc(e.reason)})`;
+                        if (e.unmatched && e.unmatched.length) {
+                          line += `<br><small>Unmatched: ${e.unmatched.map(esc).join(", ")}</small>`;
+                        }
+                        return line;
+                      });
+                      const needsAttention = summary.some(
+                        (e) => e.mode !== "template" || (e.unmatched && e.unmatched.length)
+                      );
+                      Swal.fire({
+                        icon: needsAttention ? "warning" : "success",
+                        title: "Exported all classes",
+                        html: `<div style="text-align:left">${lines.join("<br>")}</div>`,
+                      });
+                    })
                     .catch((err) => {
                       console.error("❌ Failed to download:", err);
-                      Swal.fire("Error", "Could not download export.", "error");
+                      Swal.fire("Error", err.message || "Could not download export.", "error");
                     });
                   return;
                 }

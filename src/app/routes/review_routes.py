@@ -2678,7 +2678,7 @@ def _build_canvas_grade_data(class_filter):
 
     rows = cursor.execute(sql, tuple(params)).fetchall()
     if not rows:
-        return None, [], {}
+        return None, [], {}, []
 
     class_name = rows[0]["class_name"]
 
@@ -2780,6 +2780,100 @@ def _canvas_template_paths(class_filter):
     )
 
 
+def _fill_canvas_template(template_bytes, students, alias_map):
+    """Write grades into a copy of a Canvas gradebook CSV.
+
+    Reuses the template's exact header and Points Possible rows (so every
+    column, including the `(id)` suffix Canvas matches on, lines up) and only
+    fills in the columns we can map to internal grades.
+
+    Returns (csv_text, unmatched_columns, matched_columns), or None if the
+    template has no header / Points Possible rows.
+    """
+    import csv, io
+
+    raw = template_bytes.decode("utf-8-sig", errors="replace")
+    reader = list(csv.reader(io.StringIO(raw)))
+    if len(reader) < 2:
+        return None
+
+    header = reader[0]
+    points_row = reader[1]
+    id_col_re = re.compile(r"^(.*?)\s*\((\d+)\)\s*$")
+
+    try:
+        login_idx = next(
+            i for i, h in enumerate(header)
+            if h.strip().lower() in ("sis login id", "sis user id", "login id")
+        )
+    except StopIteration:
+        login_idx = 3
+
+    col_targets = {}   # header index -> internal alias
+    unmatched = []
+    matched = []
+    for i, h in enumerate(header):
+        m = id_col_re.match(h.strip())
+        if not m:
+            continue  # Student / ID / Section / read-only aggregate columns
+        alias = _match_canvas_column(_canvas_norm(m.group(1)), alias_map)
+        if alias:
+            col_targets[i] = alias
+            matched.append(h.strip())
+        else:
+            unmatched.append(h.strip())
+
+    def _name_key(s):
+        return " ".join(sorted(re.findall(r"[a-z]+", (s or "").lower())))
+
+    by_login = {}
+    by_name = {}
+    for s in students:
+        if s["login"]:
+            by_login[s["login"].strip().lower()] = s
+        if s["name"]:
+            by_name.setdefault(_name_key(s["name"]), s)
+
+    out = io.StringIO(newline="")
+    writer = csv.writer(out, lineterminator="\r\n")
+    writer.writerow(header)
+    writer.writerow(points_row)
+
+    seen = set()
+    for row in reader[2:]:
+        if not any(cell.strip() for cell in row):
+            continue
+        row = list(row) + [""] * (len(header) - len(row))
+        login = row[login_idx].strip().lower() if login_idx < len(row) else ""
+        student = by_login.get(login) or by_name.get(_name_key(row[0]))
+        if student:
+            seen.add(id(student))
+            for idx, alias in col_targets.items():
+                if alias in student["aliases"]:
+                    row[idx] = _fmt_num(student["aliases"][alias])
+        writer.writerow(row[:len(header)])
+
+    # Students we have grades for who were not already in the template.
+    extras = 0
+    for student in students:
+        if id(student) in seen:
+            continue
+        extras += 1
+        row = [""] * len(header)
+        row[0] = student["name"] or ""
+        if login_idx < len(header):
+            row[login_idx] = student["login"] or ""
+        for idx, alias in col_targets.items():
+            if alias in student["aliases"]:
+                row[idx] = _fmt_num(student["aliases"][alias])
+        writer.writerow(row)
+
+    if extras:
+        matched.append(f"(+{extras} student rows appended, not in template)")
+
+    return out.getvalue(), unmatched, matched
+
+
 @review_routes.route("/canvas_template_info", methods=["GET"])
 def canvas_template_info():
     """Report whether a Canvas gradebook CSV is saved for a class."""
@@ -2817,16 +2911,12 @@ def export_canvas_csv():
 
     GET (fallback): best-effort export with generated column names.
     """
-    import csv, io
-
     class_filter = request.args.get("class") or request.form.get("class")
     template_file = request.files.get("template") if request.method == "POST" else None
 
     class_name, students, alias_map, columns = _build_canvas_grade_data(class_filter)
     if class_name is None:
         return jsonify({"error": "No grade rows found", "class_filter": class_filter}), 404
-
-    ID_COL_RE = re.compile(r"^(.*?)\s*\((\d+)\)\s*$")
 
     def _send(text, unmatched=None, matched=None):
         resp = make_response(("﻿" + text).encode("utf-8"))
@@ -2853,13 +2943,9 @@ def export_canvas_csv():
             return jsonify({"error": "No saved Canvas gradebook CSV for this class"}), 404
 
     if template_bytes is not None:
-        raw = template_bytes.decode("utf-8-sig", errors="replace")
-        reader = list(csv.reader(io.StringIO(raw)))
-        if len(reader) < 2:
+        filled = _fill_canvas_template(template_bytes, students, alias_map)
+        if filled is None:
             return jsonify({"error": "Template CSV has no header / Points Possible rows"}), 400
-
-        header = reader[0]
-        points_row = reader[1]
 
         # Remember a freshly uploaded template (only once it parses).
         if template_file is not None:
@@ -2875,112 +2961,76 @@ def export_canvas_csv():
             except OSError:
                 logger.exception("Could not save Canvas template for %r", class_filter)
 
-        try:
-            login_idx = next(
-                i for i, h in enumerate(header)
-                if h.strip().lower() in ("sis login id", "sis user id", "login id")
-            )
-        except StopIteration:
-            login_idx = 3
-
-        col_targets = {}   # header index -> internal alias
-        unmatched = []
-        matched = []
-        for i, h in enumerate(header):
-            m = ID_COL_RE.match(h.strip())
-            if not m:
-                continue  # Student / ID / Section / read-only aggregate columns
-            alias = _match_canvas_column(_canvas_norm(m.group(1)), alias_map)
-            if alias:
-                col_targets[i] = alias
-                matched.append(h.strip())
-            else:
-                unmatched.append(h.strip())
-
-        def _name_key(s):
-            return " ".join(sorted(re.findall(r"[a-z]+", (s or "").lower())))
-
-        by_login = {}
-        by_name = {}
-        for s in students:
-            if s["login"]:
-                by_login[s["login"].strip().lower()] = s
-            if s["name"]:
-                by_name.setdefault(_name_key(s["name"]), s)
-
-        out = io.StringIO(newline="")
-        writer = csv.writer(out, lineterminator="\r\n")
-        writer.writerow(header)
-        writer.writerow(points_row)
-
-        seen = set()
-        for row in reader[2:]:
-            if not any(cell.strip() for cell in row):
-                continue
-            row = list(row) + [""] * (len(header) - len(row))
-            login = row[login_idx].strip().lower() if login_idx < len(row) else ""
-            student = by_login.get(login) or by_name.get(_name_key(row[0]))
-            if student:
-                seen.add(id(student))
-                for idx, alias in col_targets.items():
-                    if alias in student["aliases"]:
-                        row[idx] = _fmt_num(student["aliases"][alias])
-            writer.writerow(row[:len(header)])
-
-        # Students we have grades for who were not already in the template.
-        extras = 0
-        for student in students:
-            if id(student) in seen:
-                continue
-            extras += 1
-            row = [""] * len(header)
-            row[0] = student["name"] or ""
-            if login_idx < len(header):
-                row[login_idx] = student["login"] or ""
-            for idx, alias in col_targets.items():
-                if alias in student["aliases"]:
-                    row[idx] = _fmt_num(student["aliases"][alias])
-            writer.writerow(row)
-
-        if extras:
-            matched.append(f"(+{extras} student rows appended, not in template)")
-
-        return _send(out.getvalue(), unmatched=unmatched, matched=matched)
+        text, unmatched, matched = filled
+        return _send(text, unmatched=unmatched, matched=matched)
 
     # ---- Fallback mode (no template) --------------------------------------
     return _send(_plain_canvas_csv_text(class_name, students, columns))
 
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-TEMP_DIR = os.path.join(BASE_DIR, "temp_exports")
-
 @review_routes.route("/export_all_grades_zip")
 def export_all_grades_zip():
-    import os, zipfile
-    from datetime import datetime
-    from flask import send_file
+    """Export every current-semester class into one ZIP of Canvas CSVs.
 
-    os.makedirs(TEMP_DIR, exist_ok=True)
-
-    zip_filename = f"all_classes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-    zip_path = os.path.join(TEMP_DIR, zip_filename)
+    Each class is exported the same way the single-class export does it: if a
+    Canvas gradebook CSV is saved for the class, grades are written into a
+    copy of it; otherwise a plain export is used. A per-class summary is
+    returned in the `X-Export-Summary` response header.
+    """
+    import io, zipfile
 
     classes, _ = get_current_semester_classes_full()
 
-    with zipfile.ZipFile(zip_path, "w") as zipf:
+    summary = []
+    buf = io.BytesIO()
+    used_names = set()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zipf:
         for row in classes:
             class_name = row["class_name"]
+            entry = {"class": class_name}
+            try:
+                resolved_name, students, alias_map, columns = _build_canvas_grade_data(class_name)
+                if resolved_name is None:
+                    entry["mode"] = "skipped"
+                    entry["reason"] = "no grades"
+                    summary.append(entry)
+                    continue
 
-            resolved_name, students, alias_map, columns = _build_canvas_grade_data(class_name)
-            if resolved_name is None:
-                continue
+                text = None
+                csv_path, _ = _canvas_template_paths(class_name)
+                if os.path.isfile(csv_path):
+                    with open(csv_path, "rb") as f:
+                        filled = _fill_canvas_template(f.read(), students, alias_map)
+                    if filled is not None:
+                        text, unmatched, _ = filled
+                        entry["mode"] = "template"
+                        entry["unmatched"] = unmatched
+                if text is None:
+                    text = _plain_canvas_csv_text(resolved_name, students, columns)
+                    entry["mode"] = "plain"
 
-            csv_string = _plain_canvas_csv_text(resolved_name, students, columns)
+                safe = re.sub(r"[^A-Za-z0-9._-]+", "_", resolved_name).strip("_") or "grades"
+                name, n = safe, 2
+                while name in used_names:
+                    name, n = f"{safe}_{n}", n + 1
+                used_names.add(name)
+                zipf.writestr(f"{name}.csv", ("\ufeff" + text).encode("utf-8"))
+            except Exception as e:
+                logger.exception("Export failed for class %r", class_name)
+                entry["mode"] = "error"
+                entry["reason"] = str(e)
+            summary.append(entry)
 
-            safe_name = "".join(c for c in resolved_name if c.isalnum() or c in " _-").replace(" ", "_")
-            zipf.writestr(f"{safe_name}.csv", "\ufeff" + csv_string)
+    if not any(e["mode"] in ("template", "plain") for e in summary):
+        return jsonify({"error": "No grade rows found for any class", "summary": summary}), 404
 
-    return send_file(zip_path, as_attachment=True)
+    resp = make_response(buf.getvalue())
+    resp.headers["Content-Type"] = "application/zip"
+    zip_name = f"all_classes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    resp.headers["Content-Disposition"] = f'attachment; filename="{zip_name}"'
+    resp.headers["Access-Control-Expose-Headers"] = "X-Export-Summary"
+    resp.headers["X-Export-Summary"] = stdjson.dumps(summary)
+    return resp
 
 # ----------------------------------------------------------------------------------------------------------------------
 # USER PREFERENCES
