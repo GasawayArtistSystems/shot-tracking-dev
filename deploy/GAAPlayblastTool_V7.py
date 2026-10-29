@@ -40,6 +40,7 @@ import maya.cmds as cmds
 
 SHOT_TRACKER_URL = "http://10.23.20.210:8000"
 UNC_BASE = r"\\gaaap1prd01w.ad.uc.edu\Classes"
+FFMPEG_PATH = r"C:\Cincy\ffmpeg\bin\ffmpeg.exe"
 
 audio_checkbox = None
 step_menu = None
@@ -348,10 +349,10 @@ def _drawtext_filter(textfile_path):
 
 
 def convert_to_webm(avi_path, webm_path, burn_in_text=None):
-    if not shutil.which("ffmpeg"):
+    if not os.path.exists(FFMPEG_PATH):
         cmds.confirmDialog(
             title="FFmpeg Not Found",
-            message="To submit, FFmpeg must be installed.\nPlease contact your instructor.",
+            message="FFmpeg not found at:\n" + FFMPEG_PATH + "\n\nPlease contact your instructor.",
             button=["OK"]
         )
         return False
@@ -362,7 +363,10 @@ def convert_to_webm(avi_path, webm_path, burn_in_text=None):
     vf_chain = "fps=24,setpts=N/24/TB"
     textfile_path = None
     if burn_in_text:
-        textfile_path = os.path.splitext(avi_path)[0] + "_burnin.txt"
+        # Fixed name: the path is embedded in the filter string, so it must
+        # never contain student/assignment names (an apostrophe, e.g.
+        # D'Angelo, closes the textfile='...' quote and breaks the filter).
+        textfile_path = os.path.join(os.path.dirname(avi_path), "_burnin.txt")
         with open(textfile_path, "w", encoding="utf-8") as f:
             f.write(burn_in_text)
         vf_chain += "," + _drawtext_filter(textfile_path)
@@ -370,13 +374,14 @@ def convert_to_webm(avi_path, webm_path, burn_in_text=None):
     try:
         subprocess.run(
             [
-                "ffmpeg", "-y", "-i", avi_path,
+                FFMPEG_PATH, "-y", "-i", avi_path,
                 "-c:v", "libvpx-vp9",
                 "-b:v", "2M",
                 "-g", "1",
                 "-auto-alt-ref", "0",
                 "-cpu-used", "4",
                 "-vf", vf_chain,
+                "-pix_fmt", "yuv420p",
                 "-c:a", "libvorbis", webm_path
             ],
             check=True,
@@ -463,6 +468,8 @@ def perform_playblast(width, height, personal_only=False):
 
     orig_nurbs = cmds.modelEditor(panel, q=True, nurbsCurves=True)
     cmds.modelEditor(panel, e=True, nurbsCurves=False)
+    orig_dimensions = cmds.modelEditor(panel, q=True, dimensions=True)
+    cmds.modelEditor(panel, e=True, dimensions=False)
 
     sound_node = None
     try:
@@ -491,6 +498,7 @@ def perform_playblast(width, height, personal_only=False):
         return
     finally:
         cmds.modelEditor(panel, e=True, nurbsCurves=orig_nurbs)
+        cmds.modelEditor(panel, e=True, dimensions=orig_dimensions)
 
     try:
         if not convert_to_webm(avi_path, webm_path, burn_in_text=burn_in_text):
@@ -575,6 +583,8 @@ def perform_film_playblast(width, height):
 
     orig_nurbs = cmds.modelEditor(panel, q=True, nurbsCurves=True)
     cmds.modelEditor(panel, e=True, nurbsCurves=False)
+    orig_dimensions = cmds.modelEditor(panel, q=True, dimensions=True)
+    cmds.modelEditor(panel, e=True, dimensions=False)
 
     try:
         cmds.currentUnit(time="film")
@@ -595,11 +605,12 @@ def perform_film_playblast(width, height):
         return
     finally:
         cmds.modelEditor(panel, e=True, nurbsCurves=orig_nurbs)
+        cmds.modelEditor(panel, e=True, dimensions=orig_dimensions)
 
-    if not shutil.which("ffmpeg"):
+    if not os.path.exists(FFMPEG_PATH):
         cmds.confirmDialog(
             title="FFmpeg Not Found",
-            message="FFmpeg must be installed to export .webm files.",
+            message="FFmpeg not found at:\n" + FFMPEG_PATH + "\n\nPlease contact your instructor.",
             button=["OK"]
         )
         return
@@ -607,13 +618,14 @@ def perform_film_playblast(width, height):
     try:
         subprocess.run(
             [
-                "ffmpeg", "-y", "-i", avi_path,
+                FFMPEG_PATH, "-y", "-i", avi_path,
                 "-c:v", "libvpx-vp9",
                 "-b:v", "2M",
                 "-g", "1",
                 "-auto-alt-ref", "0",
                 "-cpu-used", "4",
                 "-vf", "fps=24,setpts=N/24/TB",
+                "-pix_fmt", "yuv420p",
                 "-c:a", "libvorbis", webm_path,
             ],
             check=True,
@@ -636,9 +648,16 @@ def perform_film_playblast(width, height):
         final_version = final_version_match.group(1) if final_version_match else version
 
         hud_text = f"{film_title}-{scene}-{shot}-{dept}-{user}-v{final_version}"
+        # Same textfile= approach as _drawtext_filter: film/user names are
+        # free text and an inline text='...' breaks on an apostrophe.
+        hud_textfile = os.path.join(temp_dir, "_hud.txt")
+        with open(hud_textfile, "w", encoding="utf-8") as f:
+            f.write(hud_text)
+        hud_textfile_esc = hud_textfile.replace("\\", "/").replace(":", "\\:", 1)
         hud_filter = (
             f"drawtext=fontfile='C\\:/Windows/Fonts/arial.ttf':"
-            f"text='{hud_text}':"
+            f"textfile='{hud_textfile_esc}':"
+            f"expansion=none:"
             f"x=(w-text_w)-20:y=h-(text_h+50):"
             f"fontsize=14:fontcolor=white:borderw=2:"
             f"box=1:boxcolor=black@0.25:boxborderw=12"
@@ -647,9 +666,10 @@ def perform_film_playblast(width, height):
         hud_temp = dest_path.replace(".webm", "_HUD.webm")
         subprocess.run(
             [
-                "ffmpeg", "-y", "-i", dest_path,
+                FFMPEG_PATH, "-y", "-i", dest_path,
                 "-vf", hud_filter,
                 "-c:v", "libvpx-vp9", "-b:v", "2M",
+                "-pix_fmt", "yuv420p",
                 "-c:a", "copy", hud_temp,
             ],
             check=True,
@@ -657,6 +677,7 @@ def perform_film_playblast(width, height):
             stderr=subprocess.PIPE
         )
         shutil.move(hud_temp, dest_path)
+        safe_delete_file(hud_textfile)
 
         cmds.inViewMessage(amg=f"<hl>Final Render:</hl> {os.path.basename(dest_path)}", pos="topCenter", fade=True)
 
