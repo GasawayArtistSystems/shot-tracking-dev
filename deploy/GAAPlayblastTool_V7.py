@@ -132,6 +132,20 @@ def get_scene_metadata():
 DEFAULT_FILM_RENDER_WIDTH = 1920
 DEFAULT_FILM_RENDER_HEIGHT = 1080
 
+# "MOVIE FOR YOU" resolution choices for assignment scenes. Film scenes
+# build their own from the film's render size (see launch_playblast_ui).
+PERSONAL_STANDARD_RES = (960, 540)
+PERSONAL_HIGH_RES = (1920, 1080)
+
+# Submissions are unchanged: requested size at 50% and 2 Mbps. Personal
+# copies render at the full size picked, so the bitrate goes up with the
+# pixel count -- 2 Mbps with every frame a keyframe (-g 1) looks blocky
+# at 1080p.
+SUBMIT_BITRATE = "2M"
+PERSONAL_STANDARD_BITRATE = "4M"
+PERSONAL_HIGH_BITRATE = "10M"
+PERSONAL_MOVIES_DIR = "C:/Cincy/Movies"
+
 
 def get_film_render_dimensions():
     """
@@ -348,7 +362,7 @@ def _drawtext_filter(textfile_path):
     )
 
 
-def convert_to_webm(avi_path, webm_path, burn_in_text=None):
+def convert_to_webm(avi_path, webm_path, burn_in_text=None, bitrate=SUBMIT_BITRATE):
     if not os.path.exists(FFMPEG_PATH):
         cmds.confirmDialog(
             title="FFmpeg Not Found",
@@ -376,7 +390,7 @@ def convert_to_webm(avi_path, webm_path, burn_in_text=None):
             [
                 FFMPEG_PATH, "-y", "-i", avi_path,
                 "-c:v", "libvpx-vp9",
-                "-b:v", "2M",
+                "-b:v", bitrate,
                 "-g", "1",
                 "-auto-alt-ref", "0",
                 "-cpu-used", "4",
@@ -429,7 +443,7 @@ def submit_assignment_status(individual_assignment_id, step_code):
 #  ASSIGNMENT PLAYBLAST
 # ─────────────────────────────────────────────
 
-def perform_playblast(width, height, personal_only=False):
+def perform_playblast(width, height, personal_only=False, personal_bitrate=PERSONAL_STANDARD_BITRATE):
     global audio_checkbox
 
     current_path = cmds.file(q=True, sn=True)
@@ -485,9 +499,12 @@ def perform_playblast(width, height, personal_only=False):
             filename=avi_path,
             width=width,
             height=height,
-            percent=50,
+            # percent scales width/height. Submissions keep the old 50%;
+            # personal copies come out at exactly the size the student
+            # picked.
+            percent=100 if personal_only else 50,
             showOrnaments=False,
-            quality=70,
+            quality=100 if personal_only else 70,
             viewer=False,
             forceOverwrite=True,
             sound=sound_node
@@ -501,15 +518,15 @@ def perform_playblast(width, height, personal_only=False):
         cmds.modelEditor(panel, e=True, dimensions=orig_dimensions)
 
     try:
-        if not convert_to_webm(avi_path, webm_path, burn_in_text=burn_in_text):
+        bitrate = personal_bitrate if personal_only else SUBMIT_BITRATE
+        if not convert_to_webm(avi_path, webm_path, burn_in_text=burn_in_text, bitrate=bitrate):
             return
 
         safe_delete_file(avi_path)
 
         if personal_only:
-            movies_dir = "C:/Cincy/Movies"
-            os.makedirs(movies_dir, exist_ok=True)
-            dest_path = os.path.join(movies_dir, f"{playblast_name}.webm")
+            os.makedirs(PERSONAL_MOVIES_DIR, exist_ok=True)
+            dest_path = os.path.join(PERSONAL_MOVIES_DIR, f"{playblast_name}_{width}x{height}.webm")
             shutil.copyfile(webm_path, dest_path)
             cmds.inViewMessage(amg=f"<hl>Saved your movie to:</hl> {dest_path}", pos="topCenter", fade=True)
             return
@@ -543,7 +560,7 @@ def perform_playblast(width, height, personal_only=False):
 #  FILM PLAYBLAST
 # ─────────────────────────────────────────────
 
-def perform_film_playblast(width, height):
+def perform_film_playblast(width, height, personal_only=False, personal_bitrate=PERSONAL_STANDARD_BITRATE):
     current_path = cmds.file(q=True, sn=True)
     if not current_path:
         cmds.warning("Please save the scene before playblasting.")
@@ -593,9 +610,9 @@ def perform_film_playblast(width, height):
             filename=avi_path,
             width=width,
             height=height,
-            percent=50,
+            percent=100 if personal_only else 50,
             showOrnaments=False,
-            quality=70,
+            quality=100 if personal_only else 70,
             viewer=False,
             forceOverwrite=True
         )
@@ -606,6 +623,25 @@ def perform_film_playblast(width, height):
     finally:
         cmds.modelEditor(panel, e=True, nurbsCurves=orig_nurbs)
         cmds.modelEditor(panel, e=True, dimensions=orig_dimensions)
+
+    if personal_only:
+        # Personal copy only: never touches the shot folder or Shot
+        # Tracker. Previously MOVIE FOR YOU on a film scene ran the full
+        # submit path at half size.
+        try:
+            hud_text = f"{film_title}-{scene}-{shot}-{dept}-{user}-v{version}"
+            if not convert_to_webm(avi_path, webm_path, burn_in_text=hud_text, bitrate=personal_bitrate):
+                return
+            safe_delete_file(avi_path)
+            os.makedirs(PERSONAL_MOVIES_DIR, exist_ok=True)
+            dest_path = os.path.join(PERSONAL_MOVIES_DIR, f"{playblast_name}_{width}x{height}.webm")
+            shutil.copyfile(webm_path, dest_path)
+            cmds.inViewMessage(amg=f"<hl>Saved your movie to:</hl> {dest_path}", pos="topCenter", fade=True)
+        except subprocess.CalledProcessError as e:
+            cmds.warning(f"WebM conversion failed: {e}")
+        except Exception as e:
+            cmds.warning(f"Unexpected error: {e}")
+        return
 
     if not os.path.exists(FFMPEG_PATH):
         cmds.confirmDialog(
@@ -753,17 +789,63 @@ def show_help(*args):
             "2. If an audio track is found, check Include Audio.\n"
             "3. Choose which movie to create:\n"
             "   a. SUBMIT ASSIGNMENT - submits for grading.\n"
-            "   b. MOVIE FOR YOU - saves a personal copy only, does not submit.\n\n"
+            "   b. MOVIE FOR YOU - saves a personal copy only, does not submit.\n"
+            "      You'll be asked Standard (960x540) or High (1920x1080).\n\n"
             "FILM SHOTS\n"
             "1. The name of your file is shown at the top of the window.\n"
             "2. If an audio track is found, check Include Audio.\n"
             "3. Choose which movie to create:\n"
             "   a. SUBMIT SHOT - submits for review.\n"
-            "   b. MOVIE FOR YOU - saves a personal copy only.\n\n"
+            "   b. MOVIE FOR YOU - saves a personal copy only, does not submit.\n"
+            "      You'll be asked Standard or High resolution.\n\n"
             "Ask your instructor or admin for help if unsure."
         ),
         button=["OK"]
     )
+
+
+def _even(n):
+    """Video encoders generally expect even dimensions -- round up."""
+    return n + (n % 2)
+
+
+def ask_personal_resolution(standard, high):
+    """
+    Pops up a small window asking which size the personal movie should
+    be. standard/high are (width, height). Returns
+    (width, height, bitrate), or None if the student cancels.
+    """
+    std_label = f"Standard  ({standard[0]} x {standard[1]})"
+    high_label = f"High  ({high[0]} x {high[1]})"
+    choice = cmds.confirmDialog(
+        title="Movie For You",
+        message=(
+            "What resolution do you want for your movie?\n\n"
+            "Standard is smaller and quicker to make.\n"
+            "High is full HD, best for your reel or portfolio.\n\n"
+            f"Saved to {PERSONAL_MOVIES_DIR}. This does NOT submit anything."
+        ),
+        button=[std_label, high_label, "Cancel"],
+        defaultButton=std_label,
+        cancelButton="Cancel",
+        dismissString="Cancel"
+    )
+    if choice == std_label:
+        return standard[0], standard[1], PERSONAL_STANDARD_BITRATE
+    if choice == high_label:
+        return high[0], high[1], PERSONAL_HIGH_BITRATE
+    return None
+
+
+def movie_for_you(film, standard, high):
+    picked = ask_personal_resolution(standard, high)
+    if not picked:
+        return
+    width, height, bitrate = picked
+    if film:
+        perform_film_playblast(width, height, personal_only=True, personal_bitrate=bitrate)
+    else:
+        perform_playblast(width, height, personal_only=True, personal_bitrate=bitrate)
 
 
 def launch_playblast_ui():
@@ -816,16 +898,17 @@ def launch_playblast_ui():
 
     if is_assign:
         cmds.button(label="SUBMIT ASSIGNMENT", command=lambda _: perform_playblast(1920, 1080))
-        cmds.button(label="MOVIE FOR YOU", command=lambda _: perform_playblast(960, 540, personal_only=True))
+        cmds.button(label="MOVIE FOR YOU",
+                    command=lambda _: movie_for_you(False, PERSONAL_STANDARD_RES, PERSONAL_HIGH_RES))
     elif is_film:
         film_width, film_height = get_film_render_dimensions()
-        # Halving an odd full-res dimension (possible for some aspect
-        # ratio presets) would produce an odd personal-res one -- round up
-        # to even, since video encoders generally expect even dimensions.
-        personal_width = film_width // 2 + (film_width // 2) % 2
-        personal_height = film_height // 2 + (film_height // 2) % 2
+        # Film personal sizes follow the film's own aspect ratio: High is
+        # the film's full render size, Standard is half of it.
+        film_high = (_even(film_width), _even(film_height))
+        film_standard = (_even(film_width // 2), _even(film_height // 2))
         cmds.button(label="SUBMIT SHOT", command=lambda _: perform_film_playblast(film_width, film_height))
-        cmds.button(label="MOVIE FOR YOU", command=lambda _: perform_film_playblast(personal_width, personal_height))
+        cmds.button(label="MOVIE FOR YOU",
+                    command=lambda _: movie_for_you(True, film_standard, film_high))
     else:
         cmds.text(label="Unrecognized file format", align="center")
         cmds.text(label="Open your scene via Shot Tracker's", align="center")
