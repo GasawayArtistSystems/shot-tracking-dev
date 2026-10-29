@@ -497,24 +497,23 @@
             you told the Assignment button to save your maya file. It will save your movie files in the correct places.
           </li>
           <div class="mt-2">
-            <img src="{{ url_for('static', filename='help/images/Playblast.png') }}" alt="Create Assignment"
+            <img src="{{ url_for('static', filename='help/images/Playblast-film.png') }}" alt="Playblast Window"
               class="w-[30%] shadow" />
           </div>
           <li><span class="font-semibold">To generate a movie FOR YOU - NOT to submit!</span></li>
           <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
             <li>Simply Click on the MOVIE FOR YOU button</li>
-            <li>This will save an .avi file in the same place where you save your scenes. No need to save it anywhere
-              else. The code does it for you.</li>
+            <li>A window asks which size you want: <span class="font-semibold">Standard</span> (half your film's
+              size) or <span class="font-semibold">High</span> (your film's full size, best for your reel).</li>
+            <li>The .webm movie is saved to C:/Cincy/Movies. It is not submitted and does not go in your shot
+              folder.</li>
           </ol>
           <li><span class="font-semibold">To submit your shot for review:</span></li>
           <ol class="list-[lower-roman] ml-6 mt-1 space-y-1">
-            <li>Click Override Step checkbox </li>
-            <img src="{{ url_for('static', filename='help/images/override-step.png') }}" alt="Override Step"
-              class="inline w-[30%] mx-1 align-middle" />
-            <li>Select the step that you are submitting.</li>
-            <li>Click SUBMIT SHOT</li>
-            <li>That's it! The code will automatically put the movie file in the right place. It will also create an
-              .avi file in the folder you selected when creating the assignment, so you can view when you like.</li>
+            <li>Click SUBMIT SHOT. There's no step to pick: it comes from your file name (LAY, BL, ANIM or
+              LGT).</li>
+            <li>That's it! The code saves the .webm movie in your shot folder, next to your scene, and sends it to
+              Shot Tracker for review.</li>
           </ol>
           <li><span class="text-blue-400 font-semibold">If you have audio, the code will let you know it's in the file.
               Just click on the checkbox to include audio.</span></li>
