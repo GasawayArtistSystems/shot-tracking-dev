@@ -678,6 +678,28 @@
     renderTable();
   }
 
+  // Enter moves down to the same column on the next frame, like a
+  // spreadsheet. In Notes, Shift+Enter still adds a new line. Blurring
+  // first lets the cell's own change handler record the value (and, for a
+  // cleared typed sound, re-render) before we look up the cell below.
+  document.getElementById("xsheet-tbody").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.isComposing) return;
+    const el = e.target;
+    if (!el.matches("input[data-frame], textarea[data-frame]")) return;
+    if (el.tagName === "TEXTAREA" && e.shiftKey) return;
+    e.preventDefault();
+    const nextFrame = Number(el.dataset.frame) + 1;
+    const col = el.dataset.col;
+    el.blur();
+    const next = document.querySelector(
+      `#xsheet-tbody [data-frame="${nextFrame}"][data-col="${CSS.escape(col)}"]`
+    );
+    if (next) {
+      next.focus();
+      if (typeof next.select === "function") next.select();
+    }
+  });
+
   document.getElementById("xsheet-save-btn").addEventListener("click", save);
   document.getElementById("xsheet-add-frames-btn").addEventListener("click", () => {
     const input = document.getElementById("xsheet-add-frames-count");
