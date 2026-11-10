@@ -31,6 +31,42 @@
   };
   const SYMBOL_MODE_LABELS = { hold: "Hold", accent_settle: "Accent", accent_up: "Up", accent_down: "Down" };
 
+  // Dropdown value for "type your own sound" -- swaps the cell to a short
+  // text box. Anything typed there is saved as a plain Sounds value.
+  const CUSTOM_SOUND_OPTION = "__custom__";
+  const DEFAULT_MAX_CUSTOM_SOUND = 12;
+
+  function maxCustomSound() {
+    return (state && state.max_custom_sound_length) || DEFAULT_MAX_CUSTOM_SOUND;
+  }
+
+  function isCustomSound(val) {
+    return !!val && !state.phonemes.includes(val);
+  }
+
+  function customSoundInputHtml(frame, key, val) {
+    return `<input data-frame="${frame}" data-col="${key}" type="text" value="${escapeHtml(val)}"
+                   maxlength="${maxCustomSound()}" placeholder="Type sound"
+                   title="Type a sound (up to ${maxCustomSound()} characters). Clear it to go back to the list."
+                   class="xsheet-custom-sound-cell w-full bg-transparent text-white text-center px-1 py-1" />`;
+  }
+
+  function wireCustomSoundInput(el) {
+    el.addEventListener("change", () => {
+      const frame = Number(el.dataset.frame);
+      const col = el.dataset.col;
+      const text = el.value.trim().slice(0, maxCustomSound());
+      if (rowData[frame]) delete rowData[frame][col];
+      if (text) {
+        rowData[frame] = rowData[frame] || {};
+        rowData[frame][col] = text;
+      } else {
+        // Cleared -- go back to the normal dropdown.
+        renderTable();
+      }
+    });
+  }
+
   function symbolModeFor(sym) {
     if (!sym) return null;
     if (sym.symbol_type === "hold") return "hold";
@@ -258,6 +294,10 @@
       // a symbol mode writes a one-frame symbol instead -- mutually
       // exclusive, same as the range tool below.
       const mode = symbolModeFor(sym);
+      if (!mode && isCustomSound(val)) {
+        // A typed sound -- show it as an editable text box, not the list.
+        return `<td class="border border-gray-700 p-0">${customSoundInputHtml(frame, key, val)}</td>`;
+      }
       const selected = mode || val;
       const letterOpts = ["", ...state.phonemes].map(p =>
         `<option value="${p}" ${p === selected ? "selected" : ""} style="background:#1f2937;color:#fff">${p || "—"}</option>`
@@ -266,8 +306,10 @@
         `<option value="${m}" ${m === selected ? "selected" : ""} title="${SYMBOL_MODE_LABELS[m]}" style="background:#374151;color:#fde047">${symbolGlyph(spec)}</option>`
       ).join("");
 
+      const customOpt = `<option value="${CUSTOM_SOUND_OPTION}" title="Type your own sound (up to ${maxCustomSound()} characters)" style="background:#1f2937;color:#93c5fd">Type…</option>`;
+
       return `<td class="border border-gray-700 p-0">
-        <select data-frame="${frame}" data-col="${key}" class="xsheet-sounds-cell w-full bg-transparent text-white text-center px-1 py-1">${letterOpts}${symbolOpts}</select>
+        <select data-frame="${frame}" data-col="${key}" class="xsheet-sounds-cell w-full bg-transparent text-white text-center px-1 py-1">${letterOpts}${symbolOpts}${customOpt}</select>
       </td>`;
     }
 
@@ -347,6 +389,17 @@
         symbols = symbols.filter(s => !(s.column_key === col && s.frame_start === frame && s.frame_end === frame));
         if (rowData[frame]) delete rowData[frame][col];
 
+        if (el.value === CUSTOM_SOUND_OPTION) {
+          // Swap just this cell to a text box; nothing is stored until the
+          // student types something.
+          const td = el.parentElement;
+          td.innerHTML = customSoundInputHtml(frame, col, "");
+          const input = td.querySelector("input");
+          wireCustomSoundInput(input);
+          input.focus();
+          return;
+        }
+
         const spec = SYMBOL_MODES[el.value];
         if (spec) {
           symbols.push({ column_key: col, frame_start: frame, frame_end: frame, ...spec });
@@ -357,6 +410,8 @@
         renderTable();
       });
     });
+
+    tbody.querySelectorAll(".xsheet-custom-sound-cell").forEach(wireCustomSoundInput);
 
     if (state.is_owner) {
       tbody.querySelectorAll(".xsheet-frame-cell").forEach(el => {
@@ -468,7 +523,7 @@
       }
       const mode = symbolModeFor(sym);
       if (mode) return { lines: [symbolGlyph(SYMBOL_MODES[mode])], color: EXPORT_STYLE.symbolText, align: "center" };
-      return { lines: [val || "—"], color: EXPORT_STYLE.text, align: "center" };
+      return { lines: [truncateText(ctx, val, innerWidth) || "—"], color: EXPORT_STYLE.text, align: "center" };
     }
 
     if (col.category === "breakdown_tween") {
