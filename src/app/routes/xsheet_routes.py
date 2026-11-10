@@ -13,6 +13,9 @@ xsheet_bp = Blueprint("xsheet", __name__, url_prefix="/xsheet")
 CLASS_FOLDER_ROOT = r"\\GAAAP1PRD01W\Classes"
 
 PHONEMES = ["AH", "EH", "EE", "IH", "OH", "EWW", "MBP", "FV", "L", "SH", "TH", "SS", "rest/closed"]
+# Students can also type their own sound into a Sounds cell instead of
+# picking a phoneme from the list -- capped at this many characters.
+MAX_CUSTOM_SOUND_LENGTH = 12
 
 BREAKDOWN_TWEEN_VALUES = {"", "BRK", "TW"}
 SYMBOL_TYPES = {"hold", "accent"}
@@ -161,6 +164,7 @@ def get_xsheet(individual_assignment_id):
         "rows": rows,
         "symbols": symbols,
         "phonemes": PHONEMES,
+        "max_custom_sound_length": MAX_CUSTOM_SOUND_LENGTH,
         "is_owner": str(ia_row["users_id"]) == str(session_user_id),
         "is_staff": _is_instructor_or_admin(),
     })
@@ -226,8 +230,12 @@ def save_xsheet(individual_assignment_id):
                 return jsonify({"error": f"Frame {frame}: invalid Breakdown/Tween value '{row_data[key]}'"}), 400
         for key in sounds_keys:
             val = row_data.get(key)
-            if val not in (None, "") and val not in PHONEMES:
-                return jsonify({"error": f"Frame {frame}: invalid Sounds value '{val}'"}), 400
+            if val in (None, "") or val in PHONEMES:
+                continue
+            if not isinstance(val, str) or len(val) > MAX_CUSTOM_SOUND_LENGTH:
+                return jsonify({
+                    "error": f"Frame {frame}: typed sounds can be at most {MAX_CUSTOM_SOUND_LENGTH} characters"
+                }), 400
 
     for sym in symbols:
         symbol_type = sym.get("symbol_type")
