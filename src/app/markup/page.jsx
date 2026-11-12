@@ -1742,7 +1742,7 @@ export default function MarkupTool() {
             setSelectedAssignment({
               ...file,
               assignment_name: file.file_name?.split("_")[0] || "Planning Drawing",
-              student_name: "",
+              student_name: file.student_name || "",
               isSB: false,
               statuses: [],
             });
@@ -1796,7 +1796,7 @@ export default function MarkupTool() {
             setSelectedAssignment({
               ...file,
               assignment_name: file.file_name?.split("_")[0] || "Video Reference",
-              student_name: "",
+              student_name: file.student_name || "",
               isSB: false,
               statuses: [],
             });
