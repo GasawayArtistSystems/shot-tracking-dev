@@ -8,6 +8,12 @@
       X-Sheet — <span id="xsheet-assignment-name" class="text-yellow-400">…</span>
     </h2>
     <div class="flex gap-2">
+      <a id="xsheet-export-maya-btn"
+         href="{{ url_for('xsheet.export_xsheet', individual_assignment_id=individual_assignment_id) }}"
+         title="Downloads the last saved version. Click Save first."
+         class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">
+        Export for Maya
+      </a>
       <button id="xsheet-save-btn" type="button"
               class="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
         Save

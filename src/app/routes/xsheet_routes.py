@@ -2,8 +2,10 @@ import base64
 import binascii
 import json
 import os
+import re
 import uuid
-from flask import Blueprint, request, jsonify, session, render_template
+from datetime import datetime
+from flask import Blueprint, request, jsonify, session, render_template, Response
 from app.database.db import get_db
 from app.utils.auth_utils import login_required
 
@@ -168,6 +170,78 @@ def get_xsheet(individual_assignment_id):
         "is_owner": str(ia_row["users_id"]) == str(session_user_id),
         "is_staff": _is_instructor_or_admin(),
     })
+
+
+@xsheet_bp.route("/<int:individual_assignment_id>/export", methods=["GET"])
+@login_required
+def export_xsheet(individual_assignment_id):
+    """Downloads the saved x-sheet as a JSON file the Maya X-Sheet panel loads.
+    Reads what is saved in the database, so unsaved edits are not included."""
+    db = get_db()
+    ia_row = _get_owning_assignment(db, individual_assignment_id)
+    if not ia_row:
+        return jsonify({"error": f"individual_assignment_id {individual_assignment_id} not found"}), 404
+    if not _check_owner_or_staff(ia_row):
+        return jsonify({"error": "You can only export your own X-sheet"}), 403
+    if not _xsheet_allowed(db, ia_row["assignment_id"]):
+        return jsonify({"error": "This assignment has no X-sheet"}), 400
+
+    _ensure_default_columns(db, individual_assignment_id)
+
+    columns = [
+        {"key": r["column_key"], "name": r["display_name"], "category": r["category"]}
+        for r in db.execute("""
+            SELECT column_key, display_name, category
+            FROM xsheet_columns WHERE individual_assignment_id = ?
+            ORDER BY display_order
+        """, (individual_assignment_id,)).fetchall()
+    ]
+
+    rows = []
+    for r in db.execute("""
+        SELECT frame, data FROM xsheet_rows
+        WHERE individual_assignment_id = ? ORDER BY frame
+    """, (individual_assignment_id,)).fetchall():
+        rows.append({"frame": r["frame"], "cells": json.loads(r["data"]) if r["data"] else {}})
+
+    symbols = [
+        {
+            "column_key": r["column_key"],
+            "frame_start": r["frame_start"],
+            "frame_end": r["frame_end"],
+            "symbol_type": r["symbol_type"],
+            "direction": r["direction"],
+        }
+        for r in db.execute("""
+            SELECT column_key, frame_start, frame_end, symbol_type, direction
+            FROM xsheet_symbols WHERE individual_assignment_id = ?
+            ORDER BY frame_start
+        """, (individual_assignment_id,)).fetchall()
+    ]
+
+    owner = db.execute("SELECT name FROM users WHERE id = ?", (ia_row["users_id"],)).fetchone()
+    student_name = owner["name"] if owner else ""
+
+    payload = {
+        "format": "shot-tracker-xsheet",
+        "version": 1,
+        "exported_at": datetime.now().isoformat(timespec="seconds"),
+        "individual_assignment_id": individual_assignment_id,
+        "assignment_name": ia_row["assignment_name"],
+        "student_name": student_name,
+        "frame_start": ia_row["frame_start"] or 1,
+        "frame_end": _max_frame_in_use(db, individual_assignment_id, ia_row["frame_end"]),
+        "columns": columns,
+        "rows": rows,
+        "symbols": symbols,
+    }
+
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", f"{ia_row['assignment_name']}_{student_name}").strip("_")
+    filename = f"{safe or 'xsheet'}_xsheet.json"
+
+    response = Response(json.dumps(payload, indent=2), mimetype="application/json")
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @xsheet_bp.route("/<int:individual_assignment_id>/view", methods=["GET"])
