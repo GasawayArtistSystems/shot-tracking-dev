@@ -80,13 +80,15 @@ export default function DrawingCanvas({
       return;
     }
 
-    const rect = video.getBoundingClientRect();
+    // offsetWidth/Height, not getBoundingClientRect(): the rect includes the
+    // viewer's zoom transform, and the canvas sits inside that same
+    // transform, so sizing it from the rect would scale it twice.
     const dpr = window.devicePixelRatio || 1;
 
     canvas.width = getMediaWidth(video) * dpr;
     canvas.height = getMediaHeight(video) * dpr;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    canvas.style.width = `${video.offsetWidth}px`;
+    canvas.style.height = `${video.offsetHeight}px`;
 
     const ctx = canvas.getContext("2d");
     ctx.resetTransform?.();
@@ -243,6 +245,8 @@ export default function DrawingCanvas({
   //Start Drawing
   const startDrawing = (e) => {
     if (!isDrawingMode || !contextRef.current) return;
+    // Left button / pen tip only -- middle-drag is the viewer's pan gesture.
+    if (e.button !== 0) return;
 
     isDrawingRef.current = true;
     currentStrokePointsRef.current = [];
@@ -371,7 +375,7 @@ export default function DrawingCanvas({
     <div className="absolute inset-0">
       <canvas
         ref={canvasRef}
-        className={`w-full h-full ${isDrawingMode ? "cursor-crosshair" : "cursor-default"}`}
+        className={`w-full h-full ${isDrawingMode ? "cursor-crosshair" : ""}`}
         style={{ touchAction: 'none' }}
         onPointerDown={startDrawing}
         onPointerMove={draw}

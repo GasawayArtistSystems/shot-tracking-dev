@@ -47,6 +47,134 @@ export default function VideoPlayer({
     const isDraggingRef = useRef(false);
     const fps = 24;
 
+    // --- Zoom / pan -------------------------------------------------------
+    // The video, compare ghost and drawing canvas all live inside one
+    // "stage" div that gets a CSS translate+scale. DrawingCanvas maps the
+    // pointer through the video's getBoundingClientRect(), which already
+    // reflects the transform, so strokes land in the right media pixel at
+    // any zoom level without touching the stored annotation coordinates.
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 8;
+    const viewportRef = useRef(null);
+    const stageRef = useRef(null);
+    const [view, setView] = useState({ z: 1, x: 0, y: 0 });
+    const viewRef = useRef(view);
+    const panDragRef = useRef(null);
+    const [isPanning, setIsPanning] = useState(false);
+
+    const applyView = (z, x, y) => {
+        const stage = stageRef.current;
+        const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+        const w = stage?.offsetWidth || 0;
+        const h = stage?.offsetHeight || 0;
+        // Keep the zoomed stage covering the viewport -- no panning off into black.
+        const clampedX = Math.min(0, Math.max(w - w * zoom, x));
+        const clampedY = Math.min(0, Math.max(h - h * zoom, y));
+        const next = { z: zoom, x: clampedX, y: clampedY };
+        viewRef.current = next;
+        setView(next);
+    };
+
+    // Zoom so the stage point under (cx, cy) -- viewport-relative px -- stays put.
+    const zoomAt = (newZ, cx, cy) => {
+        const { z, x, y } = viewRef.current;
+        const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZ));
+        const px = (cx - x) / z;
+        const py = (cy - y) / z;
+        applyView(clamped, cx - px * clamped, cy - py * clamped);
+    };
+
+    const zoomAtCenter = (factor) => {
+        const stage = stageRef.current;
+        if (!stage) return;
+        zoomAt(viewRef.current.z * factor, stage.offsetWidth / 2, stage.offsetHeight / 2);
+    };
+
+    const resetZoom = () => applyView(1, 0, 0);
+
+    // New file → back to fit.
+    useEffect(() => {
+        resetZoom();
+    }, [selectedFile]);
+
+    // Mouse wheel over the viewer zooms toward the cursor. Registered by hand
+    // because React's onWheel is passive and can't preventDefault the page scroll.
+    useEffect(() => {
+        const el = viewportRef.current;
+        if (!el) return;
+        const onWheel = (e) => {
+            if (!stageRef.current) return;
+            e.preventDefault();
+            const rect = el.getBoundingClientRect();
+            const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+            const factor = Math.exp(-delta * 0.0015);
+            zoomAt(viewRef.current.z * factor, e.clientX - rect.left, e.clientY - rect.top);
+        };
+        el.addEventListener("wheel", onWheel, { passive: false });
+        return () => el.removeEventListener("wheel", onWheel);
+    }, []);
+
+    // + / - / 0 hotkeys (ignored while typing in a field).
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            const t = e.target;
+            if (t?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t?.tagName)) return;
+            if (e.key === "=" || e.key === "+") { e.preventDefault(); zoomAtCenter(1.25); }
+            else if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomAtCenter(1 / 1.25); }
+            else if (e.key === "0") { e.preventDefault(); resetZoom(); }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
+
+    // Pan: middle-mouse drag always; left drag too when not in draw mode.
+    const onViewportPointerDown = (e) => {
+        if (viewRef.current.z <= 1) return;
+        const isMiddle = e.button === 1;
+        const isLeftPan = e.button === 0 && !isDrawing;
+        if (!isMiddle && !isLeftPan) return;
+        e.preventDefault(); // stop middle-click autoscroll
+        panDragRef.current = {
+            id: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            origX: viewRef.current.x,
+            origY: viewRef.current.y,
+        };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        setIsPanning(true);
+    };
+
+    const onViewportPointerMove = (e) => {
+        const drag = panDragRef.current;
+        if (!drag || drag.id !== e.pointerId) return;
+        applyView(
+            viewRef.current.z,
+            drag.origX + (e.clientX - drag.startX),
+            drag.origY + (e.clientY - drag.startY)
+        );
+    };
+
+    const endPan = (e) => {
+        const drag = panDragRef.current;
+        if (!drag || drag.id !== e.pointerId) return;
+        panDragRef.current = null;
+        e.currentTarget.releasePointerCapture?.(e.pointerId);
+        setIsPanning(false);
+    };
+
+    const stageTransform =
+        view.z === 1 && view.x === 0 && view.y === 0
+            ? "none"
+            : `translate(${view.x}px, ${view.y}px) scale(${view.z})`;
+
+    const viewportCursor = isPanning
+        ? "grabbing"
+        : view.z > 1 && !isDrawing
+            ? "grab"
+            : undefined;
+
     // Cross-version compare: the ghost is a real <video> element rendered
     // on top of the main one (see JSX below), styled with the same
     // object-contain sizing so the browser scales/letterboxes it exactly
@@ -333,7 +461,21 @@ export default function VideoPlayer({
             {/* Main Video Area */}
             <div className="flex justify-center items-center w-full max-w-[1600px]"
                 style={{ maxHeight: "calc(100vh - 220px)" }}>
-                <div className="relative w-full h-full mx-auto border-2 border-gray-500 bg-black">
+                <div
+                    ref={viewportRef}
+                    className="relative w-full h-full mx-auto border-2 border-gray-500 bg-black overflow-hidden"
+                    style={{ cursor: viewportCursor }}
+                    onPointerDown={onViewportPointerDown}
+                    onPointerMove={onViewportPointerMove}
+                    onPointerUp={endPan}
+                    onPointerCancel={endPan}
+                    onAuxClick={(e) => e.button === 1 && e.preventDefault()}
+                >
+                  <div
+                    ref={stageRef}
+                    className="relative w-full h-full"
+                    style={{ transform: stageTransform, transformOrigin: "0 0" }}
+                  >
                     {compareVideoUrl && (
                         <video
                             ref={compareVideoRef}
@@ -428,7 +570,40 @@ export default function VideoPlayer({
                     ) : (
                         <p className="text-gray-400 text-center">🎬 Select a video or image</p>
                     )}
+                  </div>
 
+                    {/* Zoom controls */}
+                    {selectedFile && (
+                        <div
+                            className="absolute top-2 right-2 z-20 flex items-center gap-1 bg-gray-900/80 text-white text-sm rounded-md px-1 py-1 select-none"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            title="Scroll to zoom · middle-drag (or drag with drawing off) to pan · + / - / 0 keys"
+                        >
+                            <button
+                                className="w-7 h-7 rounded hover:bg-gray-700 disabled:opacity-40"
+                                onClick={() => zoomAtCenter(1 / 1.25)}
+                                disabled={view.z <= MIN_ZOOM}
+                                aria-label="Zoom out"
+                            >
+                                −
+                            </button>
+                            <button
+                                className="min-w-[4.5ch] h-7 px-1 rounded hover:bg-gray-700 tabular-nums"
+                                onClick={resetZoom}
+                                title="Reset to fit (0)"
+                            >
+                                {Math.round(view.z * 100)}%
+                            </button>
+                            <button
+                                className="w-7 h-7 rounded hover:bg-gray-700 disabled:opacity-40"
+                                onClick={() => zoomAtCenter(1.25)}
+                                disabled={view.z >= MAX_ZOOM}
+                                aria-label="Zoom in"
+                            >
+                                +
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
             {/* Timeline Below Video */}
