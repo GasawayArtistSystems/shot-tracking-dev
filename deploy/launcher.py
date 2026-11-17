@@ -336,6 +336,12 @@ RECENT_FILES_PY = (
     "import GAARecentFiles; GAARecentFiles.install()"
 )
 
+# Same idiom: removes the shelf tabs the lab does not want.
+SHELF_CLEANUP_PY = (
+    "import sys; sys.path.insert(0, 'C:/Cincy/scripts'); "
+    "import GAAShelfCleanup; GAAShelfCleanup.run()"
+)
+
 
 def _mel_launch(python_code):
     r"""
@@ -375,7 +381,13 @@ def _mel_launch(python_code):
         + RECENT_FILES_PY
         + bs + bs + bs + dq + ")" + bs + dq + ")); "
     )
-    inner = load + recent + "python(" + bs + dq + python_code + bs + dq + ")"
+    shelves = (
+        "catchQuiet(eval(" + bs + dq
+        + "python(" + bs + bs + bs + dq
+        + SHELF_CLEANUP_PY
+        + bs + bs + bs + dq + ")" + bs + dq + ")); "
+    )
+    inner = load + recent + shelves + "python(" + bs + dq + python_code + bs + dq + ")"
     return "evalDeferred(" + dq + inner + dq + ")"
 
 def launch_maya(login_name, individual_assignment_id=None):
