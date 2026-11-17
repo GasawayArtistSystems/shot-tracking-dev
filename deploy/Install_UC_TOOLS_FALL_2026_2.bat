@@ -116,7 +116,7 @@ REM     Now targets C:\Cincy\MayaApp\2026 -- with MAYA_APP_DIR set at
 REM     the OS level (step 2), that's where Maya will actually look
 REM     for Maya.env, not Documents\maya\2026 anymore.
 echo [3/19] Deploying Maya.env...
-robocopy "%SRC%\deploy\maya\2026" "C:\Cincy\MayaApp\2026" Maya.env /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
+robocopy "%SRC%\maya\2026" "C:\Cincy\MayaApp\2026" Maya.env /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "Maya.env"
 
@@ -126,14 +126,14 @@ REM Documents-targeted copy removed: under SYSTEM, %USERPROFILE%
 REM resolves to the SYSTEM profile, not the student's, and
 REM MAYA_APP_DIR=C:\Cincy\MayaApp means Maya never reads from
 REM Documents anyway. This copy is the one that matters.
-robocopy "%SRC%\deploy\maya\2026\scripts" "C:\Cincy\MayaApp\2026\scripts" userSetup.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
+robocopy "%SRC%\maya\2026\scripts" "C:\Cincy\MayaApp\2026\scripts" userSetup.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "userSetup.mel (Cincy)"
 
 REM -- 5. Deploy userPrefs.mel -----------------------------------
 echo [5/19] Deploying userPrefs.mel...
 REM Documents-targeted copy removed -- same reasoning as step 3.
-robocopy "%SRC%\deploy\maya\2026\prefs" "C:\Cincy\MayaApp\2026\prefs" userPrefs.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
+robocopy "%SRC%\maya\2026\prefs" "C:\Cincy\MayaApp\2026\prefs" userPrefs.mel /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "userPrefs.mel (Cincy)"
 
@@ -146,7 +146,7 @@ REM file Maya actually uses unlocked. Lock now applied to the
 REM correct, actually-read file below.
 attrib -R "C:\Cincy\MayaApp\2026\prefs\pluginPrefs.mel" 2>nul
 del /F /Q "C:\Cincy\MayaApp\2026\prefs\pluginPrefs.mel" 2>nul
-robocopy "%SRC%\deploy\maya\2026\prefs" "C:\Cincy\MayaApp\2026\prefs" pluginPrefs.mel /IS /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
+robocopy "%SRC%\maya\2026\prefs" "C:\Cincy\MayaApp\2026\prefs" pluginPrefs.mel /IS /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "pluginPrefs.mel (Cincy)"
 attrib +R "C:\Cincy\MayaApp\2026\prefs\pluginPrefs.mel"
@@ -165,6 +165,16 @@ echo [8/19] Deploying scripts...
 robocopy "%SRC%\scripts" "C:\Cincy\scripts" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
 set RC=%ERRORLEVEL%
 call :CheckRC %RC% "scripts"
+
+REM -- 8b. Deploy MG-PickerStudio ---------------------------------
+REM     The GAA shelf's Picker button looks for the picker at
+REM     C:\Cincy\MayaApp\2026\scripts\MG-PickerStudio, the same place
+REM     the picker's own installer wizard copies it. Mirroring it here
+REM     means students never run that wizard.
+echo [8b/19] Deploying MG-PickerStudio...
+robocopy "%SRC%\maya\2026\scripts\MG-PickerStudio" "C:\Cincy\MayaApp\2026\scripts\MG-PickerStudio" /MIR /R:3 /W:5 /LOG+:"%INSTALL_LOG%"
+set RC=%ERRORLEVEL%
+call :CheckRC %RC% "MG-PickerStudio"
 
 REM -- 9. Deploy GAA shelf ----------------------------------------
 REM     Mirrors the top-level Shelves folder directly -- that IS the
