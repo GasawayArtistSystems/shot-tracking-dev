@@ -36,10 +36,15 @@ SYMBOL_TEXT = {
 
 
 def build_model(data):
-    """Turns the exported JSON into (headers, first_frame, rows of text).
+    """Turns the exported JSON into (headers, widths, first_frame, rows of
+    text). widths holds each column's on-screen pixel width from the
+    dashboard, or None where the export didn't include one (older exports).
     No Maya or Qt in here, so it can be tested on its own."""
-    columns = [c for c in data.get("columns", []) if c.get("category") != "frame"]
+    all_columns = data.get("columns", [])
+    frame_col = next((c for c in all_columns if c.get("category") == "frame"), {})
+    columns = [c for c in all_columns if c.get("category") != "frame"]
     headers = ["Frame"] + [c["name"] for c in columns]
+    widths = [frame_col.get("width")] + [c.get("width") for c in columns]
 
     first = int(data.get("frame_start") or 1)
     cells_by_frame = {r["frame"]: (r.get("cells") or {}) for r in data.get("rows", [])}
@@ -59,7 +64,7 @@ def build_model(data):
             text = cells.get(c["key"]) or symbol_at.get((c["key"], frame), "")
             row.append(str(text))
         rows.append(row)
-    return headers, first, rows
+    return headers, widths, first, rows
 
 
 class XSheetPanel(MayaQWidgetDockableMixin, QtWidgets.QWidget):
@@ -131,7 +136,7 @@ class XSheetPanel(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                 data = json.load(f)
             if data.get("format") != EXPORT_FORMAT:
                 raise ValueError("This is not a Shot Tracker X-Sheet export.")
-            headers, first, rows = build_model(data)
+            headers, widths, first, rows = build_model(data)
         except Exception as e:
             cmds.warning("X-Sheet: could not load {}: {}".format(path, e))
             QtWidgets.QMessageBox.warning(self, "X-Sheet", "Could not load that file:\n{}".format(e))
@@ -153,6 +158,9 @@ class XSheetPanel(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                     item.setTextAlignment(QtCore.Qt.AlignCenter)
                 self._table.setItem(r, c, item)
         self._table.resizeColumnsToContents()
+        for c, w in enumerate(widths):
+            if w:
+                self._table.setColumnWidth(c, int(w))
 
         who = data.get("student_name") or ""
         self._info.setText("{}{}  |  exported {}".format(

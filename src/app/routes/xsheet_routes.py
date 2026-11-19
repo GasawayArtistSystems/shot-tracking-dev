@@ -197,6 +197,18 @@ def export_xsheet(individual_assignment_id):
         """, (individual_assignment_id,)).fetchall()
     ]
 
+    # Optional on-screen column widths from the X-sheet page (they live in
+    # the viewer's browser, not the database). Ignored if malformed.
+    try:
+        widths = json.loads(request.args.get("widths") or "{}")
+    except ValueError:
+        widths = {}
+    if isinstance(widths, dict):
+        for c in columns:
+            w = widths.get(c["key"])
+            if isinstance(w, (int, float)) and not isinstance(w, bool) and 20 <= w <= 2000:
+                c["width"] = int(w)
+
     rows = []
     for r in db.execute("""
         SELECT frame, data FROM xsheet_rows

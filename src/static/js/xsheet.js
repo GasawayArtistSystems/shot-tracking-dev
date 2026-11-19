@@ -122,8 +122,8 @@
 
   // User-adjustable on-screen column widths (drag a header's right edge;
   // double-click it to reset). Remembered per viewer, per assignment, in
-  // localStorage -- purely a display preference, never sent to the server
-  // and not used by the Share-for-Feedback / Maya exports.
+  // localStorage -- a display preference, not saved with the sheet
+  // (the Share-for-Feedback images and Maya export use the same widths).
   const DEFAULT_COL_WIDTH = {
     frame: 56, words: 160, sounds: 90, blocking: 140,
     breakdown_tween: 100, notes: 260,
@@ -159,6 +159,18 @@
     table.style.width = `${state.columns.reduce((sum, c) => sum + colWidth(c), 0)}px`;
   }
 
+  // The Maya export is built server-side from saved data, but widths only
+  // live in this browser -- pass the current ones along on the link.
+  function updateMayaExportLink() {
+    const link = document.getElementById("xsheet-export-maya-btn");
+    if (!link || !state) return;
+    const url = new URL(link.getAttribute("href"), window.location.origin);
+    const widths = {};
+    for (const c of state.columns) widths[c.column_key] = colWidth(c);
+    url.searchParams.set("widths", JSON.stringify(widths));
+    link.setAttribute("href", url.pathname + url.search);
+  }
+
   function wireColumnResizer(handle, th, col) {
     handle.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
@@ -183,6 +195,7 @@
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
         saveColWidths();
+        updateMayaExportLink();
         // Notes textareas re-wrap at the new width; refit their heights.
         document.querySelectorAll("#xsheet-tbody .xsheet-notes-cell").forEach(el => {
           el.style.height = "auto";
@@ -198,6 +211,7 @@
       e.preventDefault();
       delete colWidths[col.column_key];
       saveColWidths();
+      updateMayaExportLink();
       th.style.width = `${colWidth(col)}px`;
       applyTableWidth();
     });
@@ -325,6 +339,7 @@
     thead.innerHTML = "";
     thead.appendChild(tr);
     applyTableWidth();
+    updateMayaExportLink();
 
     thead.querySelectorAll("[data-rename]").forEach(btn => {
       btn.addEventListener("click", async () => {
@@ -557,18 +572,15 @@
     font: "13px Arial, sans-serif",
     headerFont: "bold 13px Arial, sans-serif",
   };
-  const EXPORT_COL_WIDTH = {
-    frame: 50, words: 140, sounds: 90, blocking: 140,
-    breakdown_tween: 110, notes: 220,
-    blinks: 100, hands: 100, tail: 100, legs: 100, camera: 100,
-  };
   const PADDING = 6;
   const LINE_HEIGHT = 14;
   const HEADER_HEIGHT = 30;
   const BASE_ROW_HEIGHT = 24;
 
+  // Exports use the same widths as the on-screen columns (including any
+  // the viewer has dragged), so the image/Maya panel match what they see.
   function exportColWidth(col) {
-    return EXPORT_COL_WIDTH[col.category] || 120;
+    return colWidth(col);
   }
 
   function truncateText(ctx, text, maxWidth) {
