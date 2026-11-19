@@ -120,6 +120,89 @@
   // long sheet doesn't produce one oversized/clipped screenshot.
   const PAGE_SIZE = 24;
 
+  // User-adjustable on-screen column widths (drag a header's right edge;
+  // double-click it to reset). Remembered per viewer, per assignment, in
+  // localStorage -- purely a display preference, never sent to the server
+  // and not used by the Share-for-Feedback / Maya exports.
+  const DEFAULT_COL_WIDTH = {
+    frame: 56, words: 160, sounds: 90, blocking: 140,
+    breakdown_tween: 100, notes: 260,
+    blinks: 110, hands: 110, tail: 110, legs: 110, camera: 110,
+  };
+  const MIN_COL_WIDTH = 40;
+  const WIDTHS_STORAGE_KEY = `xsheet-col-widths:${individualAssignmentId}`;
+
+  let colWidths = (() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(WIDTHS_STORAGE_KEY) || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  })();
+
+  function saveColWidths() {
+    try { localStorage.setItem(WIDTHS_STORAGE_KEY, JSON.stringify(colWidths)); } catch (_) { /* storage unavailable */ }
+  }
+
+  function colWidth(col) {
+    const w = Number(colWidths[col.column_key]);
+    return Number.isFinite(w) && w >= MIN_COL_WIDTH ? w : (DEFAULT_COL_WIDTH[col.category] || 120);
+  }
+
+  // Fixed table layout so a column can shrink below its inputs' intrinsic
+  // size; the table is exactly as wide as its columns (it scrolls sideways
+  // inside its wrapper when wider than the page).
+  function applyTableWidth() {
+    const table = document.getElementById("xsheet-table");
+    table.style.tableLayout = "fixed";
+    table.style.width = `${state.columns.reduce((sum, c) => sum + colWidth(c), 0)}px`;
+  }
+
+  function wireColumnResizer(handle, th, col) {
+    handle.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startWidth = colWidth(col);
+      handle.setPointerCapture(e.pointerId);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const onMove = (ev) => {
+        const w = Math.max(MIN_COL_WIDTH, Math.round(startWidth + ev.clientX - startX));
+        colWidths[col.column_key] = w;
+        th.style.width = `${w}px`;
+        applyTableWidth();
+      };
+      const onUp = () => {
+        handle.removeEventListener("pointermove", onMove);
+        handle.removeEventListener("pointerup", onUp);
+        handle.removeEventListener("pointercancel", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        saveColWidths();
+        // Notes textareas re-wrap at the new width; refit their heights.
+        document.querySelectorAll("#xsheet-tbody .xsheet-notes-cell").forEach(el => {
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+        });
+      };
+      handle.addEventListener("pointermove", onMove);
+      handle.addEventListener("pointerup", onUp);
+      handle.addEventListener("pointercancel", onUp);
+    });
+
+    handle.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      delete colWidths[col.column_key];
+      saveColWidths();
+      th.style.width = `${colWidth(col)}px`;
+      applyTableWidth();
+    });
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
@@ -219,7 +302,9 @@
     const tr = document.createElement("tr");
     for (const col of state.columns) {
       const th = document.createElement("th");
-      th.className = "border border-gray-700 px-2 py-1 text-left whitespace-nowrap";
+      th.className = "border border-gray-700 px-2 py-1 text-left whitespace-nowrap overflow-hidden";
+      th.style.position = "relative";
+      th.style.width = `${colWidth(col)}px`;
       const canEdit = !["frame", "words", "sounds", "blocking"].includes(col.category);
       th.innerHTML = `
         <span class="font-semibold">${col.display_name}</span>
@@ -228,10 +313,18 @@
           ${col.category !== "notes" ? `<button data-remove="${col.column_key}" title="Remove" class="ml-1 text-red-400 hover:text-red-300">✕</button>` : ""}
         ` : ""}
       `;
+      const handle = document.createElement("div");
+      handle.style.cssText = "position:absolute;top:0;right:0;width:8px;height:100%;cursor:col-resize;touch-action:none;";
+      handle.addEventListener("pointerenter", () => { handle.style.background = "rgba(59,130,246,0.5)"; });
+      handle.addEventListener("pointerleave", () => { handle.style.background = ""; });
+      handle.title = "Drag to resize · double-click to reset";
+      wireColumnResizer(handle, th, col);
+      th.appendChild(handle);
       tr.appendChild(th);
     }
     thead.innerHTML = "";
     thead.appendChild(tr);
+    applyTableWidth();
 
     thead.querySelectorAll("[data-rename]").forEach(btn => {
       btn.addEventListener("click", async () => {
